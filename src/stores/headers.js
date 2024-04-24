@@ -19,6 +19,7 @@ export const useHeaderStore = defineStore('headers', () => {
   }
 
   return {
+    headers,
     getHeaders,
     appendHeaders,
     removeHeader
