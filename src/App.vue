@@ -2,10 +2,30 @@
 import { RouterView } from 'vue-router'
 import PageHeader from './components/PageHeader.vue';
 import SideMenu from './components/SideMenu.vue';
+import { useAuthStore } from './stores/authorization';
+import { onMounted } from 'vue';
+import router from './router';
+import { useSystemInfoStore } from './stores/systemInfo';
+
+const authStore = useAuthStore()
+useSystemInfoStore()
+
+onMounted(async () => {
+  await authStore.checkLoggedIn()
+  if (authStore.LoggedIn) {
+    if (router.currentRoute.value['path'] === '/login')
+      router.push('/')
+  }
+
+  if (!authStore.LoggedIn) {
+    router.push('/login')
+  }
+})
+
 </script>
 
 <template>
-  <div>
+  <div v-if="authStore.LoggedIn">
     <header>
       <PageHeader />
     </header>
@@ -14,7 +34,9 @@ import SideMenu from './components/SideMenu.vue';
       <RouterView />
     </div>
   </div>
-
+  <div v-if="!authStore.LoggedIn">
+    <RouterView />
+  </div>
 </template>
 
 <style scoped></style>
