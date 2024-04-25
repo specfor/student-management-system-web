@@ -12,7 +12,6 @@ export const useAuthStore = defineStore('auth', () => {
       email: email,
       password: password
     })
-    console.log(data)
     if (data.status === 'success') {
       setAuthTokenInRequiredPlaces(data.data.token)
       LoggedIn.value = true
