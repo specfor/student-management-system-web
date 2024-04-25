@@ -4,8 +4,10 @@ import { ref } from 'vue';
 
 import { useAuthStore } from '@/stores/authorization';
 import router from '@/router';
+import { useAlertsStore } from '@/stores/alerts';
 
 const authStore = useAuthStore();
+const alertStore = useAlertsStore();
 
 const systemInfoStore = useSystemInfoStore()
 const systemData = systemInfoStore.getInfo()
@@ -20,10 +22,9 @@ async function login() {
     logginIn.value = true
     let resp = await authStore.login(email.value, password.value)
     if (resp.success === false)
-        console.log(resp.message);
+        alertStore.insertAlert('An error occured trying to sign in.', resp.message, 'error')
     else {
         router.replace('/')
-        console.log(resp.message);
     }
     logginIn.value = false
 }
