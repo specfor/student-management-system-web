@@ -3,6 +3,7 @@ import { useSystemInfoStore } from '@/stores/systemInfo';
 import { ref } from 'vue';
 
 import { useAuthStore } from '@/stores/authorization';
+import router from '@/router';
 
 const authStore = useAuthStore();
 
@@ -21,6 +22,7 @@ async function login() {
     if (resp.success === false)
         console.log(resp.message);
     else {
+        router.replace('/')
         console.log(resp.message);
     }
     logginIn.value = false
