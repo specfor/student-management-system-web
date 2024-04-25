@@ -25,13 +25,13 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div v-if="authStore.LoggedIn">
+  <div v-if="authStore.LoggedIn" class="h-dvh flex flex-col">
     <header>
       <PageHeader />
     </header>
-    <div class="flex">
+    <div class="flex flex-1">
       <SideMenu />
-      <RouterView />
+      <RouterView class="pt-8" />
     </div>
   </div>
   <div v-if="!authStore.LoggedIn">
