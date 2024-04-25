@@ -15,7 +15,7 @@ export const useHeaderStore = defineStore('headers', () => {
   }
 
   function removeHeader(key) {
-    headers.value = headers.value.filter((header) => header.key !== key)
+    if (headers.value[key]) delete headers.value[key]
   }
 
   return {
