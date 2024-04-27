@@ -7,6 +7,7 @@ import { onMounted } from 'vue';
 import router from './router';
 import { useSystemInfoStore } from './stores/systemInfo';
 import SideAlerts from './components/SideAlerts.vue';
+import AddNewModal from './components/formComponents/AddNewModal.vue';
 
 const authStore = useAuthStore()
 useSystemInfoStore()
@@ -39,6 +40,7 @@ onMounted(async () => {
     <RouterView />
   </div>
   <SideAlerts class="fixed right-4 top-14 z-30" />
+  <AddNewModal />
 </template>
 
 <style scoped></style>
