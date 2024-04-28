@@ -23,6 +23,8 @@ export const useDataEntryFormsStore = defineStore('form-manager-data-entry', () 
         for (const option of field['options']) {
           fieldValues.value[field['name']][option['name']] = !!option['checked']
         }
+      } else if (field['type'] === 'heading' || field['type'] === 'message') {
+        continue
       } else {
         if (field['value']) fieldValues.value[field['name']] = field['value']
         else fieldValues.value[field['name']] = ''
@@ -30,7 +32,6 @@ export const useDataEntryFormsStore = defineStore('form-manager-data-entry', () 
       errorMessages.value[field['name']] = ''
     }
     show.value = true
-    console.log('showing form')
     return new Promise((resolve) => {
       let id = setInterval(() => {
         if (!show.value) {

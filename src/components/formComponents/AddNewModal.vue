@@ -1,5 +1,5 @@
 <script setup>
-import { useDataEntryFormsStore } from '@/stores/formManager';
+import { useDataEntryFormsStore } from '@/stores/dataEntryFormManager';
 import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { storeToRefs } from 'pinia';
 import { ref } from "vue";
@@ -28,6 +28,8 @@ function validateInput(name) {
         anyError = true
   }
   for (const field of fields.value) {
+    if (field['type'] !== 'heading' || field['type'] !== 'message')
+      continue
     if (errorMessages.value[field['name']] !== '')
       anyError = true;
   }
@@ -107,7 +109,7 @@ function validateInput(name) {
                     </div>
                   </div>
                   <div v-else-if="field['type'] === 'heading'" class="mt-4 mb-1">
-                    <div class="font-semibold text-xl py-0.5 pl-4 pr-1 text-center">
+                    <div class="font-semibold text-lg py-0.5 pl-4 pr-1 text-center">
                       {{ field['text'] }}
                     </div>
                   </div>
