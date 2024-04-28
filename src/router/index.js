@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import AppDashboard from '@/views/AppDashboard.vue'
 import UsersPage from '@/views/UsersPage.vue'
 import LoginPage from '@/views/LoginPage.vue'
+import UserRolesPage from '@/views/UserRolesPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,6 +21,11 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: LoginPage
+    },
+    {
+      path: '/user-roles',
+      name: 'user-roles',
+      component: UserRolesPage
     }
     // {
     //   path: '/about',
