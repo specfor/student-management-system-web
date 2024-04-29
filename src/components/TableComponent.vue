@@ -35,9 +35,9 @@ let {
   tableColumns,
   tableRows,
   actions,
-  edit,
-  search, refreshFunc
-} = defineProps(['tableColumns', 'tableRows', 'actions', 'edit', 'search', 'refreshFunc'])
+  search,
+  refreshFunc
+} = defineProps(['tableColumns', 'tableRows', 'actions', 'search', 'refreshFunc'])
 
 let refreshingData = ref(false)
 
@@ -63,7 +63,7 @@ let refreshingData = ref(false)
           class="flex hover:cursor-pointer px-4 py-2 rounded-t-lg items-center border mr-3 disabled:cursor-not-allowed disabled:text-slate-400"
           :disabled="isEditDisabled"
           :class="{ 'bg-blue-400 text-white hover:bg-blue-700': isEditActive, 'text-slate-400': !isEditActive }"
-          @click="() => { $emit(edit[0]['onClickEvent'], selectedIds); isDisabled = true; isEditActive = false; isActive = false; isDisabled = true; selectedIds = []; if (selectedIds) { isEditDisabled = true } }">
+          @click="() => { $emit('editEmit', selectedIds[0]); isDisabled = true; isEditActive = false; isActive = false; isDisabled = true; selectedIds = []; if (selectedIds) { isEditDisabled = true } }">
           Edit
         </button>
 
