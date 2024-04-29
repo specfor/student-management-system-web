@@ -1,5 +1,5 @@
 <script setup>
-import { sendGetRequest, sendJsonPostRequest } from '@/baseFunctions/requests';
+import { sendDeleteRequest, sendGetRequest, sendJsonPostRequest } from '@/baseFunctions/requests';
 import { useAlertsStore } from '@/stores/alerts';
 import { ref } from 'vue';
 import TableComponent from '@/components/TableComponent.vue';
@@ -99,6 +99,17 @@ function createRoleName(name) {
     });
     return result
 }
+
+function deleteRoles(ids) {
+    ids.forEach(async id => {
+        let resp = await sendDeleteRequest('/user-groups/' + id)
+        if (resp.status === 'error') {
+            alertStore.insertAlert('An error occured deleting user role.', resp.message, 'error')
+            return
+        }
+        alertStore.insertAlert('Action completed.', resp.message)
+    });
+}
 </script>
 
 <template>
@@ -108,6 +119,6 @@ function createRoleName(name) {
             <NewItemButton text="New Role" :on-click="newUserRole" />
         </div>
         <TableComponent :table-columns="['ID', 'Role Name', 'Permissions']" :table-rows="roleDataForTable"
-            :refresh-func="async () => { await loadUserRoles(); return true }" />
+            :refresh-func="async () => { await loadUserRoles(); return true }" @delete-emit="deleteRoles" />
     </div>
 </template>
