@@ -103,10 +103,11 @@ function createRoleName(name) {
 
 <template>
     <div class="container">
-        <div class="flex justify-between items-center">
-            <h4 class="font-semibold text-3xl mb-8">User Roles</h4>
+        <div class="flex justify-between items-center mb-16">
+            <h4 class="font-semibold text-3xl">User Roles</h4>
             <NewItemButton text="New Role" :on-click="newUserRole" />
         </div>
-        <TableComponent :table-columns="['ID', 'Role Name', 'Permissions']" :table-rows="roleDataForTable" />
+        <TableComponent :table-columns="['ID', 'Role Name', 'Permissions']" :table-rows="roleDataForTable"
+            :refresh-func="async () => { await loadUserRoles(); return true }" />
     </div>
 </template>
