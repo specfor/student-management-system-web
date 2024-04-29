@@ -53,3 +53,29 @@ export async function sendGetRequest(url, params = {}, headers = {}) {
     return { status: 'error', message: 'Something went wrong.', data: null }
   }
 }
+
+export async function sendDeleteRequest(url, headers = {}) {
+  url = baseUrl + url
+  let headers_ = useHeaderStore().getHeaders()
+  headers_ = { ...headers_, ...headers }
+  headers_['Content-Type'] = 'application/json'
+
+  let response = null
+  try {
+    response = await fetch(url, {
+      method: 'DELETE',
+      headers: headers_,
+      credentials: 'same-origin'
+    })
+  } catch (e) {
+    return { status: 'error', message: 'Failed to connect to the servers.', data: null }
+  }
+
+  let data_
+  try {
+    data_ = await response.json()
+    return { status: data_.status, data: data_.data ?? data_.error, message: data_.message ?? null }
+  } catch (error) {
+    return { status: 'error', message: 'Something went wrong.', data: null }
+  }
+}
