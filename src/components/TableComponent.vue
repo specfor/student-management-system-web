@@ -35,10 +35,9 @@ let {
   tableColumns,
   tableRows,
   actions,
-  deleteMultiple,
   edit,
   search, refreshFunc
-} = defineProps(['tableColumns', 'tableRows', 'actions', 'deleteMultiple', 'edit', 'search', 'refreshFunc'])
+} = defineProps(['tableColumns', 'tableRows', 'actions', 'edit', 'search', 'refreshFunc'])
 
 let refreshingData = ref(false)
 
@@ -48,18 +47,22 @@ let refreshingData = ref(false)
   <div class="w-full overflow-x-auto">
     <div class="flex justify-between w-full">
       <div class="flex">
-        <button :disabled="isDisabled"
-          class="rounded-md px-3 py-1 transition duration-300  mb-4 subpixel-antialiased	font-medium	"
-          :class="{ 'bg-red-400 text-white hover:bg-red-700': isActive, 'bg-stone-200 text-stone-600': !isActive }"
-          @click="() => {
-            $emit(deleteMultiple[0]['onClickEvent'], selectedIds); isDisabled = true; isActive = false; isEditDisabled = true; isEditActive = false; selectedIds = []; if (selectedIds) { isDisabled = true };
+        <div class="flex px-4 py-2 rounded-tl-lg items-center border text-slate-700 text-sm">
+          Group Actions
+        </div>
+        <button
+          class="flex hover:cursor-pointer px-4 py-2 rounded-tr-lg items-center border mr-3 disabled:cursor-not-allowed disabled:text-slate-400"
+          :disabled="isDisabled"
+          :class="{ 'bg-red-400 text-white hover:bg-red-700': isActive, 'text-slate-400  ': !isActive }" @click="() => {
+            ; $emit('deleteEmit', selectedIds); isDisabled = true; isActive = false; isEditDisabled = true; isEditActive = false; selectedIds = []; if (selectedIds) { isDisabled = true };
             selectedIds = []
           }">Delete
         </button>
 
-        <button :disabled="isEditDisabled"
-          class="ml-5 rounded-md px-3 py-1 transition duration-300  mb-4 subpixel-antialiased	font-medium"
-          :class="{ 'bg-blue-400 text-white hover:bg-blue-700': isEditActive, 'bg-stone-200 text-stone-600': !isEditActive }"
+        <button
+          class="flex hover:cursor-pointer px-4 py-2 rounded-t-lg items-center border mr-3 disabled:cursor-not-allowed disabled:text-slate-400"
+          :disabled="isEditDisabled"
+          :class="{ 'bg-blue-400 text-white hover:bg-blue-700': isEditActive, 'text-slate-400': !isEditActive }"
           @click="() => { $emit(edit[0]['onClickEvent'], selectedIds); isDisabled = true; isEditActive = false; isActive = false; isDisabled = true; selectedIds = []; if (selectedIds) { isEditDisabled = true } }">
           Edit
         </button>
