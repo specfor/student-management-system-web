@@ -1,5 +1,6 @@
 <script setup>
 import { defineProps, ref } from "vue";
+import { ArrowPathIcon } from "@heroicons/vue/24/solid";
 
 let selectedIds = ref([])
 let isDisabled = ref(true)
@@ -36,8 +37,11 @@ let {
   actions,
   deleteMultiple,
   edit,
-  search
-} = defineProps(['tableColumns', 'tableRows', 'actions', 'deleteMultiple', 'edit', 'search'])
+  search, refreshFunc
+} = defineProps(['tableColumns', 'tableRows', 'actions', 'deleteMultiple', 'edit', 'search', 'refreshFunc'])
+
+let refreshingData = ref(false)
+
 </script>
 
 <template>
@@ -61,14 +65,27 @@ let {
         </button>
 
       </div>
-      <div
-        @click="isHidden = !isHidden; filterBgColor === 'bg-white' ? filterBgColor = 'bg-slate-400' : filterBgColor = 'bg-white'"
-        class="flex hover:cursor-pointer p-3 rounded-t-lg items-center" :class="filterBgColor">
-        <h4 class="font-semibold mr-2">Filters</h4>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
-          class="w-6 h-6">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-        </svg>
+      <div class="flex">
+        <button
+          class="flex hover:cursor-pointer hover:bg-slate-100 p-2 rounded-t-lg items-center border mr-3 disabled:cursor-not-allowed disabled:text-slate-400"
+          @click="() => {
+            refreshingData = true; refreshFunc().then((finished) => {
+              ; if (finished) refreshingData = false
+            });
+          }" :disabled="refreshingData">
+          <ArrowPathIcon class="h-6 mr-3" :class="{ 'animate-spin': refreshingData }" />
+          <h4 class="font-semibold">Refresh Data</h4>
+        </button>
+        <div
+          @click="isHidden = !isHidden; filterBgColor === 'bg-white' ? filterBgColor = 'bg-slate-400' : filterBgColor = 'bg-white'"
+          class="flex hover:cursor-pointer p-2 rounded-t-lg items-center hover:bg-slate-100 border"
+          :class="filterBgColor">
+          <h4 class="font-semibold mr-2">Filters</h4>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            stroke="currentColor" class="w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+          </svg>
+        </div>
       </div>
     </div>
 
