@@ -1,21 +1,27 @@
 <script setup>
-import { sendGetRequest } from '@/baseFunctions/requests';
+import { getUserRoles, updateUserRole } from '@/apiConnections/userRoles';
+import { createUser, deleteUser, getUsers, updateUser } from '@/apiConnections/users';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import TableComponent from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
-import { useDataEntryFormsStore } from '@/stores/dataEntryFormManager';
+import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
+import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { ref } from 'vue';
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
+const confirmForm = useConfirmationFormsStore()
 
+let userData = []
 let userDataForTable = ref([])
 
 async function loadUsers() {
-    let data = await sendGetRequest('/users')
+    userDataForTable.value = []
+    let data = await getUsers()
     if (data.status === 'error') {
         alertStore.insertAlert('An error occured.', data.message, 'error')
     } else {
+        userData = data.data.users
         data.data.users.forEach(user => {
             userDataForTable.value.push([user.id, user.name, user.email, user.role.role_name])
         });
@@ -23,18 +29,85 @@ async function loadUsers() {
 }
 loadUsers()
 
-function addNewUser() {
-    dataEntryForm.newDataEntryForm('Create New User', 'Create', [{ name: 'email', type: 'text', text: "Email" }])
-    // newDataEntryForm('hehe')
+async function addNewUser() {
+    let results = await dataEntryForm.newDataEntryForm('Create New User', 'Create', [
+        { name: 'name', type: 'text', text: 'Name', require: true },
+        { name: 'email', type: 'text', text: "Email", require: true },
+        { name: 'password', type: 'password', text: 'Password', require: true },
+        { name: 'role', type: 'select', text: 'Select User Role', require: true, options: userRoleOptionFields }
+    ])
+    if (!results.submitted)
+        return
+
+    let resp = await createUser(results.data.name, results.data.email, results.data.password, results.data.role)
+    if (resp.status === 'error') {
+        alertStore.insertAlert('An error occured.', resp.message, 'error')
+    } else {
+        alertStore.insertAlert('Action completed.', resp.message)
+        await loadUsers()
+    }
 }
+
+async function editUser(id) {
+    let user = userData.find(u => u.id === id)
+
+    let results = await dataEntryForm.newDataEntryForm('Update User', 'Update', [
+        { name: 'name', type: 'text', text: 'Name', require: true, value: user.name },
+        { name: 'role', type: 'select', text: 'Select User Role', require: true, value: user.role.id, options: userRoleOptionFields }
+    ])
+    if (!results.submitted)
+        return
+
+    let resp = await updateUser(id, results.data.name, results.data.role)
+    if (resp.status === 'error') {
+        alertStore.insertAlert('An error occured.', resp.message, 'error')
+    } else {
+        alertStore.insertAlert('Action completed.', resp.message)
+        await loadUsers()
+    }
+}
+
+async function delUser(ids) {
+    let confirmed = await confirmForm.newConfirmationForm("Confirm Deletion", "Are you sure you want to delete these users with IDs: " + ids.join(', ') + "?")
+    if (!confirmed)
+        return
+
+    ids.forEach(async id => {
+        let resp = await deleteUser(id)
+        if (resp.status === 'error') {
+            alertStore.insertAlert('An error occured deleting user.', resp.message, 'error')
+            return
+        }
+        alertStore.insertAlert('Action completed.', resp.message)
+    });
+    loadUsers()
+}
+let userRoleOptionFields = []
+
+
+async function init() {
+    let userRoles = await getUserRoles()
+    if (userRoles.status === 'error') {
+        return
+    }
+    userRoles = userRoles.data.roles
+
+    userRoles.forEach(userRole => {
+        userRoleOptionFields.push({ text: userRole.role_name, value: userRole.id })
+    });
+}
+
+init()
 </script>
 
 <template>
     <div class="container">
-        <div class="flex justify-between items-center">
-            <h4 class="font-semibold text-3xl mb-8">Users</h4>
+        <div class="flex justify-between items-center mb-16">
+            <h4 class="font-semibold text-3xl">Users</h4>
             <NewItemButton text="New User" :on-click="addNewUser" />
         </div>
-        <TableComponent :table-columns="['ID', 'Name', 'Email', 'Role']" :table-rows="userDataForTable" />
+        <TableComponent :table-columns="['ID', 'Name', 'Email', 'Role']" :table-rows="userDataForTable"
+            @edit-emit="editUser" :refresh-func="async () => { await loadUsers(); return true }"
+            @delete-emit="delUser" />
     </div>
 </template>
