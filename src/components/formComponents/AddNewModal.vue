@@ -1,5 +1,5 @@
 <script setup>
-import { useDataEntryFormsStore } from '@/stores/dataEntryFormManager';
+import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { storeToRefs } from 'pinia';
 import { ref } from "vue";

@@ -3,7 +3,7 @@ import { useAlertsStore } from '@/stores/alerts';
 import { ref } from 'vue';
 import TableComponent from '@/components/TableComponent.vue';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
-import { useDataEntryFormsStore } from '@/stores/dataEntryFormManager';
+import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { useCacheStore } from '@/stores/cache';
 import { createUserRole, deleteUserRole, getAllPermissions, getUserRoles, updateUserRole } from '@/apiConnections/userRoles';
 
