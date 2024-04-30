@@ -1,5 +1,5 @@
 <script setup>
-import { getUserRoles, updateUserRole } from '@/apiConnections/userRoles';
+import { getUserRoles } from '@/apiConnections/userRoles';
 import { createUser, deleteUser, getUsers, updateUser } from '@/apiConnections/users';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import TableComponent from '@/components/TableComponent.vue';
@@ -98,6 +98,8 @@ async function init() {
 }
 
 init()
+
+// Todo implement password reset option
 </script>
 
 <template>
