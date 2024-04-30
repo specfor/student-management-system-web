@@ -15,5 +15,8 @@ import { RouterLink } from 'vue-router';
         <RouterLink to="/user-roles" class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
             User Roles
         </RouterLink>
+        <RouterLink to="/grades" class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
+            Grades
+        </RouterLink>
     </div>
 </template>
