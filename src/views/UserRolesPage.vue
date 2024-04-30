@@ -6,7 +6,9 @@ import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { useCacheStore } from '@/stores/cache';
 import { createUserRole, deleteUserRole, getAllPermissions, getUserRoles, updateUserRole } from '@/apiConnections/userRoles';
+import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 
+const confirmForm = useConfirmationFormsStore()
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
 const cacheStore = useCacheStore()
@@ -84,7 +86,11 @@ function createCategName(name) {
     return result
 }
 
-function deleteRoles(ids) {
+async function deleteRoles(ids) {
+    let confirmed = await confirmForm.newConfirmationForm("Confirm Deletion", "Are you sure you want to delete these user roles with IDs: " + ids.join(', ') + "?")
+    if (!confirmed)
+        return
+
     ids.forEach(async id => {
         let resp = await deleteUserRole(id)
         if (resp.status === 'error') {
