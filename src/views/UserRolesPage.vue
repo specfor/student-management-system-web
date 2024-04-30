@@ -1,11 +1,11 @@
 <script setup>
-import { sendDeleteRequest, sendGetRequest, sendJsonPatchRequest, sendJsonPostRequest } from '@/baseFunctions/requests';
 import { useAlertsStore } from '@/stores/alerts';
 import { ref } from 'vue';
 import TableComponent from '@/components/TableComponent.vue';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { useDataEntryFormsStore } from '@/stores/dataEntryFormManager';
 import { useCacheStore } from '@/stores/cache';
+import { createUserRole, deleteUserRole, getAllPermissions, getUserRoles, updateUserRole } from '@/apiConnections/userRoles';
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
@@ -15,7 +15,7 @@ let roleData = []
 let roleDataForTable = ref([])
 
 async function loadUserRoles() {
-    let data = await sendGetRequest('/user-groups')
+    let data = await getUserRoles()
     if (data.status === 'error') {
         alertStore.insertAlert('An error occured.', data.message, 'error')
     } else {
@@ -35,7 +35,7 @@ async function loadPermissions() {
         permissions = cacheStore.caches['all-permissions']
         return
     }
-    let data = await sendGetRequest('/permissions')
+    let data = await getAllPermissions()
     if (data.status === 'error')
         alertStore.insertAlert('An error occured.', data.message, 'error')
     else {
@@ -64,10 +64,7 @@ async function newUserRole() {
 
     let permissionsToAdd = extractSelectedPermsFromAddNewFormData(results.data)
 
-    let resp = await sendJsonPostRequest('/user-groups', {
-        "name": results.data.role_name,
-        "permissions": permissionsToAdd
-    })
+    let resp = await createUserRole(results.data.role_name, permissionsToAdd)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured creating user role.', resp.message, 'error')
         return
@@ -89,13 +86,14 @@ function createCategName(name) {
 
 function deleteRoles(ids) {
     ids.forEach(async id => {
-        let resp = await sendDeleteRequest('/user-groups/' + id)
+        let resp = await deleteUserRole(id)
         if (resp.status === 'error') {
             alertStore.insertAlert('An error occured deleting user role.', resp.message, 'error')
             return
         }
         alertStore.insertAlert('Action completed.', resp.message)
     });
+    loadUserRoles()
 }
 
 async function editRole(id) {
@@ -128,10 +126,7 @@ async function editRole(id) {
 
     let permissionsToAdd = extractSelectedPermsFromAddNewFormData(results.data)
 
-    let resp = await sendJsonPatchRequest('/user-groups/' + id, {
-        "name": results.data.role_name,
-        "permissions": permissionsToAdd
-    })
+    let resp = await updateUserRole(id, results.data.role_name, permissionsToAdd)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured updating user role.', resp.message, 'error')
         return
