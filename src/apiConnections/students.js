@@ -65,3 +65,7 @@ export function updateStudent(
 export function deleteStudent(id) {
   return sendDeleteRequest(`/students/${id}`)
 }
+
+export function getStudentImage(id) {
+  return sendGetRequest(`/students/${id}/image`)
+}

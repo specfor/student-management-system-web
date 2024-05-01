@@ -9,6 +9,7 @@ import { useSystemInfoStore } from './stores/systemInfo';
 import SideAlerts from './components/SideAlerts.vue';
 import AddNewModal from './components/formComponents/AddNewModal.vue';
 import ConfirmationModal from './components/formComponents/ConfirmationModal.vue';
+import ExtendablePopUp from './components/formComponents/ExtendablePopUp.vue';
 
 const authStore = useAuthStore()
 useSystemInfoStore()
@@ -44,6 +45,7 @@ onMounted(async () => {
     <SideAlerts class="fixed right-4 top-14 z-30" />
     <AddNewModal />
     <ConfirmationModal />
+    <ExtendablePopUp />
   </div>
 </template>
 
