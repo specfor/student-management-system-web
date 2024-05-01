@@ -8,10 +8,13 @@ import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationFor
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { ref } from "vue"
 import { MagnifyingGlassIcon } from '@heroicons/vue/24/solid';
+import { useExtendablePopUpStore } from '@/stores/formManagers/extendablePopUp';
+import StudentMoreInfo from '@/components/customPopUps/StudentMoreInfo.vue';
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
 const confirmationForm = useConfirmationFormsStore()
+const extendablePopUpStore = useExtendablePopUpStore()
 
 let studentData = []
 const studentDataForTable = ref([])
@@ -120,7 +123,7 @@ async function delStudent(ids) {
 
 function showMoreInfo(id) {
     let student = studentData.find(s => s.id === id)
-    console.log(student);
+    extendablePopUpStore.showComponent(StudentMoreInfo, student)
 }
 </script>
 
