@@ -124,22 +124,31 @@ let refreshingData = ref(false)
               v-on:change="() => { isChecked(); isMultipleChecked() }">
           </td>
           <td v-for="(data, index) in row" :key="index" class="px-3 py-1 text-slate-800">
-            <span v-if="data === null || data === ''">None</span>
+            <span v-if="data === null || data === ''" class="font-semibold">None</span>
             <span v-else-if="typeof data === 'object'">
               <span v-if="data['type'] === 'html'" v-html="data['data']"></span>
             </span>
             <span v-else>{{ data }}</span>
           </td>
-          <td v-if="actions" class="px-3 py-1 bg-neutral-300 flex items-center justify-center h-full">
+          <td v-if="actions" class="px-3 py-1 flex items-center justify-center h-full">
             <div v-for="(action, index2) in actions" :key="index2">
-              <router-link :to="{ name: 'OrderInfo', params: { id: row[0] } }">
+              <router-link v-if="action['renderAsRouterLink']" class="flex items-center"
+                :to="{ name: action['url'], params: action['params'] ?? {} }">
                 <Component v-if="action['type'] === 'icon'" :is="action['icon']" class="w-6 cursor-pointer mx-1"
-                  :class="action['iconColor']" @click="$emit(action['onClickEvent'], row[0])" />
+                  :class="action['css']" @click="$emit(action['emit'], row[0])" />
                 <button v-else
                   class="py-0.5 my-0.5 mx-1 bg-blue-900/60 hover:bg-blue-900/80 rounded-md px-3 text-slate-100"
-                  @click="$emit(action['onClickEvent'], row[0])">{{ action['btnText'] }}
+                  @click="$emit(action['emit'], row[0])">{{ action['text'] }}
                 </button>
               </router-link>
+              <div v-else class="flex items-center">
+                <Component v-if="action['type'] === 'icon'" :is="action['icon']" class="w-6 cursor-pointer mx-1"
+                  :class="action['css']" @click="$emit(action['emit'], row[0])" />
+                <button v-else
+                  class="py-0.5 my-0.5 mx-1 bg-blue-900/60 hover:bg-blue-900/80 rounded-md px-3 text-slate-100"
+                  @click="$emit(action['emit'], row[0])">{{ action['text'] }}
+                </button>
+              </div>
             </div>
           </td>
         </tr>
