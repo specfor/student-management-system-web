@@ -89,6 +89,7 @@ let refreshingData = ref(false)
           <th class="text-left px-3 pt-4 pb-2 font-bold" v-for="(columnName, i) in tableColumns" :key="i">{{ columnName
             }}
           </th>
+          <th v-if="actions.length > 0" class="text-center px-3 pt-4 pb-2 font-bold">Actions</th>
         </tr>
       </thead>
 
