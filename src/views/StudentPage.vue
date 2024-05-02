@@ -7,7 +7,7 @@ import { useAlertsStore } from '@/stores/alerts';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { ref } from "vue"
-import { MagnifyingGlassIcon } from '@heroicons/vue/24/solid';
+import { MagnifyingGlassIcon, PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { useExtendablePopUpStore } from '@/stores/formManagers/extendablePopUp';
 import StudentMoreInfo from '@/components/customPopUps/StudentMoreInfo.vue';
 
@@ -18,9 +18,10 @@ const extendablePopUpStore = useExtendablePopUpStore()
 
 let studentData = []
 const studentDataForTable = ref([])
-const tableActions = ref([
-    { type: 'icon', emit: 'ShowMore', icon: MagnifyingGlassIcon, css: 'fill-blue-600' }
-])
+const tableActions = [
+    { type: 'icon', emit: 'ShowMore', icon: MagnifyingGlassIcon, css: 'fill-blue-600 w-5' },
+    { type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
+]
 
 async function loadStudents() {
     let resp = await getStudents()
@@ -81,7 +82,8 @@ async function addNewStudent() {
 async function editStudent(id) {
     let student = studentData.find(s => s.id === id)
 
-    let results = await dataEntryForm.newDataEntryForm('New Student', 'Create', [
+    let results = await dataEntryForm.newDataEntryForm('Update Student', 'Create', [
+        { name: 'id', text: 'ID', type: 'text', disabled: true, value: student.id },
         { name: 'name', text: 'Name', type: 'text', value: student.name },
         { name: 'full_name', text: 'Full Name', type: 'text', value: student.full_name },
         { name: 'grade_id', text: 'Select Grade', type: 'select', value: student.grade.id, options: craftGradesAsOptions() },
@@ -96,7 +98,7 @@ async function editStudent(id) {
     if (!results.submitted)
         return
 
-    let resp = await updateStudent(id, ...Object.values(results.data))
+    let resp = await updateStudent(...Object.values(results.data))
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
         return
@@ -133,8 +135,8 @@ function showMoreInfo(id) {
             <h4 class="font-semibold text-3xl">Students</h4>
             <NewItemButton text="New Student" :on-click="addNewStudent" />
         </div>
-        <TableComponent :table-columns="['ID', 'Name', 'Grade', 'Email', 'School', 'Actions']"
-            :table-rows="studentDataForTable" :actions="tableActions" @edit-emit="editStudent" @show-more="showMoreInfo"
+        <TableComponent :table-columns="['ID', 'Name', 'Grade', 'Email', 'School']" :table-rows="studentDataForTable"
+            :actions="tableActions" @edit-emit="editStudent" @show-more="showMoreInfo"
             :refresh-func="async () => { await loadStudents(); return true }" @delete-emit="delStudent" />
     </div>
 </template>
