@@ -20,7 +20,12 @@ loadImage(args.id)
 
 <template>
     <div class="grid grid-cols-3 p-5">
-        <div class="p-3">
+        <div v-if="imageUrl === null" class="flex items-center justify-center">
+            <div class="animate-pulse bg-gray-400 w-full h-full rounded-lg flex items-center justify-center">
+                <h4 class="text-2xl text-white">Loading</h4>
+            </div>
+        </div>
+        <div v-else class="p-3">
             <img :src="imageUrl" alt="student image">
         </div>
         <div class="p-3 col-span-2">
