@@ -7,6 +7,7 @@ import { useAlertsStore } from '@/stores/alerts';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { ref } from 'vue';
+import { PencilSquareIcon } from '@heroicons/vue/24/solid';
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
@@ -14,6 +15,7 @@ const confirmForm = useConfirmationFormsStore()
 
 let userData = []
 let userDataForTable = ref([])
+const tableActions = [{ type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }]
 
 async function loadUsers() {
     userDataForTable.value = []
@@ -108,8 +110,8 @@ init()
             <h4 class="font-semibold text-3xl">Users</h4>
             <NewItemButton text="New User" :on-click="addNewUser" />
         </div>
-        <TableComponent :table-columns="['ID', 'Name', 'Email', 'Role']" :table-rows="userDataForTable"
-            @edit-emit="editUser" :refresh-func="async () => { await loadUsers(); return true }"
+        <TableComponent :table-columns="['ID', 'Name', 'Email', 'Role', 'Actions']" :table-rows="userDataForTable"
+            :actions="tableActions" @edit-emit="editUser" :refresh-func="async () => { await loadUsers(); return true }"
             @delete-emit="delUser" />
     </div>
 </template>
