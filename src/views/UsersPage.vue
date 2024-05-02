@@ -110,7 +110,7 @@ init()
             <h4 class="font-semibold text-3xl">Users</h4>
             <NewItemButton text="New User" :on-click="addNewUser" />
         </div>
-        <TableComponent :table-columns="['ID', 'Name', 'Email', 'Role', 'Actions']" :table-rows="userDataForTable"
+        <TableComponent :table-columns="['ID', 'Name', 'Email', 'Role']" :table-rows="userDataForTable"
             :actions="tableActions" @edit-emit="editUser" :refresh-func="async () => { await loadUsers(); return true }"
             @delete-emit="delUser" />
     </div>
