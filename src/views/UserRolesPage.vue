@@ -7,6 +7,7 @@ import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { useCacheStore } from '@/stores/cache';
 import { createUserRole, deleteUserRole, getAllPermissions, getUserRoles, updateUserRole } from '@/apiConnections/userRoles';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
+import { PencilSquareIcon } from '@heroicons/vue/24/solid';
 
 const confirmForm = useConfirmationFormsStore()
 const dataEntryForm = useDataEntryFormsStore()
@@ -15,6 +16,9 @@ const cacheStore = useCacheStore()
 
 let roleData = []
 let roleDataForTable = ref([])
+const tableActions = [
+    { type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
+]
 
 async function loadUserRoles() {
     let data = await getUserRoles()
@@ -171,7 +175,7 @@ function extractSelectedPermsFromAddNewFormData(data) {
             <NewItemButton text="New Role" :on-click="newUserRole" />
         </div>
         <TableComponent :table-columns="['ID', 'Role Name', 'Permissions']" :table-rows="roleDataForTable"
-            :refresh-func="async () => { await loadUserRoles(); return true }" @delete-emit="deleteRoles"
-            @edit-emit="editRole" />
+            :actions="tableActions" :refresh-func="async () => { await loadUserRoles(); return true }"
+            @delete-emit="deleteRoles" @edit-emit="editRole" />
     </div>
 </template>
