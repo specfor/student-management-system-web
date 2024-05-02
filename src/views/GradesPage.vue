@@ -5,6 +5,7 @@ import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
+import { PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { ref } from 'vue';
 
 const confirmationForm = useConfirmationFormsStore()
@@ -13,6 +14,9 @@ const alertStore = useAlertsStore()
 
 const gradeDataForTable = ref([])
 let gradeData = []
+const tableActions = [
+    { type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
+]
 
 async function loadGrades() {
     let resp = await getGrades()
@@ -87,6 +91,7 @@ async function delGrade(ids) {
             <NewItemButton text="New Grade" :on-click="addNewGrade" />
         </div>
         <TableComponent :table-columns="['ID', 'Name']" :table-rows="gradeDataForTable" @edit-emit="editGrade"
-            :refresh-func="async () => { await loadGrades(); return true }" @delete-emit="delGrade" />
+            :actions="tableActions" :refresh-func="async () => { await loadGrades(); return true }"
+            @delete-emit="delGrade" />
     </div>
 </template>
