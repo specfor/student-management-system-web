@@ -5,21 +5,9 @@ import { ArrowPathIcon } from "@heroicons/vue/24/solid";
 let selectedIds = ref([])
 let isDisabled = ref(true)
 let isActive = ref(false)
-let isEditDisabled = ref(true)
-let isEditActive = ref(false)
 let searchInput = ref({})
 let isHidden = ref(true)
 let filterBgColor = ref('bg-white');
-
-function isMultipleChecked() {
-  if (selectedIds.value.length === 1) {
-    isEditDisabled.value = false
-    isEditActive.value = true
-  } else {
-    isEditDisabled.value = true
-    isEditActive.value = false
-  }
-}
 
 function isChecked() {
   if (selectedIds.value.length === 0) {
@@ -54,19 +42,10 @@ let refreshingData = ref(false)
           class="flex hover:cursor-pointer px-4 py-2 rounded-tr-lg items-center border mr-3 disabled:cursor-not-allowed disabled:text-slate-400"
           :disabled="isDisabled"
           :class="{ 'bg-red-400 text-white hover:bg-red-700': isActive, 'text-slate-400  ': !isActive }" @click="() => {
-            ; $emit('deleteEmit', selectedIds); isDisabled = true; isActive = false; isEditDisabled = true; isEditActive = false; selectedIds = []; if (selectedIds) { isDisabled = true };
+            ; $emit('deleteEmit', selectedIds); isDisabled = true; isActive = false; selectedIds = []; if (selectedIds) { isDisabled = true };
             selectedIds = []
           }">Delete
         </button>
-
-        <button
-          class="flex hover:cursor-pointer px-4 py-2 rounded-t-lg items-center border mr-3 disabled:cursor-not-allowed disabled:text-slate-400"
-          :disabled="isEditDisabled"
-          :class="{ 'bg-blue-400 text-white hover:bg-blue-700': isEditActive, 'text-slate-400': !isEditActive }"
-          @click="() => { $emit('editEmit', selectedIds[0]); isDisabled = true; isEditActive = false; isActive = false; isDisabled = true; selectedIds = []; if (selectedIds) { isEditDisabled = true } }">
-          Edit
-        </button>
-
       </div>
       <div class="flex">
         <button
@@ -120,8 +99,7 @@ let refreshingData = ref(false)
         <tr v-for="row in tableRows" :key="row[0]"
           class="border-y border-slate-400 bg-neutral-100 hover:bg-neutral-200">
           <td class="pt-1 px-5">
-            <input type="checkbox" class="h-5 w-5" :value="row[0]" v-model="selectedIds"
-              v-on:change="() => { isChecked(); isMultipleChecked() }">
+            <input type="checkbox" class="h-5 w-5" :value="row[0]" v-model="selectedIds" v-on:change="isChecked">
           </td>
           <td v-for="(data, index) in row" :key="index" class="px-3 py-1 text-slate-800">
             <span v-if="data === null || data === ''" class="font-semibold">None</span>
