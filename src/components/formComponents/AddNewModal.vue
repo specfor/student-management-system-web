@@ -69,7 +69,7 @@ function handleFiles(fieldName, event) {
                     <select :disabled="field['disabled']" class="col-span-2 border-2 border-slate-400 rounded-md hover:border-slate-700 px-3 py-0.5
                              hover:bg-slate-200 disabled:border" :name="field['name']"
                       :value="fieldValues[field['name']]"
-                      @input="event => fieldValues[field['name']] = event.target.value">
+                      @input="(event) => { fieldValues[field['name']] = event.target.value; validateInput(field['name']) }">
                       <option class="" v-for="option in field['options']" :value="option['value']">{{ option['text'] }}
                       </option>
                     </select>
@@ -100,8 +100,8 @@ function handleFiles(fieldName, event) {
                       {{ field['text'] }}
                     </div>
                     <textarea :name="field['name']" cols="30" rows="3" :value="fieldValues[field['name']]"
-                      @input="event => fieldValues[field['name']] = event.target.value" :disabled="field['disabled']"
-                      class="col-span-2 border-2 border-slate-400 rounded-md px-3 hover:border-slate-700
+                      @input="(event) => { fieldValues[field['name']] = event.target.value; validateInput(field['name']) }"
+                      :disabled="field['disabled']" class="col-span-2 border-2 border-slate-400 rounded-md px-3 hover:border-slate-700
                                py-0.5 hover:bg-slate-100 focus:bg-slate-200 disabled:border"></textarea>
                     <div class="absolute top-7 right-0 z-[1000] w-2/3 px-2 rounded-lg bg-red-500/80 text-rose-900"
                       v-if="errorMessages[field['name']]">
