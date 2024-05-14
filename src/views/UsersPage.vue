@@ -1,3 +1,4 @@
+<!-- eslint-disable no-constant-condition -->
 <script setup>
 import { getUserRoles } from '@/apiConnections/userRoles';
 import { createUser, deleteUser, getUsers, updateUser } from '@/apiConnections/users';
@@ -32,40 +33,53 @@ async function loadUsers() {
 loadUsers()
 
 async function addNewUser() {
-    let results = await dataEntryForm.newDataEntryForm('Create New User', 'Create', [
+    dataEntryForm.newDataEntryForm('Create New User', 'Create', [
         { name: 'name', type: 'text', text: 'Name', require: true },
         { name: 'email', type: 'text', text: "Email", require: true },
         { name: 'password', type: 'password', text: 'Password', require: true },
         { name: 'role', type: 'select', text: 'Select User Role', require: true, options: userRoleOptionFields }
     ])
-    if (!results.submitted)
-        return
+    while (true) {
+        let results = await dataEntryForm.waitForSubmittedData()
+        if (!results.submitted)
+            return
 
-    let resp = await createUser(results.data.name, results.data.email, results.data.password, results.data.role)
-    if (resp.status === 'error') {
-        alertStore.insertAlert('An error occured.', resp.message, 'error')
-    } else {
-        alertStore.insertAlert('Action completed.', resp.message)
-        await loadUsers()
+        let resp = await createUser(results.data.name, results.data.email, results.data.password, results.data.role)
+        if (resp.status === 'error') {
+            alertStore.insertAlert('An error occured.', resp.message, 'error')
+            continue
+        } else {
+            alertStore.insertAlert('Action completed.', resp.message)
+            loadUsers()
+            dataEntryForm.finishSubmission()
+            return
+        }
     }
 }
 
 async function editUser(id) {
     let user = userData.find(u => u.id === id)
 
-    let results = await dataEntryForm.newDataEntryForm('Update User', 'Update', [
+    dataEntryForm.newDataEntryForm('Update User', 'Update', [
         { name: 'name', type: 'text', text: 'Name', require: true, value: user.name },
         { name: 'role', type: 'select', text: 'Select User Role', require: true, value: user.role.id, options: userRoleOptionFields }
     ])
-    if (!results.submitted)
-        return
 
-    let resp = await updateUser(id, results.data.name, results.data.role)
-    if (resp.status === 'error') {
-        alertStore.insertAlert('An error occured.', resp.message, 'error')
-    } else {
-        alertStore.insertAlert('Action completed.', resp.message)
-        await loadUsers()
+    while (true) {
+        let results = await dataEntryForm.waitForSubmittedData()
+        if (!results.submitted)
+            return
+
+        let resp = await updateUser(id, results.data.name, results.data.role)
+        if (resp.status === 'error') {
+            alertStore.insertAlert('An error occured.', resp.message, 'error')
+            continue
+        } else {
+            alertStore.insertAlert('Action completed.', resp.message)
+            dataEntryForm.finishSubmission()
+            loadUsers()
+            return
+        }
     }
 }
 
