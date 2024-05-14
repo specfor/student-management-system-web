@@ -1,7 +1,7 @@
 <!-- eslint-disable no-constant-condition -->
 <script setup>
 import { getGrades } from '@/apiConnections/grades';
-import { createStudent, deleteStudent, getStudents, updateStudent } from '@/apiConnections/students';
+import { createStudent, deleteStudent, getStudents, updateStudent, updateStudentImage } from '@/apiConnections/students';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import TableComponent from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
@@ -32,6 +32,7 @@ async function loadStudents() {
     }
 
     studentData = resp.data.students
+    studentDataForTable.value = []
     resp.data.students.forEach(student => {
         studentDataForTable.value.push([student.id, student.name, student.grade.name ?? '', student.email, student.school])
     });
@@ -57,7 +58,7 @@ function craftGradesAsOptions() {
 }
 async function addNewStudent() {
     dataEntryForm.newDataEntryForm('New Student', 'Create', [
-        { name: 'name', text: 'Name', type: 'text', require: true },
+        { name: 'name', text: 'Name', type: 'text', required: true },
         { name: 'full_name', text: 'Full Name', type: 'text' },
         { name: 'grade_id', text: 'Select Grade', type: 'select', required: true, options: craftGradesAsOptions() },
         { name: 'email', text: 'Email', type: 'text' },
@@ -82,8 +83,27 @@ async function addNewStudent() {
         dataEntryForm.finishSubmission()
         alertStore.insertAlert('Action completed.', 'Student added successfully.')
         loadStudents()
+        uploadStudentImage(resp.data.student.id)
         break;
     }
+}
+async function uploadStudentImage(insId) {
+    dataEntryForm.newDataEntryForm('Student\'s Image', 'Upload', [
+        { text: "You can update the image later also. Click 'close' to continue without image.", type: 'message' },
+        { name: 'profile', text: 'Select Image', type: 'file', accept: '.jpg,.jpeg,.png', preview: true, required: true }
+    ])
+    let results = await dataEntryForm.waitForSubmittedData()
+    if (!results.submitted)
+        return
+
+    let res = await updateStudentImage(insId, results.data.profile[0]);
+    if (res.status === 'error') {
+        alertStore.insertAlert('An error occurred.', res.message, 'error')
+        dataEntryForm.finishSubmission()
+        return
+    }
+    dataEntryForm.finishSubmission()
+    alertStore.insertAlert('Action completed.', 'Student photo updated successfully.')
 }
 
 async function editStudent(id) {
@@ -138,7 +158,7 @@ async function delStudent(ids) {
 
 function showMoreInfo(id) {
     let student = studentData.find(s => s.id === id)
-    extendablePopUpStore.showComponent(StudentMoreInfo, student)
+    extendablePopUpStore.showComponent(StudentMoreInfo, { 'student': student, 'uploadImageFunc': uploadStudentImage })
 }
 </script>
 
