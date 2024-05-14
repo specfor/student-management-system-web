@@ -1,14 +1,12 @@
+<!-- eslint-disable vue/require-v-for-key -->
 <script setup>
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { storeToRefs } from 'pinia';
-import { ref } from "vue";
 import { ArrowPathIcon } from '@heroicons/vue/24/solid';
 
 const dataEntryForm = useDataEntryFormsStore()
-const { show, submitted, success, title, fields, fieldValues, successBtnText, errorMessages } = storeToRefs(dataEntryForm)
-
-let allowAdd = ref(false)
+const { show, previewUrls, submitted, allowSubmit, success, title, fields, fieldValues, successBtnText, errorMessages } = storeToRefs(dataEntryForm)
 
 function validateInput(name) {
   let anyError = false;
@@ -34,7 +32,13 @@ function validateInput(name) {
     if (errorMessages.value[field['name']] !== '')
       anyError = true;
   }
-  allowAdd.value = !anyError;
+  allowSubmit.value = !anyError;
+}
+
+function handleFiles(fieldName, event) {
+  var file = event.target.files[0]
+  previewUrls.value[fieldName] = URL.createObjectURL(file)
+
 }
 </script>
 
@@ -114,6 +118,22 @@ function validateInput(name) {
                       {{ field['text'] }}
                     </div>
                   </div>
+                  <div v-else-if="field['type'] === 'file'" class="grid grid-cols-3 mb-1 relative">
+                    <div class="font-semibold text-slate-700 py-0.5">
+                      {{ field['text'] }}
+                    </div>
+                    <div class="col-span-2 flex flex-col">
+                      <input type="file" class="border-2 border-slate-400 rounded-md px-3 py-0.5 w-full"
+                        :accept="field['accept'] ? field['accept'] : null"
+                        @input="(event) => { fieldValues[field['name']] = event.target.files; handleFiles(field['name'], event); validateInput(field['name']) }">
+                      <div v-show="field['preview'] && !previewUrls[field['name']]"
+                        class="h-[300px] w-[300px] mt-4 rounded-md bg-slate-200 flex items-center justify-center">
+                        <h4 class="text-slate-500">Select the File to Preview</h4>
+                      </div>
+                      <img v-show="field['preview'] && previewUrls[field['name']]" :src="previewUrls[field['name']]"
+                        alt="selected file" class="w-auto mt-4 h-[300px] rounded-md">
+                    </div>
+                  </div>
                   <div v-else class="grid grid-cols-3 mb-1 relative">
                     <div class="font-semibold text-slate-700 py-0.5">
                       {{ field['text'] }}
@@ -130,7 +150,7 @@ function validateInput(name) {
                 </div>
               </div>
               <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                <button v-if="successBtnText" type="button" :disabled="(allowAdd && !submitted) ? false : 'disabled'"
+                <button v-if="successBtnText" type="button" :disabled="(allowSubmit && !submitted) ? false : 'disabled'"
                   class="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold
                          text-white shadow-sm hover:bg-blue-500 sm:ml-3 sm:w-auto disabled:hover:bg-blue-200 disabled:bg-blue-200"
                   @click="success = true; submitted = true">
