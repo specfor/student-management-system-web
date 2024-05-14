@@ -1,3 +1,4 @@
+<!-- eslint-disable no-constant-condition -->
 <script setup>
 import { createGrade, deleteGrade, getGrades, updateGrade } from '@/apiConnections/grades';
 import TableComponent from '@/components/TableComponent.vue';
@@ -34,36 +35,50 @@ async function loadGrades() {
 loadGrades()
 
 async function addNewGrade() {
-    let results = await dataEntryForm.newDataEntryForm('Create New Grade', 'Create', [
+    dataEntryForm.newDataEntryForm('Create New Grade', 'Create', [
         { name: 'name', type: 'text', text: 'Name', require: true }
     ])
-    if (!results.submitted)
-        return
 
-    let resp = await createGrade(results.data.name)
-    if (resp.status === 'error') {
-        alertStore.insertAlert('An error occured.', resp.message, 'error')
-    } else {
-        alertStore.insertAlert('Action completed.', resp.message)
-        loadGrades()
+    while (true) {
+        let results = await dataEntryForm.waitForSubmittedData()
+        if (!results.submitted)
+            return
+
+        let resp = await createGrade(results.data.name)
+        if (resp.status === 'error') {
+            alertStore.insertAlert('An error occured.', resp.message, 'error')
+            continue
+        } else {
+            dataEntryForm.finishSubmission()
+            alertStore.insertAlert('Action completed.', resp.message)
+            loadGrades()
+            break
+        }
     }
 }
 
 async function editGrade(id) {
     let grade = gradeData.find(g => g.id === id)
 
-    let results = await dataEntryForm.newDataEntryForm('Update Grade', 'Update', [
+    dataEntryForm.newDataEntryForm('Update Grade', 'Update', [
         { name: 'name', type: 'text', text: 'Name', require: true, value: grade.name }
     ])
-    if (!results.submitted)
-        return
 
-    let resp = await updateGrade(id, results.data.name)
-    if (resp.status === 'error') {
-        alertStore.insertAlert('An error occured.', resp.message, 'error')
-    } else {
-        alertStore.insertAlert('Action completed.', resp.message)
-        loadGrades()
+    while (true) {
+        let results = await dataEntryForm.waitForSubmittedData()
+        if (!results.submitted)
+            return
+
+        let resp = await updateGrade(id, results.data.name)
+        if (resp.status === 'error') {
+            alertStore.insertAlert('An error occured.', resp.message, 'error')
+            continue
+        } else {
+            dataEntryForm.finishSubmission()
+            alertStore.insertAlert('Action completed.', resp.message)
+            loadGrades()
+            break
+        }
     }
 }
 

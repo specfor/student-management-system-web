@@ -1,3 +1,4 @@
+<!-- eslint-disable no-constant-condition -->
 <script setup>
 import { getGrades } from '@/apiConnections/grades';
 import { createStudent, deleteStudent, getStudents, updateStudent } from '@/apiConnections/students';
@@ -55,34 +56,40 @@ function craftGradesAsOptions() {
     return ret
 }
 async function addNewStudent() {
-    let results = await dataEntryForm.newDataEntryForm('New Student', 'Create', [
+    dataEntryForm.newDataEntryForm('New Student', 'Create', [
         { name: 'name', text: 'Name', type: 'text', require: true },
         { name: 'full_name', text: 'Full Name', type: 'text' },
         { name: 'grade_id', text: 'Select Grade', type: 'select', required: true, options: craftGradesAsOptions() },
         { name: 'email', text: 'Email', type: 'text' },
         { name: 'birthday', text: 'Birth Date', type: 'date' },
         { name: 'phone_number', text: 'Phone Number', type: 'text' },
-        { name: 'address', text: 'Address', type: 'text' },
+        { name: 'address', text: 'Address', type: 'textarea' },
         { name: 'school', text: 'School', type: 'text' },
         { name: 'parent_name', text: 'Parent Name', type: 'text' },
         { name: 'parent_phone_number', text: 'Parent\'s Phone Number', type: 'text' },
     ])
-    if (!results.submitted)
-        return
 
-    let resp = await createStudent(...Object.values(results.data))
-    if (resp.status === 'error') {
-        alertStore.insertAlert('An error occured.', resp.message, 'error')
-        return
+    while (true) {
+        let results = await dataEntryForm.waitForSubmittedData()
+        if (!results.submitted)
+            return
+
+        let resp = await createStudent(...Object.values(results.data))
+        if (resp.status === 'error') {
+            alertStore.insertAlert('An error occured.', resp.message, 'error')
+            continue
+        }
+        dataEntryForm.finishSubmission()
+        alertStore.insertAlert('Action completed.', 'Student added successfully.')
+        loadStudents()
+        break;
     }
-    alertStore.insertAlert('Action completed.', 'Student added successfully.')
-    loadStudents()
 }
 
 async function editStudent(id) {
     let student = studentData.find(s => s.id === id)
 
-    let results = await dataEntryForm.newDataEntryForm('Update Student', 'Create', [
+    dataEntryForm.newDataEntryForm('Update Student', 'Update', [
         { name: 'id', text: 'ID', type: 'text', disabled: true, value: student.id },
         { name: 'name', text: 'Name', type: 'text', value: student.name },
         { name: 'full_name', text: 'Full Name', type: 'text', value: student.full_name },
@@ -90,21 +97,27 @@ async function editStudent(id) {
         { name: 'email', text: 'Email', type: 'text', value: student.email },
         { name: 'birthday', text: 'Birth Date', type: 'date', value: student.birthday },
         { name: 'phone_number', text: 'Phone Number', type: 'text', value: student.phone_number },
-        { name: 'address', text: 'Address', type: 'text', value: student.address },
+        { name: 'address', text: 'Address', type: 'textarea', value: student.address },
         { name: 'school', text: 'School', type: 'text', value: student.school },
         { name: 'parent_name', text: 'Parent Name', type: 'text', value: student.parent_name },
         { name: 'parent_phone_number', text: 'Parent\'s Phone Number', type: 'text', value: student.parent_phone_number },
     ])
-    if (!results.submitted)
-        return
 
-    let resp = await updateStudent(...Object.values(results.data))
-    if (resp.status === 'error') {
-        alertStore.insertAlert('An error occured.', resp.message, 'error')
-        return
+    while (true) {
+        let results = await dataEntryForm.waitForSubmittedData()
+        if (!results.submitted)
+            return
+
+        let resp = await updateStudent(...Object.values(results.data))
+        if (resp.status === 'error') {
+            alertStore.insertAlert('An error occured.', resp.message, 'error')
+            continue
+        }
+        alertStore.insertAlert('Action completed.', 'Student updated successfully.')
+        loadStudents()
+        dataEntryForm.finishSubmission()
+        break
     }
-    alertStore.insertAlert('Action completed.', 'Student updated successfully.')
-    loadStudents()
 }
 
 async function delStudent(ids) {

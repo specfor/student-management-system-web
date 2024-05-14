@@ -1,3 +1,4 @@
+<!-- eslint-disable no-constant-condition -->
 <script setup>
 import { useAlertsStore } from '@/stores/alerts';
 import { ref } from 'vue';
@@ -64,20 +65,26 @@ async function newUserRole() {
         fields.push({ type: 'checkbox', text: createCategName(role), name: role, options: p })
     }
 
-    let results = await dataEntryForm.newDataEntryForm('Create New User Role', 'Create', fields)
-    if (!results.submitted)
-        return
+    dataEntryForm.newDataEntryForm('Create New User Role', 'Create', fields)
 
-    let permissionsToAdd = extractSelectedPermsFromAddNewFormData(results.data)
+    while (true) {
+        let results = await dataEntryForm.waitForSubmittedData()
+        if (!results.submitted)
+            return
 
-    let resp = await createUserRole(results.data.role_name, permissionsToAdd)
-    if (resp.status === 'error') {
-        alertStore.insertAlert('An error occured creating user role.', resp.message, 'error')
-        return
+        let permissionsToAdd = extractSelectedPermsFromAddNewFormData(results.data)
+
+        let resp = await createUserRole(results.data.role_name, permissionsToAdd)
+        if (resp.status === 'error') {
+            alertStore.insertAlert('An error occured creating user role.', resp.message, 'error')
+            continue
+        }
+
+        dataEntryForm.finishSubmission()
+        alertStore.insertAlert('Action completed.', resp.message)
+        loadUserRoles()
+        break
     }
-
-    alertStore.insertAlert('Action completed.', resp.message)
-    loadUserRoles()
 }
 
 function createCategName(name) {
@@ -130,20 +137,26 @@ async function editRole(id) {
         fields.push({ type: 'checkbox', text: createCategName(categ), name: categ, options: p })
     }
 
-    let results = await dataEntryForm.newDataEntryForm('Update User Role', 'Update', fields)
-    if (!results.submitted)
-        return
+    dataEntryForm.newDataEntryForm('Update User Role', 'Update', fields)
 
-    let permissionsToAdd = extractSelectedPermsFromAddNewFormData(results.data)
+    while (true) {
+        let results = await dataEntryForm.waitForSubmittedData()
+        if (!results.submitted)
+            return
 
-    let resp = await updateUserRole(id, results.data.role_name, permissionsToAdd)
-    if (resp.status === 'error') {
-        alertStore.insertAlert('An error occured updating user role.', resp.message, 'error')
-        return
+        let permissionsToAdd = extractSelectedPermsFromAddNewFormData(results.data)
+
+        let resp = await updateUserRole(id, results.data.role_name, permissionsToAdd)
+        if (resp.status === 'error') {
+            alertStore.insertAlert('An error occured updating user role.', resp.message, 'error')
+            continue
+        }
+
+        dataEntryForm.finishSubmission()
+        alertStore.insertAlert('Action completed.', resp.message)
+        loadUserRoles()
+        break
     }
-
-    alertStore.insertAlert('Action completed.', resp.message)
-    loadUserRoles()
 }
 
 function extractSelectedPermsFromAddNewFormData(data) {
