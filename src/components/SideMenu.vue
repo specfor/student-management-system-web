@@ -21,5 +21,9 @@ import { RouterLink } from 'vue-router';
         <RouterLink to="/students" class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
             Students
         </RouterLink>
+        <RouterLink to="/instructors" class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
+            Instructors
+        </RouterLink>
+
     </div>
 </template>
