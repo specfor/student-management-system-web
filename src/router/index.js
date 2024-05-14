@@ -6,6 +6,7 @@ import UserRolesPage from '@/views/UserRolesPage.vue'
 import GradesPage from '@/views/GradesPage.vue'
 import StudentPage from '@/views/StudentPage.vue'
 import InstructorsPage from '@/views/InstructorsPage.vue'
+import CoursesPage from '@/views/CoursesPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -44,6 +45,11 @@ const router = createRouter({
       path: '/instructors',
       name: 'instructors',
       component: InstructorsPage
+    },
+    {
+      path: '/courses',
+      name: 'courses',
+      component: CoursesPage
     }
     // {
     //   path: '/about',
