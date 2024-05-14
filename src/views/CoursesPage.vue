@@ -1,0 +1,180 @@
+<!-- eslint-disable no-constant-condition -->
+<script setup>
+import { createCourse, deleteCourse, getCourses, updateCourse } from '@/apiConnections/courses';
+import { getInstructors } from '@/apiConnections/instructors';
+import TableComponent from '@/components/TableComponent.vue';
+import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
+import { useAlertsStore } from '@/stores/alerts';
+import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
+import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
+import { PencilSquareIcon } from '@heroicons/vue/24/solid';
+import { ref } from 'vue';
+
+const confirmationForm = useConfirmationFormsStore()
+const dataEntryForm = useDataEntryFormsStore()
+const alertStore = useAlertsStore()
+
+const coursesDataForTable = ref([])
+let coursesData = []
+const tableActions = [
+    { type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
+]
+
+async function loadCourses() {
+    let resp = await getCourses()
+    if (resp.status === 'error') {
+        alertStore.insertAlert('An error occured.', resp.message, 'error')
+        return
+    }
+
+    coursesData = resp.data.courses
+    coursesDataForTable.value = []
+    resp.data.courses.forEach(course => {
+        coursesDataForTable.value.push([course.id, course.name, course.schedule[0].day, course.schedule[0].time, course.fee.type, course.fee.amount, course.instructor.name])
+    });
+}
+loadCourses()
+
+let instructorOptionFields = []
+
+async function init() {
+    let resp = await getInstructors()
+    if (resp.status === 'error') {
+        return
+    }
+    let instructors = resp.data.instructors
+
+    instructors.forEach(instructor => {
+        instructorOptionFields.push({ text: instructor.name, value: instructor.id })
+    });
+}
+
+init()
+
+async function addNewCourse() {
+    dataEntryForm.newDataEntryForm('Create New Course', 'Create', [
+        { name: 'name', type: 'text', text: 'Course Name', required: true },
+        { name: 'instructor_id', type: 'select', text: 'Instructor', options: instructorOptionFields, required: true },
+        { type: 'heading', text: 'Enter Course Schedule' },
+        {
+            name: 'day', type: 'select', text: 'Course Day', required: true, options: [
+                { text: 'Monday', value: 'monday' },
+                { text: 'Tuesday', value: 'tuesday' },
+                { text: 'Wednesday', value: 'wednesday' },
+                { text: 'Thursday', value: 'thursday' },
+                { text: 'Friday', value: 'friday' },
+                { text: 'Saturday', value: 'saturday' },
+                { text: 'Sunday', value: 'sunday' }
+            ]
+        },
+        { name: 's_time', type: 'time', text: 'Course Start Time', required: true },
+        { name: 'e_time', type: 'time', text: 'Course End Time', required: true },
+        { name: 'venue', type: 'text', text: 'Course Venue / Hall', required: true },
+        { type: 'heading', text: 'Enter Course Fee' },
+        {
+            name: 'fee_type', type: 'select', text: 'Course Fee Type', required: true, options: [
+                { text: 'Daily', value: 'daily' },
+                { text: 'Monthly', value: 'monthly' },
+                { text: 'One Time', value: 'onetime' },
+            ]
+        },
+        { name: 'amount', type: 'number', text: 'Course Fee', required: true },
+    ])
+
+    while (true) {
+        let results = await dataEntryForm.waitForSubmittedData()
+        if (!results.submitted)
+            return
+
+        let resp = await createCourse(...Object.values(results.data))
+        if (resp.status === 'error') {
+            alertStore.insertAlert('An error occured.', resp.message, 'error')
+            continue
+        } else {
+            dataEntryForm.finishSubmission()
+            alertStore.insertAlert('Action completed.', resp.message)
+            loadCourses()
+            break
+        }
+    }
+}
+
+async function editCourse(id) {
+    let course = coursesData.find(g => g.id === id)
+
+    dataEntryForm.newDataEntryForm('Update Course', 'Update', [
+        { name: 'id', type: 'text', text: 'Course ID', disabled: true, value: course.id },
+        { name: 'name', type: 'text', text: 'Course Name', required: true, value: course.name },
+        { name: 'instructor_id', type: 'select', text: 'Instructor', options: instructorOptionFields, required: true, value: course.instructor.id },
+        { type: 'heading', text: 'Enter Course Schedule' },
+        {
+            name: 'day', type: 'select', text: 'Course Day', required: true, value: course.schedule[0].day, options: [
+                { text: 'Monday', value: 'monday' },
+                { text: 'Tuesday', value: 'tuesday' },
+                { text: 'Wednesday', value: 'wednesday' },
+                { text: 'Thursday', value: 'thursday' },
+                { text: 'Friday', value: 'friday' },
+                { text: 'Saturday', value: 'saturday' },
+                { text: 'Sunday', value: 'sunday' }
+            ]
+        },
+        { name: 's_time', type: 'time', text: 'Course Start Time', required: true, value: course.schedule[0].time.substring(0, 5) },
+        { name: 'e_time', type: 'time', text: 'Course End Time', required: true, value: course.schedule[0].time.substring(6, 11) },
+        { name: 'venue', type: 'text', text: 'Course Venue / Hall', required: true, value: course.schedule[0].venue },
+        { type: 'heading', text: 'Enter Course Fee' },
+        {
+            name: 'fee_type', type: 'select', text: 'Course Fee Type', required: true, value: course.fee.type, options: [
+                { text: 'Daily', value: 'daily' },
+                { text: 'Monthly', value: 'monthly' },
+                { text: 'One Time', value: 'onetime' },
+            ]
+        },
+        { name: 'amount', type: 'number', text: 'Course Fee', required: true, value: course.fee.amount },
+    ])
+
+    while (true) {
+        let results = await dataEntryForm.waitForSubmittedData()
+        if (!results.submitted)
+            return
+
+        let resp = await updateCourse(...Object.values(results.data))
+        if (resp.status === 'error') {
+            alertStore.insertAlert('An error occured.', resp.message, 'error')
+            continue
+        } else {
+            dataEntryForm.finishSubmission()
+            alertStore.insertAlert('Action completed.', resp.message)
+            loadCourses()
+            break
+        }
+    }
+}
+
+async function delCourse(ids) {
+    let confirmed = await confirmationForm.newConfirmationForm("Confirm Deletion", "Are you sure you want to delete these courses with IDs: " + ids.join(', ') + "?")
+    if (!confirmed)
+        return
+
+    ids.forEach(async id => {
+        let resp = await deleteCourse(id)
+        if (resp.status === 'error') {
+            alertStore.insertAlert('An error occured deleting course.', resp.message, 'error')
+            return
+        }
+        alertStore.insertAlert('Action completed.', resp.message)
+    });
+    loadCourses()
+}
+</script>
+
+<template>
+    <div class="container">
+        <div class="flex justify-between items-center mb-16">
+            <h4 class="font-semibold text-3xl">Courses</h4>
+            <NewItemButton text="New Course" :on-click="addNewCourse" />
+        </div>
+        <TableComponent :table-columns="['ID', 'Name', 'Course Day', 'Time', 'Payment Cycle', 'Fee', 'Instructor']"
+            :table-rows="coursesDataForTable" @edit-emit="editCourse" :actions="tableActions"
+            :refresh-func="async () => { await loadCourses(); return true }" @delete-emit="delCourse" />
+    </div>
+</template>
