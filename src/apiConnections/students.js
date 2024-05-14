@@ -1,5 +1,6 @@
 import {
   sendDeleteRequest,
+  sendFileUploadRequest,
   sendGetRequest,
   sendJsonPatchRequest,
   sendJsonPostRequest
@@ -68,4 +69,8 @@ export function deleteStudent(id) {
 
 export function getStudentImage(id) {
   return sendGetRequest(`/students/${id}/image`)
+}
+
+export function updateStudentImage(id, image) {
+  return sendFileUploadRequest(`/students/${id}/image`, 'photo', image)
 }
