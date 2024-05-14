@@ -3,9 +3,10 @@ import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { storeToRefs } from 'pinia';
 import { ref } from "vue";
+import { ArrowPathIcon } from '@heroicons/vue/24/solid';
 
 const dataEntryForm = useDataEntryFormsStore()
-const { show, success, title, fields, fieldValues, successBtnText, errorMessages } = storeToRefs(dataEntryForm)
+const { show, submitted, success, title, fields, fieldValues, successBtnText, errorMessages } = storeToRefs(dataEntryForm)
 
 let allowAdd = ref(false)
 
@@ -129,13 +130,18 @@ function validateInput(name) {
                 </div>
               </div>
               <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                <button v-if="successBtnText" type="button" :disabled="allowAdd ? false : 'disabled'"
+                <button v-if="successBtnText" type="button" :disabled="(allowAdd && !submitted) ? false : 'disabled'"
                   class="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold
-                         text-white shadow-sm hover:bg-blue-500 sm:ml-3 sm:w-auto disabled:hover:bg-blue-200 disabled:bg-blue-200" @click="show = false; success = true;">{{ successBtnText }}
+                         text-white shadow-sm hover:bg-blue-500 sm:ml-3 sm:w-auto disabled:hover:bg-blue-200 disabled:bg-blue-200"
+                  @click="success = true; submitted = true">
+                  <span v-show="submitted && show">
+                    <ArrowPathIcon class="w-5 animate-spin mr-2" />
+                  </span>
+                  <span>{{ successBtnText }}</span>
                 </button>
                 <button type="button" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold
                          text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-                  @click="show = false" ref="cancelButtonRef">Cancel
+                  @click="show = false; submitted = true" ref="cancelButtonRef">Cancel
                 </button>
               </div>
             </DialogPanel>

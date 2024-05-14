@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 
 export const useDataEntryFormsStore = defineStore('form-manager-data-entry', () => {
   const show = ref(false)
+  const submitted = ref(false)
   const success = ref(false)
   const title = ref('')
   const fields = ref([])
@@ -16,6 +17,7 @@ export const useDataEntryFormsStore = defineStore('form-manager-data-entry', () 
     title.value = title_
     fields.value = fields_
     successBtnText.value = successBtn_
+    submitted.value = false
 
     for (const field of fields_) {
       if (field['type'] === 'checkbox') {
@@ -32,23 +34,37 @@ export const useDataEntryFormsStore = defineStore('form-manager-data-entry', () 
       errorMessages.value[field['name']] = ''
     }
     show.value = true
+  }
+
+  function waitForSubmittedData() {
+    success.value = false
+    submitted.value = false
     return new Promise((resolve) => {
       let id = setInterval(() => {
-        if (!show.value) {
+        if (submitted.value) {
           clearInterval(id)
           resolve({ data: fieldValues.value, submitted: success.value })
         }
       }, 200)
     })
   }
+
+  function finishSubmission() {
+    submitted.value = false
+    show.value = false
+  }
+
   return {
     show,
+    submitted,
     success,
     title,
     fields,
     fieldValues,
     successBtnText,
     errorMessages,
-    newDataEntryForm
+    newDataEntryForm,
+    waitForSubmittedData,
+    finishSubmission
   }
 })
