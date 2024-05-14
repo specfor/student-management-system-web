@@ -10,6 +10,8 @@ export const useDataEntryFormsStore = defineStore('form-manager-data-entry', () 
   const fieldValues = ref({})
   const successBtnText = ref('')
   const errorMessages = ref({})
+  const allowSubmit = ref(false)
+  const previewUrls = ref([])
 
   function newDataEntryForm(title_, successBtn_, fields_) {
     fieldValues.value = {}
@@ -18,6 +20,8 @@ export const useDataEntryFormsStore = defineStore('form-manager-data-entry', () 
     fields.value = fields_
     successBtnText.value = successBtn_
     submitted.value = false
+    allowSubmit.value = false
+    previewUrls.value = []
 
     for (const field of fields_) {
       if (field['type'] === 'checkbox') {
@@ -57,6 +61,8 @@ export const useDataEntryFormsStore = defineStore('form-manager-data-entry', () 
   return {
     show,
     submitted,
+    allowSubmit,
+    previewUrls,
     success,
     title,
     fields,
