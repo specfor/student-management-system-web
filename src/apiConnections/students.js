@@ -52,7 +52,7 @@ export function updateStudent(
 ) {
   return sendJsonPatchRequest(`/students/${id}`, {
     name: name,
-    fullname: fullname,
+    full_name: fullname,
     birthday: birthday,
     address: address,
     email: email,
