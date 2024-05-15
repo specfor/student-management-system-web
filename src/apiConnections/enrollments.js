@@ -8,6 +8,10 @@ export function getEnrollmentsOfCourse(courseId) {
 //   return sendGetRequest('/enroll?student=' + studentId)
 // }
 
+export function getStudentEnrollmentOfCourse(courseId, studentId) {
+  return sendGetRequest(`/enroll/${courseId}/${studentId}`)
+}
+
 export function enrollCourse(
   course_id,
   student_id,
