@@ -53,7 +53,6 @@ watch(selectedCourseForTable, async (courseId) => {
     courseIdToFetchEnrollments = courseId
     loadEnrollments()
     selectedCourseData.value = courses.find(c => c.id == courseId)
-    console.log(selectedCourseData.value);
 })
 
 let coursesOptionFields = ref([])
@@ -65,8 +64,8 @@ async function init() {
         return
     }
     courses = resp.data.courses
-    courses.forEach(enrollment => {
-        coursesOptionFields.value.push({ text: enrollment.name, value: enrollment.id })
+    courses.forEach(course => {
+        coursesOptionFields.value.push({ text: course.name, value: course.id })
     });
 
     resp = await getStudents()
