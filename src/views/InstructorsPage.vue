@@ -75,7 +75,7 @@ async function addNewInstructor() {
 
 async function uploadInstructorImage(insId) {
     dataEntryForm.newDataEntryForm('Instructor\'s Image', 'Upload', [
-        { text: "You can update the image later also. Click 'close' to continue without image.", type: 'message' },
+        { text: "You can update the image later also. Click 'Cancel' to continue without image.", type: 'message' },
         { name: 'profile', text: 'Select Image', type: 'file', accept: '.jpg,.jpeg,.png', preview: true, required: true }
     ])
     let results = await dataEntryForm.waitForSubmittedData()
