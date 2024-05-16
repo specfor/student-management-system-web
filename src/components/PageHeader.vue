@@ -20,8 +20,8 @@ const showProfileDropdown = ref(false)
 <template>
     <div class="bg-slate-300">
         <div class="flex py-2 px-8 items-center justify-between">
-            <div class="flex gap-4">
-                <img src="/favicon.ico" alt="company logo">
+            <div class="flex gap-4 items-center">
+                <img src="/logo.png" alt="company logo" class="h-10">
                 <h4 class="font-semibold text-xl">{{ systemData['company-name'] }}</h4>
             </div>
             <div class="flex">
