@@ -88,7 +88,7 @@ async function delGrade() {
     <div class="container">
         <div class="flex justify-between items-center mb-16">
             <h4 class="font-semibold text-3xl">Payments</h4>
-            <NewItemButton text="New Grade" :on-click="addNewGrade" />
+            <!-- <NewItemButton text="New Grade" :on-click="addNewGrade" /> -->
         </div>
         <TableComponent :table-columns="['ID', 'Payment For', 'Amount', 'Student', 'Course', 'Method', 'Refunded']"
             :table-rows="gradeDataForTable" @edit-emit="editPayment" :actions="tableActions"
