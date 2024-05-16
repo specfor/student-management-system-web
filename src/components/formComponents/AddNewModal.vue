@@ -63,8 +63,11 @@ function handleFiles(fieldName, event) {
                 <div class="text-center text-2xl font-bold mb-10 ">{{ title }}</div>
                 <div v-for="field in fields">
                   <div v-if="field['type'] === 'select'" class="grid grid-cols-3 mb-1 relative">
-                    <div class="font-semibold text-slate-700 py-0.5">
-                      {{ field['text'] }}
+                    <div class="flex justify-between">
+                      <div class="font-semibold text-slate-700 py-0.5">
+                        {{ field['text'] }}
+                      </div>
+                      <h3 class="text-xl text-red-700 pr-1" v-if="field['required']">*</h3>
                     </div>
                     <select :disabled="field['disabled']" class="col-span-2 border-2 border-slate-400 rounded-md hover:border-slate-700 px-3 py-0.5
                              hover:bg-slate-200 disabled:border" :name="field['name']"
@@ -79,8 +82,11 @@ function handleFiles(fieldName, event) {
                     </div>
                   </div>
                   <div v-else-if="field['type'] === 'checkbox'" class="grid grid-cols-3 my-2 relative">
-                    <div class="font-semibold text-slate-700 py-0.5">
-                      {{ field['text'] }}
+                    <div class="flex justify-between">
+                      <div class="font-semibold text-slate-700 py-0.5">
+                        {{ field['text'] }}
+                      </div>
+                      <h3 class="text-xl text-red-700 pr-1" v-if="field['required']">*</h3>
                     </div>
                     <div class="col-span-2 grid grid-cols-2">
                       <div v-for="option in field['options']" class="flex mt-1">
@@ -96,8 +102,11 @@ function handleFiles(fieldName, event) {
                     </div>
                   </div>
                   <div v-else-if="field['type'] === 'textarea'" class="grid grid-cols-3 mb-1 relative">
-                    <div class="font-semibold text-slate-700 py-0.5">
-                      {{ field['text'] }}
+                    <div class="flex justify-between">
+                      <div class="font-semibold text-slate-700 py-0.5">
+                        {{ field['text'] }}
+                      </div>
+                      <h3 class="text-xl text-red-700 pr-1" v-if="field['required']">*</h3>
                     </div>
                     <textarea :name="field['name']" cols="30" rows="3" :value="fieldValues[field['name']]"
                       @input="(event) => { fieldValues[field['name']] = event.target.value; validateInput(field['name']) }"
@@ -119,8 +128,11 @@ function handleFiles(fieldName, event) {
                     </div>
                   </div>
                   <div v-else-if="field['type'] === 'file'" class="grid grid-cols-3 mb-1 relative">
-                    <div class="font-semibold text-slate-700 py-0.5">
-                      {{ field['text'] }}
+                    <div class="flex justify-between">
+                      <div class="font-semibold text-slate-700 py-0.5">
+                        {{ field['text'] }}
+                      </div>
+                      <h3 class="text-xl text-red-700 pr-1" v-if="field['required']">*</h3>
                     </div>
                     <div class="col-span-2 flex flex-col">
                       <input type="file" class="border-2 border-slate-400 rounded-md px-3 py-0.5 w-full"
@@ -135,8 +147,9 @@ function handleFiles(fieldName, event) {
                     </div>
                   </div>
                   <div v-else class="grid grid-cols-3 mb-1 relative">
-                    <div class="font-semibold text-slate-700 py-0.5">
-                      {{ field['text'] }}
+                    <div class="font-semibold text-slate-700 py-0.5 flex justify-between">
+                      <h3>{{ field['text'] }}</h3>
+                      <h3 class="text-xl text-red-700 pr-1" v-if="field['required']">*</h3>
                     </div>
                     <input class="col-span-2 border-2 border-slate-400 rounded-md px-3 hover:border-slate-700
                          py-0.5 hover:bg-slate-100 focus:bg-slate-200 disabled:border" :disabled="field['disabled']"
