@@ -15,7 +15,6 @@ export const useAuthStore = defineStore('auth', () => {
     })
     if (data.status === 'success') {
       userPermissions.value = data.data.user.role.permissions
-      console.log(userPermissions.value)
       await setAuthTokenInRequiredPlaces(data.data.token)
       LoggedIn.value = true
       return { success: true, message: 'Login Successful.' }
@@ -46,7 +45,6 @@ export const useAuthStore = defineStore('auth', () => {
     )
     if (data.status === 'success') {
       userPermissions.value = data.data.user.role.permissions
-      console.log(userPermissions.value)
       await setAuthTokenInRequiredPlaces(storedKey)
       return true
     }
