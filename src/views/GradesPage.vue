@@ -36,7 +36,7 @@ loadGrades()
 
 async function addNewGrade() {
     dataEntryForm.newDataEntryForm('Create New Grade', 'Create', [
-        { name: 'name', type: 'text', text: 'Name', require: true }
+        { name: 'name', type: 'text', text: 'Name', required: true }
     ])
 
     while (true) {
@@ -61,7 +61,7 @@ async function editGrade(id) {
     let grade = gradeData.find(g => g.id === id)
 
     dataEntryForm.newDataEntryForm('Update Grade', 'Update', [
-        { name: 'name', type: 'text', text: 'Name', require: true, value: grade.name }
+        { name: 'name', type: 'text', text: 'Name', required: true, value: grade.name }
     ])
 
     while (true) {

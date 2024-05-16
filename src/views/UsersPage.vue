@@ -34,10 +34,10 @@ loadUsers()
 
 async function addNewUser() {
     dataEntryForm.newDataEntryForm('Create New User', 'Create', [
-        { name: 'name', type: 'text', text: 'Name', require: true },
-        { name: 'email', type: 'text', text: "Email", require: true },
-        { name: 'password', type: 'password', text: 'Password', require: true },
-        { name: 'role', type: 'select', text: 'Select User Role', require: true, options: userRoleOptionFields }
+        { name: 'name', type: 'text', text: 'Name', required: true },
+        { name: 'email', type: 'text', text: "Email", required: true },
+        { name: 'password', type: 'password', text: 'Password', required: true },
+        { name: 'role', type: 'select', text: 'Select User Role', required: true, options: userRoleOptionFields }
     ])
     while (true) {
         let results = await dataEntryForm.waitForSubmittedData()
@@ -61,8 +61,8 @@ async function editUser(id) {
     let user = userData.find(u => u.id === id)
 
     dataEntryForm.newDataEntryForm('Update User', 'Update', [
-        { name: 'name', type: 'text', text: 'Name', require: true, value: user.name },
-        { name: 'role', type: 'select', text: 'Select User Role', require: true, value: user.role.id, options: userRoleOptionFields }
+        { name: 'name', type: 'text', text: 'Name', required: true, value: user.name },
+        { name: 'role', type: 'select', text: 'Select User Role', required: true, value: user.role.id, options: userRoleOptionFields }
     ])
 
     while (true) {

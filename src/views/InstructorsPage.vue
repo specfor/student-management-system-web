@@ -96,7 +96,7 @@ async function editInstructor(id) {
 
     dataEntryForm.newDataEntryForm('Update Instructor', 'Update', [
         { name: 'id', text: 'ID', type: 'text', disabled: true, value: instructor.id },
-        { name: 'name', text: 'Name', type: 'text', value: instructor.name },
+        { name: 'name', text: 'Name', type: 'text', required: true, value: instructor.name },
         { name: 'email', text: 'Email', type: 'text', value: instructor.email },
         { name: 'phone_number', text: 'Phone Number', type: 'text', value: instructor.phone_number },
         { name: 'birthday', text: 'Birth Date', type: 'date', value: instructor.birthday },

@@ -1,6 +1,6 @@
 <script setup>
 import { useSystemInfoStore } from '@/stores/systemInfo';
-import { computed, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 
 import { useAuthStore } from '@/stores/authorization';
 import router from '@/router';

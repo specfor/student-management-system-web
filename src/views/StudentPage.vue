@@ -111,9 +111,9 @@ async function editStudent(id) {
 
     dataEntryForm.newDataEntryForm('Update Student', 'Update', [
         { name: 'id', text: 'ID', type: 'text', disabled: true, value: student.id },
-        { name: 'name', text: 'Name', type: 'text', value: student.name },
+        { name: 'name', text: 'Name', type: 'text', required: true, value: student.name },
         { name: 'full_name', text: 'Full Name', type: 'text', value: student.full_name },
-        { name: 'grade_id', text: 'Select Grade', type: 'select', value: student.grade.id, options: craftGradesAsOptions() },
+        { name: 'grade_id', text: 'Select Grade', type: 'select', required: true, value: student.grade.id, options: craftGradesAsOptions() },
         { name: 'email', text: 'Email', type: 'text', value: student.email },
         { name: 'birthday', text: 'Birth Date', type: 'date', value: student.birthday },
         { name: 'phone_number', text: 'Phone Number', type: 'text', value: student.phone_number },
