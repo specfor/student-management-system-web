@@ -6,6 +6,7 @@ import { useHeaderStore } from './headers'
 export const useAuthStore = defineStore('auth', () => {
   const LoggedIn = ref(false)
   const authToken = ref('')
+  const userPermissions = ref({})
 
   async function login(email, password) {
     let data = await sendJsonPostRequest('/login', {
@@ -13,7 +14,9 @@ export const useAuthStore = defineStore('auth', () => {
       password: password
     })
     if (data.status === 'success') {
-      setAuthTokenInRequiredPlaces(data.data.token)
+      userPermissions.value = data.data.user.role.permissions
+      console.log(userPermissions.value)
+      await setAuthTokenInRequiredPlaces(data.data.token)
       LoggedIn.value = true
       return { success: true, message: 'Login Successful.' }
     } else {
@@ -42,7 +45,9 @@ export const useAuthStore = defineStore('auth', () => {
       { Authorization: craftAuthorizationHeader(storedKey) }
     )
     if (data.status === 'success') {
-      setAuthTokenInRequiredPlaces(storedKey)
+      userPermissions.value = data.data.user.role.permissions
+      console.log(userPermissions.value)
+      await setAuthTokenInRequiredPlaces(storedKey)
       return true
     }
     return false
@@ -68,6 +73,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     LoggedIn,
+    userPermissions,
     checkLoggedIn,
     login,
     logout,
