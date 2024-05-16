@@ -1,6 +1,7 @@
 <!-- eslint-disable no-constant-condition -->
 <script setup>
 import { createCourse, deleteCourse, getCourses, updateCourse } from '@/apiConnections/courses';
+import { getGrades } from '@/apiConnections/grades';
 import { getInstructors } from '@/apiConnections/instructors';
 import TableComponent from '@/components/TableComponent.vue';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
@@ -30,12 +31,13 @@ async function loadCourses() {
     coursesData = resp.data.courses
     coursesDataForTable.value = []
     resp.data.courses.forEach(course => {
-        coursesDataForTable.value.push([course.id, course.name, course.schedule[0].day, course.schedule[0].time, course.fee.type, course.fee.amount, course.instructor.name])
+        coursesDataForTable.value.push([course.id, course.name, course.group_name, course.grade ? course.grade.name : 'None', course.schedule[0].day, course.schedule[0].time, course.fee.amount, course.fee.type, course.instructor.name])
     });
 }
 loadCourses()
 
 let instructorOptionFields = []
+let gradeOptionFields = []
 
 async function init() {
     let resp = await getInstructors()
@@ -47,6 +49,14 @@ async function init() {
     instructors.forEach(instructor => {
         instructorOptionFields.push({ text: instructor.name, value: instructor.id })
     });
+
+    // get grade data for selection boxes
+    resp = await getGrades()
+    if (resp.status === 'success') {
+        resp.data.grades.forEach(grade => {
+            gradeOptionFields.push({ value: grade.id, text: grade.name })
+        });
+    }
 }
 
 init()
@@ -54,6 +64,7 @@ init()
 async function addNewCourse() {
     dataEntryForm.newDataEntryForm('Create New Course', 'Create', [
         { name: 'name', type: 'text', text: 'Course Name', required: true },
+        { name: 'group_name', type: 'text', text: 'Group (if course has groups )' },
         { name: 'instructor_id', type: 'select', text: 'Instructor', options: instructorOptionFields, required: true },
         { type: 'heading', text: 'Enter Course Schedule' },
         {
@@ -79,6 +90,8 @@ async function addNewCourse() {
             ]
         },
         { name: 'amount', type: 'number', text: 'Course Fee', required: true },
+        { type: 'heading', text: 'Limit to a Grade (Optional)' },
+        { name: 'grade_id', type: 'select', text: 'Grade', options: gradeOptionFields },
     ])
 
     while (true) {
@@ -105,6 +118,7 @@ async function editCourse(id) {
     dataEntryForm.newDataEntryForm('Update Course', 'Update', [
         { name: 'id', type: 'text', text: 'Course ID', disabled: true, value: course.id },
         { name: 'name', type: 'text', text: 'Course Name', required: true, value: course.name },
+        { name: 'group_name', type: 'text', text: 'Group (if course has groups )', value: course.group_name },
         { name: 'instructor_id', type: 'select', text: 'Instructor', options: instructorOptionFields, required: true, value: course.instructor.id },
         { type: 'heading', text: 'Enter Course Schedule' },
         {
@@ -130,6 +144,8 @@ async function editCourse(id) {
             ]
         },
         { name: 'amount', type: 'number', text: 'Course Fee', required: true, value: course.fee.amount },
+        { type: 'heading', text: 'Limit to a Grade (Optional)' },
+        { name: 'grade_id', type: 'select', text: 'Grade', options: gradeOptionFields, value: course.grade_id },
     ])
 
     while (true) {
@@ -173,7 +189,8 @@ async function delCourse(ids) {
             <h4 class="font-semibold text-3xl">Courses</h4>
             <NewItemButton text="New Course" :on-click="addNewCourse" />
         </div>
-        <TableComponent :table-columns="['ID', 'Name', 'Course Day', 'Time', 'Payment Cycle', 'Fee', 'Instructor']"
+        <TableComponent
+            :table-columns="['ID', 'Name', 'Group', 'Grade', 'Course Day', 'Time', 'Fee', 'Payment Cycle', 'Instructor']"
             :table-rows="coursesDataForTable" @edit-emit="editCourse" :actions="tableActions"
             :refresh-func="async () => { await loadCourses(); return true }" @delete-emit="delCourse" />
     </div>
