@@ -13,7 +13,7 @@ function logOut() {
 
 <template>
     <div class="flex flex-col bg-gray-300 p-1 mt-2 rounded-lg">
-        <button class="hover:bg-gray-100 px-8 py-2 border-b-2">Profile</button>
+        <!-- <button class="hover:bg-gray-100 px-8 py-2 border-b-2">Profile</button> -->
         <button class="hover:bg-gray-100 px-8 py-2 border-b-2" @click="logOut">Sign Out</button>
     </div>
 </template>
