@@ -12,6 +12,36 @@ let { userPermissions } = storeToRefs(authStore)
         <RouterLink to="/" class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
             Dashboard
         </RouterLink>
+        <div class="h-1 bg-slate-600 mx-2 rounded-xl my-5"></div>
+        <RouterLink v-if="userPermissions.all || userPermissions.attendance" to="/mark-attendance"
+            class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
+            Mark Attendance
+        </RouterLink>
+        <RouterLink v-if="userPermissions.all || userPermissions.enrollment" to="/enrollments"
+            class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
+            Enrollments
+        </RouterLink>
+        <RouterLink v-if="userPermissions.all || userPermissions.students" to="/students"
+            class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
+            Students
+        </RouterLink>
+        <div class="h-1 bg-slate-600 mx-2 rounded-xl my-5"></div>
+        <RouterLink v-if="userPermissions.all || userPermissions.payments" to="/payments"
+            class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
+            Payments
+        </RouterLink>
+        <RouterLink v-if="userPermissions.all || userPermissions.courses" to="/courses"
+            class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
+            Courses
+        </RouterLink>
+        <RouterLink v-if="userPermissions.all || userPermissions.instructors" to="/instructors"
+            class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
+            Instructors
+        </RouterLink>
+        <RouterLink v-if="userPermissions.all || userPermissions.grades" to="/grades"
+            class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
+            Grades
+        </RouterLink>
         <RouterLink v-if="userPermissions.all || userPermissions.users" to="/users"
             class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
             Users
@@ -20,33 +50,6 @@ let { userPermissions } = storeToRefs(authStore)
             active-class="bg-white">
             User Roles
         </RouterLink>
-        <RouterLink v-if="userPermissions.all || userPermissions.grades" to="/grades"
-            class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
-            Grades
-        </RouterLink>
-        <RouterLink v-if="userPermissions.all || userPermissions.students" to="/students"
-            class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
-            Students
-        </RouterLink>
-        <RouterLink v-if="userPermissions.all || userPermissions.instructors" to="/instructors"
-            class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
-            Instructors
-        </RouterLink>
-        <RouterLink v-if="userPermissions.all || userPermissions.courses" to="/courses"
-            class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
-            Courses
-        </RouterLink>
-        <RouterLink v-if="userPermissions.all || userPermissions.enrollment" to="/enrollments"
-            class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
-            Enrollments
-        </RouterLink>
-        <RouterLink v-if="userPermissions.all || userPermissions.payments" to="/payments"
-            class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
-            Payments
-        </RouterLink>
-        <RouterLink v-if="userPermissions.all || userPermissions.attendance" to="/mark-attendance"
-            class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
-            Mark Attendance
-        </RouterLink>
+
     </div>
 </template>
