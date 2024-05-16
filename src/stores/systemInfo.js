@@ -3,16 +3,12 @@ import { defineStore } from 'pinia'
 
 export const useSystemInfoStore = defineStore('systemInfo', () => {
   const sysInfo = ref({})
-  let loaded = ref(false)
+  let loaded = false
 
-  if (!loaded.value) {
+  if (!loaded) {
     loadInfoFromLocalStorage()
     laodInfoFromInternet()
-    loaded.value = true
-  }
-
-  function getInfo() {
-    return sysInfo.value
+    loaded = true
   }
 
   function loadInfoFromLocalStorage() {
@@ -28,6 +24,6 @@ export const useSystemInfoStore = defineStore('systemInfo', () => {
   }
 
   return {
-    getInfo
+    sysInfo
   }
 })

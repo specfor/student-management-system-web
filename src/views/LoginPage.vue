@@ -1,18 +1,23 @@
 <script setup>
 import { useSystemInfoStore } from '@/stores/systemInfo';
-import { ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 import { useAuthStore } from '@/stores/authorization';
 import router from '@/router';
 import { useAlertsStore } from '@/stores/alerts';
+import { storeToRefs } from 'pinia';
 
 const authStore = useAuthStore();
 const alertStore = useAlertsStore();
 
 const systemInfoStore = useSystemInfoStore()
-const systemData = systemInfoStore.getInfo()
+const { sysInfo } = storeToRefs(systemInfoStore)
 
-let logoUrl = "/" + systemData['company-logo']
+let logoUrl = ref("/" + sysInfo.value['company-logo'])
+
+watch(sysInfo, () => {
+    logoUrl.value = "/" + sysInfo.value['company-logo']
+})
 
 let email = ref("")
 let password = ref("")
@@ -34,7 +39,7 @@ async function login() {
     <div class="h-screen">
         <div class="h-full flex flex-col justify-center items-center">
             <img :src="logoUrl" alt="company-logo" class="h-[200px]">
-            <h4 class="font-bold text-4xl">{{ systemData['company-name'] }}</h4>
+            <h4 class="font-bold text-4xl">{{ sysInfo['company-name'] }}</h4>
             <div class="flex flex-col mt-14 gap-y-6 bg-slate-100 py-8 px-12 rounded-lg">
                 <div class="grid grid-cols-2">
                     <label for="email" class="text-xl justify-self-end mr-4">Email</label>
