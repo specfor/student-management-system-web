@@ -9,6 +9,8 @@ import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { ref, watch } from 'vue';
+import PaginateComponent from '@/components/PaginateComponent.vue';
+
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
@@ -25,17 +27,23 @@ const tableActions = [
 
 let courseIdToFetchEnrollments = null;
 
-async function loadEnrollments() {
+
+const limitLoadEnrollments = 30
+const countTotEnrollments = ref(0)
+
+async function loadEnrollments(startIndex = 0) {
     if (courseIdToFetchEnrollments === null)
         return
 
-    let resp = await getEnrollmentsOfCourse(courseIdToFetchEnrollments)
+    let resp = await getEnrollmentsOfCourse(courseIdToFetchEnrollments, startIndex, limitLoadEnrollments)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
         return
     }
 
     enrollmentsData = resp.data.enrollments
+    countTotEnrollments.value = resp.data.tot_count
+
     enrollmentsDataForTable.value = []
     resp.data.enrollments.forEach(enrollment => {
         let priceOffer = 'NOT GIVEN'
@@ -219,5 +227,10 @@ async function delEnrollment() {
         <TableComponent :table-columns="['ID', 'Student Name', 'Suspended', 'Price Concession']"
             :table-rows="enrollmentsDataForTable" @edit-emit="editEnrollment" :actions="tableActions"
             :refresh-func="async () => { await loadEnrollments(); return true }" @delete-emit="delEnrollment" />
+
+        <div class="flex justify-center mt-4 mb-10">
+            <PaginateComponent :total-count="countTotEnrollments" :page-size="limitLoadEnrollments"
+                @load-page-emit="loadEnrollments" />
+        </div>
     </div>
 </template>

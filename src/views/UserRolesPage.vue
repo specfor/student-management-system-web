@@ -9,6 +9,8 @@ import { useCacheStore } from '@/stores/cache';
 import { createUserRole, deleteUserRole, getAllPermissions, getUserRoles, updateUserRole } from '@/apiConnections/userRoles';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
+import PaginateComponent from '@/components/PaginateComponent.vue';
+
 
 const confirmForm = useConfirmationFormsStore()
 const dataEntryForm = useDataEntryFormsStore()
@@ -21,13 +23,19 @@ const tableActions = [
     { type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
 
-async function loadUserRoles() {
-    let data = await getUserRoles()
+
+const limitLoadUserRoles = 30
+const countTotUserRoles = ref(0)
+
+async function loadUserRoles(startIndex = 0) {
+    let data = await getUserRoles(startIndex, limitLoadUserRoles)
     if (data.status === 'error') {
         alertStore.insertAlert('An error occured.', data.message, 'error')
     } else {
         roleDataForTable.value = []
         roleData = data.data.roles
+        countTotUserRoles.value = data.data.tot_count
+
         data.data.roles.forEach(role => {
             roleDataForTable.value.push([role.id, role.role_name, JSON.stringify(role.permissions)])
         });
@@ -190,5 +198,10 @@ function extractSelectedPermsFromAddNewFormData(data) {
         <TableComponent :table-columns="['ID', 'Role Name', 'Permissions']" :table-rows="roleDataForTable"
             :actions="tableActions" :refresh-func="async () => { await loadUserRoles(); return true }"
             @delete-emit="deleteRoles" @edit-emit="editRole" />
+
+        <div class="flex justify-center mt-4 mb-10">
+            <PaginateComponent :total-count="countTotUserRoles" :page-size="limitLoadUserRoles"
+                @load-page-emit="loadUserRoles" />
+        </div>
     </div>
 </template>

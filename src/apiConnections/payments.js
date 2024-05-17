@@ -1,7 +1,10 @@
 import { sendJsonPostRequest, sendGetRequest } from '@/baseFunctions/requests'
 
-export function getPayments() {
-  return sendGetRequest('/payments')
+export function getPayments(startIndex = 0, limit = null) {
+  let params = { start: startIndex }
+  if (limit) params['size'] = limit
+
+  return sendGetRequest('/payments', params)
 }
 
 export function createPayment(enrollmentId, amount) {

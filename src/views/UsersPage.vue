@@ -9,6 +9,8 @@ import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationFor
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { ref } from 'vue';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
+import PaginateComponent from '@/components/PaginateComponent.vue';
+
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
@@ -18,13 +20,17 @@ let userData = []
 let userDataForTable = ref([])
 const tableActions = [{ type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }]
 
-async function loadUsers() {
+const limitLoadUsers = 30
+const countTotUsers = ref(0)
+
+async function loadUsers(startIndex = 0) {
     userDataForTable.value = []
-    let data = await getUsers()
+    let data = await getUsers(startIndex, limitLoadUsers)
     if (data.status === 'error') {
         alertStore.insertAlert('An error occured.', data.message, 'error')
     } else {
         userData = data.data.users
+        countTotUsers.value = data.data.tot_count
         data.data.users.forEach(user => {
             userDataForTable.value.push([user.id, user.name, user.email, user.role.role_name])
         });
@@ -127,5 +133,9 @@ init()
         <TableComponent :table-columns="['ID', 'Name', 'Email', 'Role']" :table-rows="userDataForTable"
             :actions="tableActions" @edit-emit="editUser" :refresh-func="async () => { await loadUsers(); return true }"
             @delete-emit="delUser" />
+
+        <div class="flex justify-center mt-4 mb-10">
+            <PaginateComponent :total-count="countTotUsers" :page-size="limitLoadUsers" @load-page-emit="loadUsers" />
+        </div>
     </div>
 </template>

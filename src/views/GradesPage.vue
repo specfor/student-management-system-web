@@ -8,6 +8,8 @@ import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationFor
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { ref } from 'vue';
+import PaginateComponent from '@/components/PaginateComponent.vue';
+
 
 const confirmationForm = useConfirmationFormsStore()
 const dataEntryForm = useDataEntryFormsStore()
@@ -19,14 +21,20 @@ const tableActions = [
     { type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
 
-async function loadGrades() {
-    let resp = await getGrades()
+
+const limitLoadGrades = 30
+const countTotGrades = ref(0)
+
+async function loadGrades(startIndex = 0) {
+    let resp = await getGrades(startIndex, limitLoadGrades)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
         return
     }
 
     gradeData = resp.data.grades
+    countTotGrades.value = resp.data.tot_count
+
     gradeDataForTable.value = []
     resp.data.grades.forEach(grade => {
         gradeDataForTable.value.push([grade.id, grade.name])
@@ -108,5 +116,10 @@ async function delGrade(ids) {
         <TableComponent :table-columns="['ID', 'Name']" :table-rows="gradeDataForTable" @edit-emit="editGrade"
             :actions="tableActions" :refresh-func="async () => { await loadGrades(); return true }"
             @delete-emit="delGrade" />
+
+        <div class="flex justify-center mt-4 mb-10">
+            <PaginateComponent :total-count="countTotGrades" :page-size="limitLoadGrades"
+                @load-page-emit="loadGrades" />
+        </div>
     </div>
 </template>
