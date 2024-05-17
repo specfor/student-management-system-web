@@ -1,7 +1,9 @@
 import { sendJsonPatchRequest, sendJsonPostRequest, sendGetRequest } from '@/baseFunctions/requests'
 
-export function getEnrollmentsOfCourse(courseId) {
-  return sendGetRequest('/enroll/' + courseId)
+export function getEnrollmentsOfCourse(courseId, startIndex = 0, limit = null) {
+  let params = { start: startIndex }
+  if (limit) params['size'] = limit
+  return sendGetRequest('/enroll/' + courseId, params)
 }
 
 // export function getEnrollmentOfStudent(studentId) {

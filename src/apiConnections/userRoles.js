@@ -5,8 +5,11 @@ import {
   sendJsonPostRequest
 } from '@/baseFunctions/requests'
 
-export function getUserRoles() {
-  return sendGetRequest('/user-groups')
+export function getUserRoles(startIndex = 0, limit = null) {
+  let params = { start: startIndex }
+  if (limit) params['size'] = limit
+
+  return sendGetRequest('/user-groups', params)
 }
 
 export function getAllPermissions() {

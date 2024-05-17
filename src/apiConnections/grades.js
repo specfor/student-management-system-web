@@ -5,8 +5,10 @@ import {
   sendGetRequest
 } from '@/baseFunctions/requests'
 
-export function getGrades() {
-  return sendGetRequest('/grades')
+export function getGrades(startIndex = 0, limit = null) {
+  let params = { start: startIndex }
+  if (limit) params['size'] = limit
+  return sendGetRequest('/grades', params)
 }
 
 export function createGrade(name) {

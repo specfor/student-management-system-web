@@ -10,6 +10,8 @@ import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationFor
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { ref } from 'vue';
+import PaginateComponent from '@/components/PaginateComponent.vue';
+
 
 const confirmationForm = useConfirmationFormsStore()
 const dataEntryForm = useDataEntryFormsStore()
@@ -21,14 +23,20 @@ const tableActions = [
     { type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
 
-async function loadCourses() {
-    let resp = await getCourses()
+
+const limitLoadCourses = 30
+const countTotCourses = ref(0)
+
+async function loadCourses(startIndex = 0) {
+    let resp = await getCourses(startIndex, limitLoadCourses)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
         return
     }
 
     coursesData = resp.data.courses
+    countTotCourses.value = resp.data.tot_count
+
     coursesDataForTable.value = []
     resp.data.courses.forEach(course => {
         coursesDataForTable.value.push([course.id, course.name, course.group_name, course.grade ? course.grade.name : 'None', course.schedule[0].day, course.schedule[0].time, course.fee.amount, course.fee.type, course.instructor.name])
@@ -193,5 +201,10 @@ async function delCourse(ids) {
             :table-columns="['ID', 'Name', 'Group', 'Grade', 'Course Day', 'Time', 'Fee', 'Payment Cycle', 'Instructor']"
             :table-rows="coursesDataForTable" @edit-emit="editCourse" :actions="tableActions"
             :refresh-func="async () => { await loadCourses(); return true }" @delete-emit="delCourse" />
+
+        <div class="flex justify-center mt-4 mb-10">
+            <PaginateComponent :total-count="countTotCourses" :page-size="limitLoadCourses"
+                @load-page-emit="loadCourses" />
+        </div>
     </div>
 </template>

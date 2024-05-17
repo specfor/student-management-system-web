@@ -5,8 +5,10 @@ import {
   sendGetRequest
 } from '@/baseFunctions/requests'
 
-export function getCourses() {
-  return sendGetRequest('/courses')
+export function getCourses(startIndex = 0, limit = null) {
+  let params = { start: startIndex }
+  if (limit) params['size'] = limit
+  return sendGetRequest('/courses', params)
 }
 
 export function createCourse(

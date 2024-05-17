@@ -6,8 +6,11 @@ import {
   sendJsonPostRequest
 } from '@/baseFunctions/requests'
 
-export function getInstructors() {
-  return sendGetRequest('/instructors')
+export function getInstructors(startIndex = 0, limit = null) {
+  let params = { start: startIndex }
+  if (limit) params['size'] = limit
+
+  return sendGetRequest('/instructors', params)
 }
 
 export function createInstructor(name, email, phone_number, birthday, address, work_place) {

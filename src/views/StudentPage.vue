@@ -11,6 +11,7 @@ import { ref } from "vue"
 import { MagnifyingGlassIcon, PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { useExtendablePopUpStore } from '@/stores/formManagers/extendablePopUp';
 import StudentMoreInfo from '@/components/customPopUps/StudentMoreInfo.vue';
+import PaginateComponent from '@/components/PaginateComponent.vue';
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
@@ -24,14 +25,18 @@ const tableActions = [
     { type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
 
-async function loadStudents() {
-    let resp = await getStudents()
+const limitLoadStudents = 30
+const countTotStudents = ref(0)
+
+async function loadStudents(startIndex = 0) {
+    let resp = await getStudents(startIndex, limitLoadStudents)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
         return
     }
 
     studentData = resp.data.students
+    countTotStudents.value = resp.data.tot_count
     studentDataForTable.value = []
     resp.data.students.forEach(student => {
         studentDataForTable.value.push([student.id, student.name, student.grade.name ?? '', student.email, student.school])
@@ -171,5 +176,10 @@ function showMoreInfo(id) {
         <TableComponent :table-columns="['ID', 'Name', 'Grade', 'Email', 'School']" :table-rows="studentDataForTable"
             :actions="tableActions" @edit-emit="editStudent" @show-more="showMoreInfo"
             :refresh-func="async () => { await loadStudents(); return true }" @delete-emit="delStudent" />
+
+        <div class="flex justify-center mt-4 mb-10">
+            <PaginateComponent :total-count="countTotStudents" :page-size="limitLoadStudents"
+                @load-page-emit="loadStudents" />
+        </div>
     </div>
 </template>

@@ -7,6 +7,8 @@ import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { ref } from 'vue';
+import PaginateComponent from '@/components/PaginateComponent.vue';
+
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
@@ -17,14 +19,18 @@ const tableActions = [
     { type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
 
-async function loadPayment() {
-    let resp = await getPayments()
+const limitLoadPayments = 30
+const countTotPayments = ref(0)
+
+async function loadPayment(startIndex = 0) {
+    let resp = await getPayments(startIndex, limitLoadPayments)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
         return
     }
 
     // paymentData = resp.data.grades
+    countTotPayments.value = resp.data.tot_count
     gradeDataForTable.value = []
     resp.data.payments.forEach(payment => {
         gradeDataForTable.value.push([payment.id, payment.payment_for, payment.amount,
@@ -93,5 +99,10 @@ async function delGrade() {
         <TableComponent :table-columns="['ID', 'Payment For', 'Amount', 'Student', 'Course', 'Method', 'Refunded']"
             :table-rows="gradeDataForTable" @edit-emit="editPayment" :actions="tableActions"
             :refresh-func="async () => { await loadPayment(); return true }" @delete-emit="delGrade" />
+
+        <div class="flex justify-center mt-4 mb-10">
+            <PaginateComponent :total-count="countTotPayments" :page-size="limitLoadPayments"
+                @load-page-emit="loadPayment" />
+        </div>
     </div>
 </template>

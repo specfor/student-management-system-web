@@ -7,8 +7,11 @@ import {
   sendJsonPostRequest
 } from '@/baseFunctions/requests'
 
-export function getStudents() {
-  return sendGetRequest('/students')
+export function getStudents(startIndex = 0, limit = null) {
+  let params = { start: startIndex }
+  if (limit) params['size'] = limit
+
+  return sendGetRequest('/students', params)
 }
 
 export function createStudent(

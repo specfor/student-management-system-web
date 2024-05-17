@@ -5,8 +5,10 @@ import {
   sendJsonPostRequest
 } from '@/baseFunctions/requests'
 
-export function getUsers() {
-  return sendGetRequest('/users')
+export function getUsers(startIndex = 0, limit = null) {
+  let params = { start: startIndex }
+  if (limit) params['size'] = limit
+  return sendGetRequest('/users', params)
 }
 
 export function createUser(name, email, password, role_id) {
