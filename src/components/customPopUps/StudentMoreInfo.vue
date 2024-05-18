@@ -26,7 +26,7 @@ loadImage(args.student.id)
                     <h4 class="text-2xl text-white">Loading</h4>
                 </div>
             </div>
-            <div v-else class="w-[300px] h-[300px] ml-3">
+            <div v-else class="w-[300px] h-[300px] ml-3 flex items-center">
                 <img :src="imageUrl" alt="student image">
             </div>
             <button @click="() => { $emit('closeEmit'); args.uploadImageFunc(args.student.id); }"
