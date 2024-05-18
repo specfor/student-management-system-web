@@ -29,54 +29,54 @@ loadImage(args.student.id)
             <div v-else class="w-[300px] h-[300px] ml-3">
                 <img :src="imageUrl" alt="student image">
             </div>
-            <!-- <button @click="() => { args.uploadImageFunc(args.student.id) }"
-                class="border-2 py-2 px-5 rounded-lg font-semibold">Update
-                Image</button> -->
+            <button @click="() => { $emit('closeEmit'); args.uploadImageFunc(args.student.id); }"
+                class="border py-2 px-5 rounded-lg font-semibold mt-5">Update
+                Image</button>
         </div>
-        <div class="p-3 col-span-2">
-            <div class="grid grid-cols-2">
+        <div class="p-3 col-span-2 ml-5">
+            <div class="grid grid-cols-2 mt-2">
                 <h4>Student ID</h4>
                 <p>{{ args.student.id }}</p>
             </div>
-            <div class="grid grid-cols-2">
+            <div class="grid grid-cols-2 mt-2">
                 <h4>Name</h4>
-                <p>{{ args.student.name }}</p>
+                <p>{{ args.student.name ?? 'None' }}</p>
             </div>
-            <div class="grid grid-cols-2">
+            <div class="grid grid-cols-2 mt-2">
                 <h4>Full Name</h4>
-                <p>{{ args.student.full_name }}</p>
+                <p>{{ args.student.full_name ?? 'None' }}</p>
             </div>
-            <div class="grid grid-cols-2">
+            <div class="grid grid-cols-2 mt-2">
                 <h4>Email</h4>
-                <p>{{ args.student.email }}</p>
+                <p>{{ args.student.email ?? 'None' }}</p>
             </div>
-            <div class="grid grid-cols-2">
+            <div class="grid grid-cols-2 mt-2">
                 <h4>Phone Number</h4>
-                <p>{{ args.student.phone_number }}</p>
+                <p>{{ args.student.phone_number ?? 'None' }}</p>
             </div>
-            <div class="grid grid-cols-2">
+            <div class="grid grid-cols-2 mt-2">
                 <h4>Birthday</h4>
-                <p>{{ args.student.birthday }}</p>
+                <p>{{ args.student.birthday ?? 'None' }}</p>
             </div>
-            <div class="grid grid-cols-2">
+            <div class="grid grid-cols-2 mt-2">
                 <h4>Grade</h4>
-                <p>{{ args.student.grade.name }}</p>
+                <p>{{ args.student.grade.name ?? 'None' }}</p>
             </div>
-            <div class="grid grid-cols-2">
+            <div class="grid grid-cols-2 mt-2">
                 <h4>Address</h4>
-                <p>{{ args.student.address }}</p>
+                <p>{{ args.student.address ?? 'None' }}</p>
             </div>
-            <div class="grid grid-cols-2">
+            <div class="grid grid-cols-2 mt-2">
                 <h4>School</h4>
-                <p>{{ args.student.school }}</p>
+                <p>{{ args.student.school ?? 'None' }}</p>
             </div>
-            <div class="grid grid-cols-2">
+            <div class="grid grid-cols-2 mt-2">
                 <h4>Parent's Name</h4>
-                <p>{{ args.student.parent_name }}</p>
+                <p>{{ args.student.parent_name ?? 'None' }}</p>
             </div>
-            <div class="grid grid-cols-2">
+            <div class="grid grid-cols-2 mt-2">
                 <h4>Parent's Phone Number</h4>
-                <p>{{ args.student.parent_phone_number }}</p>
+                <p>{{ args.student.parent_phone_number ?? 'None' }}</p>
             </div>
         </div>
     </div>
