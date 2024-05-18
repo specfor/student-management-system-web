@@ -28,7 +28,6 @@ let {
 } = defineProps(['tableColumns', 'tableRows', 'actions', 'search', 'refreshFunc'])
 
 let refreshingData = ref(false)
-
 </script>
 
 <template>
@@ -93,23 +92,33 @@ let refreshingData = ref(false)
         </tr>
       </thead>
 
-      <tbody class="font-semibold">
+      <tbody>
         <tr v-if="tableRows.length === 0">
           <td colspan="100%" class="text-center pt-2 text-slate-700">No Data To Display.</td>
         </tr>
         <tr v-for="row in tableRows" :key="row[0]"
           class="border-y border-slate-400 bg-neutral-100 hover:bg-neutral-200">
-          <td class="pt-1 px-5">
+          <td class="pt-1 px-5"
+            v-if="!row.some(value => { return typeof value == 'object' && value !== null && value.type === 'group' })">
             <input type="checkbox" class="h-5 w-5" :value="row[0]" v-model="selectedIds" v-on:change="isChecked">
           </td>
-          <td v-for="(data, index) in row" :key="index" class="px-3 py-1 text-slate-800">
-            <span v-if="data === null || data === ''" class="font-semibold">None</span>
-            <span v-else-if="typeof data === 'object'">
-              <span v-if="data['type'] === 'html'" v-html="data['data']"></span>
-            </span>
-            <span v-else>{{ data }}</span>
+          <td colspan="100%" class="py-1 font-semibold bg-white pl-6"
+            v-if="x = row.find(value => { return typeof value == 'object' && value !== null && value.type === 'group' })">
+            {{ x.value }}
           </td>
-          <td v-if="actions" class="px-3 py-1 flex items-center justify-center h-full">
+          <template
+            v-if="!row.some(value => { return typeof value == 'object' && value !== null && value.type === 'group' })">
+            <td v-for="(data, index) in row" :key="index" class="px-3 py-1 text-slate-800">
+              <span v-if="data === null || data === ''" class="">None</span>
+              <span v-else-if="typeof data === 'object'">
+                <span v-if="data['type'] === 'html'" v-html="data['value']"></span>
+              </span>
+              <span v-else>{{ data }}</span>
+            </td>
+          </template>
+          <td
+            v-if="actions && !row.some(value => { return typeof value == 'object' && value !== null && value.type === 'group' })"
+            class="px-3 py-1 flex items-center justify-center h-full">
             <div v-for="(action, index2) in actions" :key="index2">
               <router-link v-if="action['renderAsRouterLink']" class="flex items-center"
                 :to="{ name: action['url'], params: action['params'] ?? {} }">
