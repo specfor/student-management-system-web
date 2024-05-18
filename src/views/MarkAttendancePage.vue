@@ -61,7 +61,6 @@ watch(selectedCourseGroup, async (gName) => {
             coursesOptionFields.value.push({ value: group.id, text: group.group_name ? group.group_name : 'No Name' })
         })
     }
-    console.log(coursesOptionFields.value);
 })
 watch(selectedCourseId, async (courseId) => {
     if (courseId === 0) return
