@@ -34,15 +34,15 @@ async function loadCourses(startIndex = 0) {
         return
     }
 
-    coursesData = resp.data.courses
     countTotCourses.value = resp.data.tot_count
 
     coursesDataForTable.value = []
+    coursesData = []
     Object.entries(resp.data.courses).forEach(item => {
         coursesDataForTable.value.push([{ value: 'Course - ' + item[0], type: 'group' }])
         item[1].forEach(course => {
             coursesDataForTable.value.push([course.id, course.group_name, course.grade ? course.grade.name : 'None', course.schedule[0].day, course.schedule[0].time, course.fee.amount, course.fee.type, course.instructor.name])
-
+            coursesData.push(course)
         })
     })
 }
