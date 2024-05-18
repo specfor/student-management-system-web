@@ -38,9 +38,13 @@ async function loadCourses(startIndex = 0) {
     countTotCourses.value = resp.data.tot_count
 
     coursesDataForTable.value = []
-    resp.data.courses.forEach(course => {
-        coursesDataForTable.value.push([course.id, course.name, course.group_name, course.grade ? course.grade.name : 'None', course.schedule[0].day, course.schedule[0].time, course.fee.amount, course.fee.type, course.instructor.name])
-    });
+    Object.entries(resp.data.courses).forEach(item => {
+        coursesDataForTable.value.push([{ value: 'Course - ' + item[0], type: 'group' }])
+        item[1].forEach(course => {
+            coursesDataForTable.value.push([course.id, course.group_name, course.grade ? course.grade.name : 'None', course.schedule[0].day, course.schedule[0].time, course.fee.amount, course.fee.type, course.instructor.name])
+
+        })
+    })
 }
 loadCourses()
 
@@ -198,7 +202,7 @@ async function delCourse(ids) {
             <NewItemButton text="New Course" :on-click="addNewCourse" />
         </div>
         <TableComponent
-            :table-columns="['ID', 'Name', 'Group', 'Grade', 'Course Day', 'Time', 'Fee', 'Payment Cycle', 'Instructor']"
+            :table-columns="['ID', 'Group', 'Grade', 'Course Day', 'Time', 'Fee', 'Payment Cycle', 'Instructor']"
             :table-rows="coursesDataForTable" @edit-emit="editCourse" :actions="tableActions"
             :refresh-func="async () => { await loadCourses(); return true }" @delete-emit="delCourse" />
 
