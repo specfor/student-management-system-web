@@ -18,7 +18,7 @@ const showProfileDropdown = ref(false)
 </script>
 
 <template>
-    <div class="bg-slate-300">
+    <div class="bg-slate-300 fixed top-0 w-full z-[5]">
         <div class="flex py-2 px-8 items-center justify-between">
             <div class="flex gap-4 items-center">
                 <img src="/logo.png" alt="company logo" class="h-10">

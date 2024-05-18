@@ -34,8 +34,10 @@ onMounted(async () => {
       <header>
         <PageHeader />
       </header>
-      <div class="flex flex-1">
-        <SideMenu />
+      <div class="flex flex-1 mt-14">
+        <div class="relative w-[200px] h-full">
+          <SideMenu class="fixed" />
+        </div>
         <RouterView class="pt-8" />
       </div>
     </div>
