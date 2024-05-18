@@ -63,17 +63,19 @@ async function loadEnrollments(startIndex = 0) {
 
 watch(selectedCourseGroup, async (gName) => {
     selectedCourseData.value = []
+    coursesOptionFields.value = []
     let groups = courses.filter(c => c.name == gName)
     if (groups.length === 1) {
         selectedCourseForTable.value = groups[0].id
     } else {
-        coursesOptionFields.value = []
+        selectedCourseForTable.value = 0
         groups.forEach(group => {
             coursesOptionFields.value.push({ value: group.id, text: group.group_name ? group.group_name : 'No Name' })
         })
     }
 })
 watch(selectedCourseForTable, async (courseId) => {
+    if (courseId === 0) return
     courseIdToFetchEnrollments = courseId
     loadEnrollments()
     selectedCourseData.value = courses.find(c => c.id == courseId)

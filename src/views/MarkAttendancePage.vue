@@ -50,18 +50,21 @@ const selectedStudentData = ref([])
 const studentImageUrl = ref(null)
 
 watch(selectedCourseGroup, async (gName) => {
-    selectedCourseData.value = []
+    coursesOptionFields.value = []
     let groups = courses.filter(c => c.name == gName)
     if (groups.length === 1) {
         selectedCourseId.value = groups[0].id
     } else {
-        coursesOptionFields.value = []
+        selectedCourseId.value = 0
+        selectedCourseData.value = []
         groups.forEach(group => {
             coursesOptionFields.value.push({ value: group.id, text: group.group_name ? group.group_name : 'No Name' })
         })
     }
+    console.log(coursesOptionFields.value);
 })
 watch(selectedCourseId, async (courseId) => {
+    if (courseId === 0) return
     selectedCourseData.value = courses.find(c => c.id == courseId)
     checkEnrolled()
 })
