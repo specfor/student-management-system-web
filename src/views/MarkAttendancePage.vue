@@ -11,6 +11,7 @@ import { ref, watch } from 'vue';
 const alertStore = useAlertsStore()
 
 let coursesOptionFields = ref([])
+let courseGroupOptionFields = ref([])
 let studentOptionFields = ref([])
 let courses = []
 let students = []
@@ -21,10 +22,13 @@ async function init() {
     if (resp.status === 'error') {
         return
     }
-    courses = resp.data.courses
-    courses.forEach(course => {
-        coursesOptionFields.value.push({ text: course.name, value: course.id })
-    });
+
+    Object.entries(resp.data.courses).forEach(item => {
+        courseGroupOptionFields.value.push({ value: item[0], text: item[0] })
+        item[1].forEach(course => {
+            courses.push(course)
+        })
+    })
 
     resp = await getStudents()
     if (resp.status === 'error')
@@ -37,6 +41,7 @@ async function init() {
 }
 
 const selectedCourseId = ref(0)
+const selectedCourseGroup = ref('')
 const selectedCourseData = ref([])
 
 const selectedStudentId = ref(0)
@@ -44,6 +49,18 @@ const selectedStudentData = ref([])
 
 const studentImageUrl = ref(null)
 
+watch(selectedCourseGroup, async (gName) => {
+    selectedCourseData.value = []
+    let groups = courses.filter(c => c.name == gName)
+    if (groups.length === 1) {
+        selectedCourseId.value = groups[0].id
+    } else {
+        coursesOptionFields.value = []
+        groups.forEach(group => {
+            coursesOptionFields.value.push({ value: group.id, text: group.group_name ? group.group_name : 'No Name' })
+        })
+    }
+})
 watch(selectedCourseId, async (courseId) => {
     selectedCourseData.value = courses.find(c => c.id == courseId)
     checkEnrolled()
@@ -152,6 +169,16 @@ init()
         <div class="flex">
             <h4 class="mr-5 font-semibold">Select a Course</h4>
             <select class="border w-[300px] border-slate-400 rounded-md hover:border-slate-700 px-3 py-0.5
+                             hover:bg-slate-100" name="selected-enrollment" :value="selectedCourseGroup"
+                @input="(event) => { selectedCourseGroup = event.target.value }">
+                <option class="" v-for="option in courseGroupOptionFields" :value="option['value']"
+                    :key="option['value']">
+                    {{ option['text'] }}
+                </option>
+            </select>
+
+            <h4 class="mr-5 font-semibold ml-10" v-show="coursesOptionFields.length !== 0">Select a Group </h4>
+            <select v-show="coursesOptionFields.length !== 0" class="border w-[300px] border-slate-400 rounded-md hover:border-slate-700 px-3 py-0.5
                              hover:bg-slate-100" name="selected-enrollment" :value="selectedCourseId"
                 @input="(event) => { selectedCourseId = event.target.value }">
                 <option class="" v-for="option in coursesOptionFields" :value="option['value']" :key="option['value']">
