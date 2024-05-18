@@ -26,7 +26,7 @@ let { htmlBody, show, componentObj, argsPassed } = storeToRefs(extendablePopUpSt
                  sm:my-8 sm:w-full sm:max-w-lg lg:max-w-4xl">
               <div v-if="htmlBody !== ''" v-html="htmlBody"></div>
               <div v-else>
-                <Component :is="componentObj" :args="argsPassed" />
+                <Component :is="componentObj" :args="argsPassed" @close-emit="show = false" />
               </div>
               <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
                 <button type="button" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold
