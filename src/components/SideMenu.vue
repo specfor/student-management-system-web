@@ -8,7 +8,7 @@ let { userPermissions } = storeToRefs(authStore)
 </script>
 
 <template>
-    <div class="bg-back-secondary w-[200px] pt-3">
+    <div class="bg-back-secondary w-[200px] h-full pt-3">
         <RouterLink to="/" class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
             Dashboard
         </RouterLink>
