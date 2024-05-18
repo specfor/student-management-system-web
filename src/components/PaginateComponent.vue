@@ -50,9 +50,10 @@ function nextPage() {
         </a>
       </li>
       <li v-for="num in pageNums" :key="num">
-        <a href="#" :aria-current="currentPage === num ? 'page' : ''" class=" flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 
-          hover:bg-gray-100 hover:text-gray-700" @click="loadPage(num)"
-          :class="currentPage === num ? 'text-blue-600 border border-blue-300 bg-blue-100 hover:bg-blue-200 hover:text-blue-700' : ''">
+        <a href="#" :aria-current="currentPage === num ? 'page' : ''"
+          class=" flex items-center justify-center px-3 h-8 leading-tight border" @click="loadPage(num)" :class="currentPage == num ?
+            'text-blue-600  border-blue-300 bg-blue-100 hover:bg-blue-200 hover:text-blue-700' :
+            'text-gray-500  bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700'">
           {{ num }}</a>
       </li>
       <li>
