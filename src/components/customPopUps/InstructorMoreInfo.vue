@@ -8,7 +8,6 @@ let { args } = defineProps(['args'])
 
 async function loadImage(instructorId) {
     let resp = await getInstructorsImage(instructorId);
-    console.log(resp);
     if (resp.status === 'error') {
         imageUrl.value = '/default-profile.png'
         return
