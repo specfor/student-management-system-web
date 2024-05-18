@@ -9,8 +9,8 @@ import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { ref } from "vue"
 import { MagnifyingGlassIcon, PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { useExtendablePopUpStore } from '@/stores/formManagers/extendablePopUp';
-import StudentMoreInfo from '@/components/customPopUps/StudentMoreInfo.vue';
 import PaginateComponent from '@/components/PaginateComponent.vue';
+import InstructorMoreInfo from '@/components/customPopUps/InstructorMoreInfo.vue';
 
 
 const alertStore = useAlertsStore()
@@ -147,7 +147,7 @@ async function delInstructor(ids) {
 
 function showMoreInfo(id) {
     let instructor = instructorData.find(s => s.id === id)
-    extendablePopUpStore.showComponent(StudentMoreInfo, instructor)
+    extendablePopUpStore.showComponent(InstructorMoreInfo, { instructor: instructor, uploadImageFunc: uploadInstructorImage })
 }
 </script>
 
