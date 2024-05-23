@@ -109,8 +109,14 @@ async function init() {
 init()
 
 async function addNewEnrollment() {
+    let courseOptions = []
+    let selectedCourseName = courses.find(c => c.id == selectedCourseForTable.value).name
+    let coursesWithSameName = courses.filter(c => c.name === selectedCourseName)
+    coursesWithSameName.forEach(course => {
+        courseOptions.push({ text: selectedCourseName + ' - ' + (course.group_name ? course.group_name : 'No Name'), value: course.id })
+    })
     dataEntryForm.newDataEntryForm('Enroll to Course', 'Enroll', [
-        { name: 'course_id', type: 'select', text: 'Course', options: coursesOptionFields, value: courseIdToFetchEnrollments, required: true },
+        { name: 'course_id', type: 'select', text: 'Course', options: courseOptions, value: courseIdToFetchEnrollments, required: true },
         { name: 'student_id', type: 'select', text: 'Student', options: studentOptionFields, required: true },
         { type: 'heading', text: 'Any price concession? (optional)' },
         {
@@ -192,27 +198,31 @@ async function delEnrollment() {
     <div class="container">
         <div class="flex justify-between items-center mb-16">
             <h4 class="font-semibold text-3xl">Course Enrollments</h4>
-            <NewItemButton text="Enroll a Student" :on-click="addNewEnrollment" />
         </div>
-        <div class="flex">
-            <h4 class="mr-5 font-semibold">Select a Course</h4>
-            <select class="border w-[300px] border-slate-400 rounded-md hover:border-slate-700 px-3 py-0.5
+        <div class="flex justify-between items-center">
+            <div class="flex items-center mr-5">
+                <h4 class="mr-5 font-semibold">Select a Course</h4>
+                <select class="border w-[300px] border-slate-400 rounded-md hover:border-slate-700 px-3 py-0.5
                              hover:bg-slate-100" name="selected-enrollment" :value="selectedCourseGroup"
-                @input="(event) => { selectedCourseGroup = event.target.value }">
-                <option class="" v-for="option in courseGroupOptionFields" :value="option['value']"
-                    :key="option['value']">
-                    {{ option['text'] }}
-                </option>
-            </select>
+                    @input="(event) => { selectedCourseGroup = event.target.value }">
+                    <option class="" v-for="option in courseGroupOptionFields" :value="option['value']"
+                        :key="option['value']">
+                        {{ option['text'] }}
+                    </option>
+                </select>
 
-            <h4 class="mr-5 font-semibold ml-10" v-show="coursesOptionFields.length !== 0">Select a Group </h4>
-            <select v-show="coursesOptionFields.length !== 0" class="border w-[300px] border-slate-400 rounded-md hover:border-slate-700 px-3 py-0.5
+                <h4 class="mr-5 font-semibold ml-10" v-show="coursesOptionFields.length !== 0">Select a Group </h4>
+                <select v-show="coursesOptionFields.length !== 0" class="border w-[300px] border-slate-400 rounded-md hover:border-slate-700 px-3 py-0.5
                              hover:bg-slate-100" name="selected-enrollment" :value="selectedCourseForTable"
-                @input="(event) => { selectedCourseForTable = event.target.value }">
-                <option class="" v-for="option in coursesOptionFields" :value="option['value']" :key="option['value']">
-                    {{ option['text'] }}
-                </option>
-            </select>
+                    @input="(event) => { selectedCourseForTable = event.target.value }">
+                    <option class="" v-for="option in coursesOptionFields" :value="option['value']"
+                        :key="option['value']">
+                        {{ option['text'] }}
+                    </option>
+                </select>
+            </div>
+            <NewItemButton text="Enroll a Student" :on-click="addNewEnrollment"
+                :disabled="selectedCourseForTable === 0" />
         </div>
         <div class="mb-10 grid grid-cols-3 gap-x-10 border rounded-xl py-3 px-10 mt-4 text-slate-600">
             <div class="">
