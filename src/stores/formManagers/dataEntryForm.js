@@ -58,6 +58,14 @@ export const useDataEntryFormsStore = defineStore('form-manager-data-entry', () 
     show.value = false
   }
 
+  function insertErrorMessage(fieldName, errMessage) {
+    errorMessages.value[fieldName] = errMessage
+  }
+
+  function removeErrorMessage(fieldName) {
+    delete errorMessages.value[fieldName]
+  }
+
   return {
     show,
     submitted,
@@ -71,6 +79,8 @@ export const useDataEntryFormsStore = defineStore('form-manager-data-entry', () 
     errorMessages,
     newDataEntryForm,
     waitForSubmittedData,
-    finishSubmission
+    finishSubmission,
+    insertErrorMessage,
+    removeErrorMessage
   }
 })
