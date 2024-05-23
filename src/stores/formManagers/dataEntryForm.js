@@ -13,14 +13,14 @@ export const useDataEntryFormsStore = defineStore('form-manager-data-entry', () 
   const allowSubmit = ref(false)
   const previewUrls = ref([])
 
-  function newDataEntryForm(title_, successBtn_, fields_) {
+  function newDataEntryForm(title_, successBtn_, fields_, options = { allowSubmit: false }) {
     fieldValues.value = {}
     success.value = false
     title.value = title_
     fields.value = fields_
     successBtnText.value = successBtn_
     submitted.value = false
-    allowSubmit.value = false
+    allowSubmit.value = options.allowSubmit
     previewUrls.value = []
 
     for (const field of fields_) {
