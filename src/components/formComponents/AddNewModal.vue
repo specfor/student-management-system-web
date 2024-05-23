@@ -61,7 +61,7 @@ function handleFiles(fieldName, event) {
                  sm:my-8 sm:w-full sm:max-w-lg">
               <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                 <div class="text-center text-2xl font-bold mb-10 ">{{ title }}</div>
-                <div v-for="field in fields">
+                <div v-for="(field, index) in fields" :key="index">
                   <div v-if="field['type'] === 'select'" class="grid grid-cols-3 mb-1 relative">
                     <div class="flex justify-between">
                       <div class="font-semibold text-slate-700 py-0.5">
@@ -73,7 +73,8 @@ function handleFiles(fieldName, event) {
                              hover:bg-slate-200 disabled:border" :name="field['name']"
                       :value="fieldValues[field['name']]"
                       @input="(event) => { fieldValues[field['name']] = event.target.value; validateInput(field['name']) }">
-                      <option class="" v-for="option in field['options']" :value="option['value']">{{ option['text'] }}
+                      <option class="" v-for="(option, index2) in field['options']" :value="option['value']"
+                        :key="index2">{{ option['text'] }}
                       </option>
                     </select>
                     <div class="absolute top-7 right-0 z-[1000] w-2/3 px-2 rounded-lg bg-red-500/80 text-rose-900"
@@ -89,7 +90,7 @@ function handleFiles(fieldName, event) {
                       <h3 class="text-xl text-red-700 pr-1" v-if="field['required']">*</h3>
                     </div>
                     <div class="col-span-2 grid grid-cols-2">
-                      <div v-for="option in field['options']" class="flex mt-1">
+                      <div v-for="(option, index3) in field['options']" :key="index3" class="flex mt-1">
                         <input class="w-5 h-5 mt-0.5" :disabled="field['disabled']" type="checkbox"
                           :checked="option['checked']"
                           @input="event => fieldValues[field['name']][option['name']] = event.target.checked">
