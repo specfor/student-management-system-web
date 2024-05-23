@@ -6,9 +6,11 @@ import { getStudentEnrollmentOfCourse } from '@/apiConnections/enrollments';
 import { createPayment } from '@/apiConnections/payments';
 import { downloadStudentImage, getStudents } from '@/apiConnections/students';
 import { useAlertsStore } from '@/stores/alerts';
+import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { ref, watch } from 'vue';
 
 const alertStore = useAlertsStore()
+const dataEntryForm = useDataEntryFormsStore()
 
 let coursesOptionFields = ref([])
 let courseGroupOptionFields = ref([])
@@ -50,6 +52,7 @@ const selectedStudentData = ref([])
 const studentImageUrl = ref(null)
 
 watch(selectedCourseGroup, async (gName) => {
+    feeToPay.value = ''
     coursesOptionFields.value = []
     let groups = courses.filter(c => c.name == gName)
     if (groups.length === 1) {
@@ -105,6 +108,35 @@ async function loadStudentEnrollmentOfCourse() {
 
 async function markPayment() {
     enrollActionsEnabled.value = false
+    let cName = ''
+    if (selectedCourseData.value['group_name'] === null)
+        cName = selectedCourseData.value['id'] + ' - ' + selectedCourseData.value['name']
+    else
+        cName = selectedCourseData.value['id'] + ' - ' + selectedCourseData.value['name'] + ' - ' + selectedCourseData.value['group_name']
+
+    let sName = selectedStudentData.value['id'] + ' - ' + selectedStudentData.value['name']
+
+    let timeP = { name: 'time', type: 'month', text: 'Month', value: new Date().toJSON().slice(0, 7) }
+    if (selectedCourseData.value['fee']['type'] === 'daily')
+        timeP = { name: 'time', type: 'date', text: 'Day', value: new Date().toJSON().slice(0, 10) }
+    else if (selectedCourseData.value['fee']['type'] === 'onetime')
+        timeP = { type: 'message', text: 'Course fee is a one time fee.' }
+
+    dataEntryForm.newDataEntryForm('Payment Confirmation', 'Confirm', [
+        { type: 'heading', text: 'Check all below details!' },
+        { name: 'course', type: 'text', text: 'Course', value: cName, disabled: true },
+        { name: 'student', type: 'text', text: 'Student', value: sName, disabled: true },
+        { name: 'amount', type: 'text', text: 'Amount', value: feeToPay.value, disabled: true },
+        { type: 'heading', text: 'Select the time period of the payment' },
+        timeP
+    ], { allowSubmit: true })
+    let confirmed = await dataEntryForm.waitForSubmittedData()
+    dataEntryForm.finishSubmission()
+    if (!confirmed.submitted) {
+        enrollActionsEnabled.value = true
+        return
+    }
+
     let resp = await createPayment(enrollmentData.value.enrollment.id, feeToPay.value)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
