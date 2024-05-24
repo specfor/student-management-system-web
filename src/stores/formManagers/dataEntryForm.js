@@ -23,6 +23,8 @@ export const useDataEntryFormsStore = defineStore('form-manager-data-entry', () 
     submitted.value = false
     allowSubmit.value = options.allowSubmit
     previewUrls.value = []
+    errorMessages.value = {}
+    generalErrorMessages.value = {}
 
     for (const field of fields_) {
       if (field['type'] === 'checkbox') {
