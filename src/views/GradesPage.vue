@@ -54,7 +54,14 @@ async function addNewGrade() {
 
         let resp = await createGrade(results.data.name)
         if (resp.status === 'error') {
-            alertStore.insertAlert('An error occured.', resp.message, 'error')
+            if (resp.data.type === 'user_error')
+                Object.entries(resp.data.messages).forEach(msg => {
+                    if (typeof msg[1] === 'object')
+                        msg[1] = msg[1].join(', ')
+                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                })
+            else
+                alertStore.insertAlert('An error occured.', resp.message, 'error')
             continue
         } else {
             dataEntryForm.finishSubmission()
@@ -79,7 +86,14 @@ async function editGrade(id) {
 
         let resp = await updateGrade(id, results.data.name)
         if (resp.status === 'error') {
-            alertStore.insertAlert('An error occured.', resp.message, 'error')
+            if (resp.data.type === 'user_error')
+                Object.entries(resp.data.messages).forEach(msg => {
+                    if (typeof msg[1] === 'object')
+                        msg[1] = msg[1].join(', ')
+                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                })
+            else
+                alertStore.insertAlert('An error occured.', resp.message, 'error')
             continue
         } else {
             dataEntryForm.finishSubmission()

@@ -69,7 +69,14 @@ async function addNewInstructor() {
         console.log(results.data);
         let resp = await createInstructor(...Object.values(results.data))
         if (resp.status === 'error') {
-            alertStore.insertAlert('An error occurred.', resp.message, 'error')
+            if (resp.data.type === 'user_error')
+                Object.entries(resp.data.messages).forEach(msg => {
+                    if (typeof msg[1] === 'object')
+                        msg[1] = msg[1].join(', ')
+                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                })
+            else
+                alertStore.insertAlert('An error occurred.', resp.message, 'error')
             continue
         }
         dataEntryForm.finishSubmission()
@@ -92,7 +99,14 @@ async function uploadInstructorImage(insId) {
 
     let res = await updateInstructorImage(insId, results.data.profile[0]);
     if (res.status === 'error') {
-        alertStore.insertAlert('An error occurred.', res.message, 'error')
+        if (res.data.type === 'user_error')
+            Object.entries(res.data.messages).forEach(msg => {
+                if (typeof msg[1] === 'object')
+                    msg[1] = msg[1].join(', ')
+                dataEntryForm.insertErrorMessage(msg[0], msg[1])
+            })
+        else
+            alertStore.insertAlert('An error occurred.', res.message, 'error')
         return
     }
     dataEntryForm.finishSubmission()
@@ -119,7 +133,14 @@ async function editInstructor(id) {
 
         let resp = await updateInstructor(...Object.values(results.data))
         if (resp.status === 'error') {
-            alertStore.insertAlert('An error occured.', resp.message, 'error')
+            if (resp.data.type === 'user_error')
+                Object.entries(resp.data.messages).forEach(msg => {
+                    if (typeof msg[1] === 'object')
+                        msg[1] = msg[1].join(', ')
+                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                })
+            else
+                alertStore.insertAlert('An error occured.', resp.message, 'error')
             continue
         }
         alertStore.insertAlert('Action completed.', 'Instructor updated successfully.')
