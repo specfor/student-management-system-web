@@ -12,7 +12,7 @@ let { userPermissions } = storeToRefs(authStore)
         <RouterLink to="/" class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
             Dashboard
         </RouterLink>
-        <div class="h-1 bg-slate-600 mx-2 rounded-xl my-5"></div>
+        <div class="h-1 bg-slate-200 mx-2 rounded-xl my-5"></div>
         <RouterLink v-if="userPermissions.all || userPermissions.attendance" to="/mark-attendance"
             class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
             Mark Attendance
@@ -25,7 +25,7 @@ let { userPermissions } = storeToRefs(authStore)
             class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
             Students
         </RouterLink>
-        <div class="h-1 bg-slate-600 mx-2 rounded-xl my-5"></div>
+        <div class="h-1 bg-slate-200 mx-2 rounded-xl my-5"></div>
         <RouterLink v-if="userPermissions.all || userPermissions.payments" to="/payments"
             class="flex py-2 px-4 w-full hover:bg-gray-100" active-class="bg-white">
             Payments
