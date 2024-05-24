@@ -12,6 +12,7 @@ export const useDataEntryFormsStore = defineStore('form-manager-data-entry', () 
   const errorMessages = ref({})
   const allowSubmit = ref(false)
   const previewUrls = ref([])
+  const generalErrorMessages = ref({})
 
   function newDataEntryForm(title_, successBtn_, fields_, options = { allowSubmit: false }) {
     fieldValues.value = {}
@@ -59,11 +60,15 @@ export const useDataEntryFormsStore = defineStore('form-manager-data-entry', () 
   }
 
   function insertErrorMessage(fieldName, errMessage) {
-    errorMessages.value[fieldName] = errMessage
+    let fieldKeys = Object.keys(fieldValues.value)
+    if (fieldKeys.includes(fieldName)) errorMessages.value[fieldName] = errMessage
+    else generalErrorMessages.value[fieldName] = errMessage
   }
 
   function removeErrorMessage(fieldName) {
-    delete errorMessages.value[fieldName]
+    let fieldKeys = Object.keys(fieldValues.value)
+    if (fieldKeys.includes(fieldName)) delete errorMessages.value[fieldName]
+    else delete generalErrorMessages.value[fieldName]
   }
 
   return {
@@ -77,6 +82,7 @@ export const useDataEntryFormsStore = defineStore('form-manager-data-entry', () 
     fieldValues,
     successBtnText,
     errorMessages,
+    generalErrorMessages,
     newDataEntryForm,
     waitForSubmittedData,
     finishSubmission,

@@ -6,7 +6,7 @@ import { storeToRefs } from 'pinia';
 import { ArrowPathIcon, XCircleIcon } from '@heroicons/vue/24/solid';
 
 const dataEntryForm = useDataEntryFormsStore()
-const { show, previewUrls, submitted, allowSubmit, success, title, fields, fieldValues, successBtnText, errorMessages } = storeToRefs(dataEntryForm)
+const { show, previewUrls, submitted, allowSubmit, success, title, fields, fieldValues, successBtnText, errorMessages, generalErrorMessages } = storeToRefs(dataEntryForm)
 
 function validateInput(name) {
   let anyError = false;
@@ -61,6 +61,16 @@ function handleFiles(fieldName, event) {
                  sm:my-8 sm:w-full sm:max-w-lg">
               <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                 <div class="text-center text-2xl font-bold mb-10 ">{{ title }}</div>
+
+                <div class="bg-red-300 px-3 py-1 mb-4 text-red-700"
+                  v-if="Object.entries(generalErrorMessages).length !== 0">
+                  <div v-for="err in Object.entries(generalErrorMessages)" :key="err[0]"
+                    class="flex items-center justify-between">
+                    <h4>{{ err[1] }}</h4>
+                    <XCircleIcon class="w-5 h-5 hover:fill-white" @click="dataEntryForm.removeErrorMessage(err[0])" />
+                  </div>
+                </div>
+
                 <div v-for="(field, index) in fields" :key="index">
                   <div v-if="field['type'] === 'select'" class="grid grid-cols-3 mb-1 relative">
                     <div class="flex justify-between">
