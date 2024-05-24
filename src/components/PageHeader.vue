@@ -31,7 +31,7 @@ const showProfileDropdown = ref(false)
         </div>
     </div>
     <div class="relative">
-        <HeaderProfileIconDropdown class="absolute right-2" v-show="showProfileDropdown" />
+        <HeaderProfileIconDropdown class="absolute top-14 right-2" v-show="showProfileDropdown" />
     </div>
 </template>
 
