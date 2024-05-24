@@ -105,7 +105,6 @@ async function addNewCourse() {
         { type: 'heading', text: 'Limit to a Grade (Optional)' },
         { name: 'grade_id', type: 'select', text: 'Grade', options: gradeOptionFields },
     ])
-
     while (true) {
         let results = await dataEntryForm.waitForSubmittedData()
         if (!results.submitted)
@@ -113,7 +112,14 @@ async function addNewCourse() {
 
         let resp = await createCourse(...Object.values(results.data))
         if (resp.status === 'error') {
-            alertStore.insertAlert('An error occured.', resp.message, 'error')
+            if (resp.data.type === 'user_error')
+                Object.entries(resp.data.messages).forEach(msg => {
+                    if (typeof msg[1] === 'object')
+                        msg[1] = msg[1].join(', ')
+                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                })
+            else
+                alertStore.insertAlert('An error occured.', resp.message, 'error')
             continue
         } else {
             dataEntryForm.finishSubmission()
