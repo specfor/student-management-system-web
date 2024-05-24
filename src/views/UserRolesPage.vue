@@ -84,7 +84,14 @@ async function newUserRole() {
 
         let resp = await createUserRole(results.data.role_name, permissionsToAdd)
         if (resp.status === 'error') {
-            alertStore.insertAlert('An error occured creating user role.', resp.message, 'error')
+            if (resp.data.type === 'user_error')
+                Object.entries(resp.data.messages).forEach(msg => {
+                    if (typeof msg[1] === 'object')
+                        msg[1] = msg[1].join(', ')
+                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                })
+            else
+                alertStore.insertAlert('An error occured creating user role.', resp.message, 'error')
             continue
         }
 
@@ -156,7 +163,14 @@ async function editRole(id) {
 
         let resp = await updateUserRole(id, results.data.role_name, permissionsToAdd)
         if (resp.status === 'error') {
-            alertStore.insertAlert('An error occured updating user role.', resp.message, 'error')
+            if (resp.data.type === 'user_error')
+                Object.entries(resp.data.messages).forEach(msg => {
+                    if (typeof msg[1] === 'object')
+                        msg[1] = msg[1].join(', ')
+                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                })
+            else
+                alertStore.insertAlert('An error occured updating user role.', resp.message, 'error')
             continue
         }
 

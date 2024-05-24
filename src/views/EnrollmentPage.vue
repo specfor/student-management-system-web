@@ -136,7 +136,14 @@ async function addNewEnrollment() {
 
         let resp = await enrollCourse(results.data['course_id'], results.data['student_id'], results.data['discount_type'], results.data['amount'], results.data['reason'])
         if (resp.status === 'error') {
-            alertStore.insertAlert('An error occured.', resp.message, 'error')
+            if (resp.data.type === 'user_error')
+                Object.entries(resp.data.messages).forEach(msg => {
+                    if (typeof msg[1] === 'object')
+                        msg[1] = msg[1].join(', ')
+                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                })
+            else
+                alertStore.insertAlert('An error occured.', resp.message, 'error')
             continue
         } else {
             dataEntryForm.finishSubmission()
@@ -178,7 +185,14 @@ async function editEnrollment(id) {
 
         let resp = await updateEnrollment(id, results.data['suspend'] === 'true', results.data['discount_type'], results.data['amount'], results.data['reason'])
         if (resp.status === 'error') {
-            alertStore.insertAlert('An error occured.', resp.message, 'error')
+            if (resp.data.type === 'user_error')
+                Object.entries(resp.data.messages).forEach(msg => {
+                    if (typeof msg[1] === 'object')
+                        msg[1] = msg[1].join(', ')
+                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                })
+            else
+                alertStore.insertAlert('An error occured.', resp.message, 'error')
             continue
         } else {
             dataEntryForm.finishSubmission()
