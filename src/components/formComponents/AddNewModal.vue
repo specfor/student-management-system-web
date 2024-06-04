@@ -82,7 +82,8 @@ function handleFiles(fieldName, event) {
                       <h3 class="text-xl text-red-700 pr-1" v-if="field['required']">*</h3>
                     </div>
                     <SelectionBox :options="field['options']" :disabled="field['disabled']"
-                      :value="fieldValues[field['name']]" @input="(val) => { fieldValues[field['name']] = val }"
+                      :value="fieldValues[field['name']]"
+                      @input="(val) => { fieldValues[field['name']] = val; validateInput(field['name']) }"
                       class="col-span-2" />
                     <div class="mb-2 mt-1 px-2 flex items-center justify-between col-span-3 bg-red-300 text-red-900"
                       v-if="errorMessages[field['name']]">
