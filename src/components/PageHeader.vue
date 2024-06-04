@@ -18,11 +18,11 @@ const showProfileDropdown = ref(false)
 </script>
 
 <template>
-    <div class="bg-slate-300 fixed top-0 w-full z-[5]">
+    <div class="bg-blue-900 fixed top-0 w-full z-[5]">
         <div class="flex py-2 px-8 items-center justify-between">
             <div class="flex gap-4 items-center">
                 <img src="/logo.png" alt="company logo" class="h-10">
-                <h4 class="font-semibold text-xl">{{ sysInfo['company-name'] }}</h4>
+                <h4 class="font-semibold text-xl text-white">{{ sysInfo['company-name'] }}</h4>
             </div>
             <div class="flex">
                 <UserCircleIcon class="h-10 w-10 hover:bg-white rounded-md cursor-pointer"
