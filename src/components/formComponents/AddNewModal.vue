@@ -4,6 +4,8 @@ import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { storeToRefs } from 'pinia';
 import { ArrowPathIcon, XCircleIcon } from '@heroicons/vue/24/solid';
+import SelectionBox from '../primary/SelectionBox.vue';
+
 
 const dataEntryForm = useDataEntryFormsStore()
 const { show, previewUrls, submitted, allowSubmit, success, title, fields, fieldValues, successBtnText, errorMessages, generalErrorMessages } = storeToRefs(dataEntryForm)
@@ -79,14 +81,9 @@ function handleFiles(fieldName, event) {
                       </div>
                       <h3 class="text-xl text-red-700 pr-1" v-if="field['required']">*</h3>
                     </div>
-                    <select :disabled="field['disabled']" class="col-span-2 border-2 border-slate-400 rounded-md hover:border-slate-700 px-3 py-0.5
-                             hover:bg-slate-200 disabled:border" :name="field['name']"
-                      :value="fieldValues[field['name']]"
-                      @input="(event) => { fieldValues[field['name']] = event.target.value; validateInput(field['name']) }">
-                      <option class="" v-for="(option, index2) in field['options']" :value="option['value']"
-                        :key="index2">{{ option['text'] }}
-                      </option>
-                    </select>
+                    <SelectionBox :options="field['options']" :disabled="field['disabled']"
+                      :value="fieldValues[field['name']]" @input="(val) => { fieldValues[field['name']] = val }"
+                      class="col-span-2" />
                     <div class="mb-2 mt-1 px-2 flex items-center justify-between col-span-3 bg-red-300 text-red-900"
                       v-if="errorMessages[field['name']]">
                       <h1>{{ errorMessages[field['name']] }}</h1>
@@ -125,7 +122,7 @@ function handleFiles(fieldName, event) {
                     </div>
                     <textarea :name="field['name']" cols="30" rows="3" :value="fieldValues[field['name']]"
                       @input="(event) => { fieldValues[field['name']] = event.target.value; validateInput(field['name']) }"
-                      :disabled="field['disabled']" class="col-span-2 border-2 border-slate-400 rounded-md px-3 hover:border-slate-700
+                      :disabled="field['disabled']" class="col-span-2 border border-slate-400 rounded-md px-3 hover:border-slate-700
                                py-0.5 hover:bg-slate-100 focus:bg-slate-200 disabled:border"></textarea>
                     <div class="mb-2 mt-1 px-2 flex items-center justify-between col-span-3 bg-red-300 text-red-900"
                       v-if="errorMessages[field['name']]">
@@ -152,7 +149,7 @@ function handleFiles(fieldName, event) {
                       <h3 class="text-xl text-red-700 pr-1" v-if="field['required']">*</h3>
                     </div>
                     <div class="col-span-2 flex flex-col">
-                      <input type="file" class="border-2 border-slate-400 rounded-md px-3 py-0.5 w-full"
+                      <input type="file" class="border border-slate-400 rounded-md px-3 py-0.5 w-full"
                         :accept="field['accept'] ? field['accept'] : null"
                         @input="(event) => { fieldValues[field['name']] = event.target.files; handleFiles(field['name'], event); validateInput(field['name']) }">
                       <div v-show="field['preview'] && !previewUrls[field['name']]"
@@ -174,7 +171,7 @@ function handleFiles(fieldName, event) {
                       <h3>{{ field['text'] }}</h3>
                       <h3 class="text-xl text-red-700 pr-1" v-if="field['required']">*</h3>
                     </div>
-                    <input class="col-span-2 border-2 border-slate-400 rounded-md px-3 hover:border-slate-700
+                    <input class="col-span-2 border border-slate-400 rounded-md px-3 hover:border-slate-700
                          py-0.5 hover:bg-slate-100 focus:bg-slate-200 disabled:border" :disabled="field['disabled']"
                       :type="field['type']" :value="fieldValues[field['name']]" :min="field['min']" :max="field['max']"
                       @input="(event) => { fieldValues[field['name']] = event.target.value; validateInput(field['name']) }">
