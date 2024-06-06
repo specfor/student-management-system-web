@@ -29,7 +29,7 @@ export function enrollCourse(
       type: discount_type,
       reason: discount_reason
     }
-    if (discount_type === 'amount') params['price_adjustment'].amount = discount_amount
+    if (discount_type === 'fixed') params['price_adjustment'].amount = discount_amount
     else params['price_adjustment'].percentage = discount_amount
   }
   return sendJsonPostRequest('/enroll/' + course_id, params)
@@ -44,8 +44,12 @@ export function updateEnrollment(id, suspend, discount_type, discount_amount, di
       type: discount_type,
       reason: discount_reason
     }
-    if (discount_type === 'amount') params['price_adjustment'].amount = discount_amount
+    if (discount_type === 'fixed') params['price_adjustment'].amount = discount_amount
     else params['price_adjustment'].percentage = discount_amount
   }
   return sendJsonPatchRequest(`/enroll/${id}`, params)
+}
+
+export function getStudentEnrollments(studentId) {
+  return sendGetRequest(`/enroll/student/${studentId}`)
 }
