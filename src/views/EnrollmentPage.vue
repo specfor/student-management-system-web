@@ -10,6 +10,7 @@ import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { ref, watch } from 'vue';
 import PaginateComponent from '@/components/PaginateComponent.vue';
+import SelectionBox from '@/components/primary/SelectionBox.vue';
 
 
 const dataEntryForm = useDataEntryFormsStore()
@@ -216,24 +217,13 @@ async function delEnrollment() {
         <div class="flex justify-between items-center">
             <div class="flex items-center mr-5">
                 <h4 class="mr-5 font-semibold">Select a Course</h4>
-                <select class="border w-[300px] border-slate-400 rounded-md hover:border-slate-700 px-3 py-0.5
-                             hover:bg-slate-100" name="selected-enrollment" :value="selectedCourseGroup"
-                    @input="(event) => { selectedCourseGroup = event.target.value }">
-                    <option class="" v-for="option in courseGroupOptionFields" :value="option['value']"
-                        :key="option['value']">
-                        {{ option['text'] }}
-                    </option>
-                </select>
+                <SelectionBox :options="courseGroupOptionFields" :value="selectedCourseGroup"
+                    @input="(val) => { selectedCourseGroup = val }" class="w-[300px] mr-5" />
 
                 <h4 class="mr-5 font-semibold ml-10" v-show="coursesOptionFields.length !== 0">Select a Group </h4>
-                <select v-show="coursesOptionFields.length !== 0" class="border w-[300px] border-slate-400 rounded-md hover:border-slate-700 px-3 py-0.5
-                             hover:bg-slate-100" name="selected-enrollment" :value="selectedCourseForTable"
-                    @input="(event) => { selectedCourseForTable = event.target.value }">
-                    <option class="" v-for="option in coursesOptionFields" :value="option['value']"
-                        :key="option['value']">
-                        {{ option['text'] }}
-                    </option>
-                </select>
+                <SelectionBox v-show="coursesOptionFields.length !== 0" :options="coursesOptionFields"
+                    :value="selectedCourseForTable" @input="(val) => { selectedCourseForTable = val }"
+                    class="w-[300px] mr-5" />
             </div>
             <NewItemButton text="Enroll a Student" :on-click="addNewEnrollment"
                 :disabled="selectedCourseForTable === 0" />
