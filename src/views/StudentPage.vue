@@ -9,8 +9,10 @@ import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationFor
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { ref } from "vue"
 import { MagnifyingGlassIcon, PencilSquareIcon } from '@heroicons/vue/24/solid';
+import { BookOpenIcon } from '@heroicons/vue/24/outline';
 import { useExtendablePopUpStore } from '@/stores/formManagers/extendablePopUp';
 import StudentMoreInfo from '@/components/customPopUps/StudentMoreInfo.vue';
+import StudentCourses from '@/components/customPopUps/StudentCourses.vue';
 import PaginateComponent from '@/components/PaginateComponent.vue';
 
 const alertStore = useAlertsStore()
@@ -22,7 +24,8 @@ let studentData = []
 const studentDataForTable = ref([])
 const tableActions = [
     { type: 'icon', emit: 'ShowMore', icon: MagnifyingGlassIcon, css: 'fill-blue-600 w-5' },
-    { type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
+    { type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' },
+    { type: 'icon', emit: 'coursesEmit', icon: BookOpenIcon, css: 'stroke-blue-600' },
 ]
 
 const limitLoadStudents = 30
@@ -39,7 +42,7 @@ async function loadStudents(startIndex = 0) {
     countTotStudents.value = resp.data.tot_count
     studentDataForTable.value = []
     resp.data.students.forEach(student => {
-        studentDataForTable.value.push([student.id, student.name, student.grade.name ?? '', student.email, student.school])
+        studentDataForTable.value.push([student.id, student.custom_id, student.name, student.grade.name ?? '', student.email, student.school])
     });
 }
 
@@ -63,6 +66,7 @@ function craftGradesAsOptions() {
 }
 async function addNewStudent() {
     dataEntryForm.newDataEntryForm('New Student', 'Create', [
+        { name: 'custom_id', text: 'Student ID', type: 'text', required: true },
         { name: 'name', text: 'Name', type: 'text', required: true },
         { name: 'full_name', text: 'Full Name', type: 'text' },
         { name: 'grade_id', text: 'Select Grade', type: 'select', required: true, options: craftGradesAsOptions() },
@@ -130,6 +134,7 @@ async function editStudent(id) {
 
     dataEntryForm.newDataEntryForm('Update Student', 'Update', [
         { name: 'id', text: 'ID', type: 'text', disabled: true, value: student.id },
+        { name: 'custom_id', text: 'Student ID', type: 'text', required: true, value: student.custom_id },
         { name: 'name', text: 'Name', type: 'text', required: true, value: student.name },
         { name: 'full_name', text: 'Full Name', type: 'text', value: student.full_name },
         { name: 'grade_id', text: 'Select Grade', type: 'select', required: true, value: student.grade.id, options: craftGradesAsOptions() },
@@ -186,6 +191,12 @@ function showMoreInfo(id) {
     let student = studentData.find(s => s.id === id)
     extendablePopUpStore.showComponent(StudentMoreInfo, { 'student': student, 'uploadImageFunc': uploadStudentImage })
 }
+
+function showStudentCourses(id) {
+    let student = studentData.find(s => s.id === id)
+    extendablePopUpStore.showComponent(StudentCourses, { 'student': student, })
+
+}
 </script>
 
 <template>
@@ -194,9 +205,10 @@ function showMoreInfo(id) {
             <h4 class="font-semibold text-3xl">Students</h4>
             <NewItemButton text="New Student" :on-click="addNewStudent" />
         </div>
-        <TableComponent :table-columns="['ID', 'Name', 'Grade', 'Email', 'School']" :table-rows="studentDataForTable"
-            :actions="tableActions" @edit-emit="editStudent" @show-more="showMoreInfo"
-            :refresh-func="async () => { await loadStudents(); return true }" @delete-emit="delStudent" />
+        <TableComponent :table-columns="['ID', 'Custom ID', 'Name', 'Grade', 'Email', 'School']"
+            :table-rows="studentDataForTable" :actions="tableActions" @edit-emit="editStudent" @show-more="showMoreInfo"
+            :refresh-func="async () => { await loadStudents(); return true }" @delete-emit="delStudent"
+            @courses-emit="showStudentCourses" />
 
         <div class="flex justify-center mt-4 mb-10">
             <PaginateComponent :total-count="countTotStudents" :page-size="limitLoadStudents"
