@@ -7,8 +7,9 @@ import App from './App.vue'
 import router from './router'
 
 import vClickOutside from 'click-outside-vue3'
+import { Tabs, Tab } from 'vue3-tabs-component'
 
-const app = createApp(App)
+const app = createApp(App).component('tabs', Tabs).component('tab', Tab)
 
 app.use(vClickOutside)
 app.use(createPinia())
