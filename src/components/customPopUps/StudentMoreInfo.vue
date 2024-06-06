@@ -35,8 +35,12 @@ loadImage(args.student.id)
         </div>
         <div class="p-3 col-span-2 ml-5">
             <div class="grid grid-cols-2 mt-2">
-                <h4>Student ID</h4>
+                <h4>ID</h4>
                 <p>{{ args.student.id }}</p>
+            </div>
+            <div class="grid grid-cols-2 mt-2">
+                <h4>Student ID</h4>
+                <p>{{ args.student.custom_id ?? 'None' }}</p>
             </div>
             <div class="grid grid-cols-2 mt-2">
                 <h4>Name</h4>

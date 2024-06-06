@@ -15,6 +15,7 @@ export function getStudents(startIndex = 0, limit = null) {
 }
 
 export function createStudent(
+  custom_id,
   name,
   fullname,
   grade_id,
@@ -27,6 +28,7 @@ export function createStudent(
   parent_phone_number
 ) {
   return sendJsonPostRequest('/students', {
+    custom_id: custom_id,
     name: name,
     full_name: fullname,
     birthday: birthday,
@@ -42,6 +44,7 @@ export function createStudent(
 
 export function updateStudent(
   id,
+  custom_id,
   name,
   fullname,
   grade_id,
@@ -54,6 +57,7 @@ export function updateStudent(
   parent_phone_number
 ) {
   return sendJsonPatchRequest(`/students/${id}`, {
+    custom_id: custom_id,
     name: name,
     full_name: fullname,
     birthday: birthday,
