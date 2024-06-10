@@ -42,7 +42,7 @@ async function loadStudents(startIndex = 0) {
     countTotStudents.value = resp.data.tot_count
     studentDataForTable.value = []
     resp.data.students.forEach(student => {
-        studentDataForTable.value.push([student.id, student.custom_id, student.name, student.grade.name ?? '', student.email, student.school])
+        studentDataForTable.value.push([student.id, student.custom_id, student.name, student.grade ? student.grade.name : 'DELETED GRADE', student.email, student.school])
     });
 }
 
@@ -137,7 +137,7 @@ async function editStudent(id) {
         { name: 'custom_id', text: 'Student ID', type: 'text', required: true, value: student.custom_id },
         { name: 'name', text: 'Name', type: 'text', required: true, value: student.name },
         { name: 'full_name', text: 'Full Name', type: 'text', value: student.full_name },
-        { name: 'grade_id', text: 'Select Grade', type: 'select', required: true, value: student.grade.id, options: craftGradesAsOptions() },
+        { name: 'grade_id', text: 'Select Grade', type: 'select', required: true, value: student.grade ? student.grade.id : '', options: craftGradesAsOptions() },
         { name: 'email', text: 'Email', type: 'text', value: student.email },
         { name: 'birthday', text: 'Birth Date', type: 'date', value: student.birthday },
         { name: 'phone_number', text: 'Phone Number', type: 'text', value: student.phone_number },
