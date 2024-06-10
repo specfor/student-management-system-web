@@ -6,8 +6,10 @@ import { getStudentEnrollments } from '@/apiConnections/enrollments';
 let courses = ref([])
 let student = ref({})
 
-async function init() {
-    let res = await getStudentEnrollments(1)
+let { args } = defineProps(['args'])
+
+async function init(studentId) {
+    let res = await getStudentEnrollments(studentId)
     if (res.status === 'error') {
         console.log('failed to load data.');
         return
@@ -26,7 +28,7 @@ async function init() {
         courses.value.push([enrollment.course.id, cName, fee, enrollment.suspended ? 'Suspended' : 'Not Suspended'])
     });
 }
-init()
+init(args.student.id)
 </script>
 
 <template>
