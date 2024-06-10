@@ -1,8 +1,8 @@
 <!-- eslint-disable no-constant-condition -->
 <script setup>
 import { getCourses } from '@/apiConnections/courses';
-import { enrollCourse, getEnrollmentsOfCourse, updateEnrollment } from '@/apiConnections/enrollments';
-import { getStudents } from '@/apiConnections/students';
+import { enrollCourse, getEnrollmentsOfCourse, getStudentEnrollments, updateEnrollment } from '@/apiConnections/enrollments';
+import { downloadStudentImage, getStudents } from '@/apiConnections/students';
 import TableComponent from '@/components/TableComponent.vue';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { useAlertsStore } from '@/stores/alerts';
@@ -16,15 +16,24 @@ import SelectionBox from '@/components/primary/SelectionBox.vue';
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
 
+const tabSelectMode = ref(null)
+
 const selectedCourseForTable = ref(0)
 const selectedCourseGroup = ref('')
 const selectedCourseData = ref([])
 let courseGroupOptionFields = ref([])
+const selectedStudent = ref(0)
+const selectedStudentData = ref({})
+const selectedStudentImageUrl = ref('/default-profile.png')
 
 let courses = []
+let students = []
 
-const enrollmentsDataForTable = ref([])
-let enrollmentsData = []
+const enrollmentsDataForByCourseTab = ref([])
+const enrollmentsDataForByStudentTab = ref([])
+let enrollmentsDataTabCourse = []
+let enrollmentsDataTabStudent = []
+
 const tableActions = [
     { type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
@@ -33,22 +42,37 @@ let courseIdToFetchEnrollments = null;
 
 
 const limitLoadEnrollments = 30
-const countTotEnrollments = ref(0)
+const countTotEnrollmentsTabCourse = ref(0)
+const countTotEnrollmentsTabStudent = ref(0)
 
 async function loadEnrollments(startIndex = 0) {
-    if (courseIdToFetchEnrollments === null)
-        return
+    let resp = null
 
-    let resp = await getEnrollmentsOfCourse(courseIdToFetchEnrollments, startIndex, limitLoadEnrollments)
-    if (resp.status === 'error') {
-        alertStore.insertAlert('An error occured.', resp.message, 'error')
-        return
+    if (tabSelectMode.value.activeTabHash == '#by-student') {
+        resp = await getStudentEnrollments(selectedStudent.value, startIndex, limitLoadEnrollments)
+        if (resp.status === 'error') {
+            alertStore.insertAlert('An error occured.', resp.message, 'error')
+            return
+        }
+
+        enrollmentsDataTabStudent = resp.data.enrollments
+        countTotEnrollmentsTabStudent.value = resp.data.tot_count
+        enrollmentsDataForByStudentTab.value = []
+    } else {
+        if (courseIdToFetchEnrollments === null)
+            return
+        resp = await getEnrollmentsOfCourse(courseIdToFetchEnrollments, startIndex, limitLoadEnrollments)
+        if (resp.status === 'error') {
+            alertStore.insertAlert('An error occured.', resp.message, 'error')
+            return
+        }
+
+        enrollmentsDataTabCourse = resp.data.enrollments
+        countTotEnrollmentsTabCourse.value = resp.data.tot_count
+        enrollmentsDataForByCourseTab.value = []
     }
 
-    enrollmentsData = resp.data.enrollments
-    countTotEnrollments.value = resp.data.tot_count
 
-    enrollmentsDataForTable.value = []
     resp.data.enrollments.forEach(enrollment => {
         let priceOffer = 'NOT GIVEN'
         if (enrollment.price_adjustments !== null) {
@@ -57,10 +81,28 @@ async function loadEnrollments(startIndex = 0) {
             else
                 priceOffer = enrollment.price_adjustments.percentage + '% reduction'
         }
-        enrollmentsDataForTable.value.push([enrollment.id, enrollment.student.name, enrollment.suspended, priceOffer])
+        if (tabSelectMode.value.activeTabHash == '#by-student') {
+            let course = enrollment.course.name
+            if (enrollment.course.group_name)
+                course += " - " + enrollment.course.group_name
+            enrollmentsDataForByStudentTab.value.push([enrollment.id, course, enrollment.suspended, priceOffer])
+        }
+        else
+            enrollmentsDataForByCourseTab.value.push([enrollment.id, enrollment.student.name, enrollment.suspended, priceOffer])
     });
 }
 
+watch(selectedStudent, async (studentID) => {
+    selectedStudentData.value = students.find(s => s.id == studentID)
+    loadEnrollments()
+    if (selectedStudentData.value.image) {
+        let resp = await downloadStudentImage(studentID)
+        if (resp.status === 'success')
+            selectedStudentImageUrl.value = URL.createObjectURL(resp.data.file)
+    }
+    else
+        selectedStudentImageUrl.value = '/default-profile.png'
+})
 
 watch(selectedCourseGroup, async (gName) => {
     selectedCourseData.value = []
@@ -83,7 +125,7 @@ watch(selectedCourseForTable, async (courseId) => {
 })
 
 let coursesOptionFields = ref([])
-let studentOptionFields = []
+let studentOptionFields = ref([])
 
 async function init() {
     let resp = await getCourses()
@@ -101,9 +143,9 @@ async function init() {
     if (resp.status === 'error')
         return
 
-    let students = resp.data.students
+    students = resp.data.students
     students.forEach(student => {
-        studentOptionFields.push({ text: student.name, value: student.id })
+        studentOptionFields.value.push({ text: student.name, value: student.id })
     })
 }
 
@@ -111,14 +153,22 @@ init()
 
 async function addNewEnrollment() {
     let courseOptions = []
-    let selectedCourseName = courses.find(c => c.id == selectedCourseForTable.value).name
-    let coursesWithSameName = courses.filter(c => c.name === selectedCourseName)
-    coursesWithSameName.forEach(course => {
-        courseOptions.push({ text: selectedCourseName + ' - ' + (course.group_name ? course.group_name : 'No Name'), value: course.id })
-    })
+    let studentValue = ""
+    if (tabSelectMode.value.activeTabHash == '#by-student') {
+        studentValue = selectedStudent.value
+        courses.forEach(course => {
+            courseOptions.push({ text: course.id + ' - ' + course.name + (course.group_name ? ' - ' + course.group_name : ''), value: course.id })
+        })
+    } else {
+        let selectedCourseName = courses.find(c => c.id == selectedCourseForTable.value).name
+        let coursesWithSameName = courses.filter(c => c.name === selectedCourseName)
+        coursesWithSameName.forEach(course => {
+            courseOptions.push({ text: course.id + ' - ' + selectedCourseName + (course.group_name ? ' - ' + course.group_name : ''), value: course.id })
+        })
+    }
     dataEntryForm.newDataEntryForm('Enroll to Course', 'Enroll', [
         { name: 'course_id', type: 'select', text: 'Course', options: courseOptions, value: courseIdToFetchEnrollments, required: true },
-        { name: 'student_id', type: 'select', text: 'Student', options: studentOptionFields, required: true },
+        { name: 'student_id', type: 'select', text: 'Student', options: studentOptionFields.value, required: true, value: studentValue },
         { type: 'heading', text: 'Any price concession? (optional)' },
         {
             name: 'discount_type', type: 'select', text: 'Concession Type', options: [
@@ -156,7 +206,12 @@ async function addNewEnrollment() {
 }
 
 async function editEnrollment(id) {
-    let enrollment = enrollmentsData.find(g => g.id === id)
+    let enrollment = null
+
+    if (tabSelectMode.value.activeTabHash == '#by-student')
+        enrollment = enrollmentsDataTabStudent.find(g => g.id === id)
+    else
+        enrollment = enrollmentsDataTabCourse.find(g => g.id === id)
 
     dataEntryForm.newDataEntryForm('Update Enrollment', 'Update', [
         { name: 'id', type: 'text', text: 'Enrollment ID', disabled: true, value: enrollment.id },
@@ -211,70 +266,118 @@ async function delEnrollment() {
 
 <template>
     <div class="container">
-        <div class="flex justify-between items-center mb-16">
+        <div class="flex justify-between items-center mb-10">
             <h4 class="font-semibold text-3xl">Course Enrollments</h4>
         </div>
-        <div class="flex justify-between items-center">
-            <div class="flex items-center mr-5">
-                <h4 class="mr-5 font-semibold">Select a Course</h4>
-                <SelectionBox :options="courseGroupOptionFields" :value="selectedCourseGroup"
-                    @input="(val) => { selectedCourseGroup = val }" class="w-[300px] mr-5" />
 
-                <h4 class="mr-5 font-semibold ml-10" v-show="coursesOptionFields.length !== 0">Select a Group </h4>
-                <SelectionBox v-show="coursesOptionFields.length !== 0" :options="coursesOptionFields"
-                    :value="selectedCourseForTable" @input="(val) => { selectedCourseForTable = val }"
-                    class="w-[300px] mr-5" />
-            </div>
-            <NewItemButton text="Enroll a Student" :on-click="addNewEnrollment"
-                :disabled="selectedCourseForTable === 0" />
-        </div>
-        <div class="mb-10 grid grid-cols-3 gap-x-10 border rounded-xl py-3 px-10 mt-4 text-slate-600">
-            <div class="">
-                <h1 class="font-semibold text-lg">Basic Info</h1>
-                <div class="grid grid-cols-2 ml-5">
-                    <h4>Instructor</h4>
-                    <h4>{{ selectedCourseData.id ? selectedCourseData.instructor.name : '' }}</h4>
+        <tabs nav-class="flex border-b-2 pb-[6px] justify-center" nav-item-link-class="border px-10 py-2 font-semibold"
+            nav-item-link-active-class="bg-slate-200" panels-wrapper-class="pt-10" ref="tabSelectMode">
+            <tab name="by Student">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center mr-5">
+                        <h4 class="mr-5 font-semibold">Select a Student</h4>
+                        <SelectionBox :options="studentOptionFields" :value="selectedStudent"
+                            @input="(val) => { selectedStudent = val }" class="w-[300px] mr-5" />
+                    </div>
+                    <NewItemButton text="Enroll a Student" :on-click="addNewEnrollment"
+                        :disabled="selectedStudent === 0" />
                 </div>
-                <div class="grid grid-cols-2 ml-5">
-                    <h4>Enrollment Open</h4>
-                    <h4>{{ selectedCourseData.id ? (selectedCourseData.enrollment_open ? 'Open' : 'Closed') : '' }}
-                    </h4>
+                <div class="mb-10 grid grid-cols-3 gap-x-10 border rounded-xl py-3 px-10 mt-4 text-slate-600">
+                    <div class="justify-self-center">
+                        <img :src="selectedStudentImageUrl" alt="student photo" class="object-cover w-[100px]">
+                    </div>
+                    <div class="col-span-2">
+                        <h1 class="font-semibold text-lg">Student Info</h1>
+                        <div class="grid grid-cols-2 ml-5">
+                            <h4>Student Id</h4>
+                            <h4>{{ selectedStudentData.custom_id }}</h4>
+                        </div>
+                        <div class="grid grid-cols-2 ml-5">
+                            <h4>Name</h4>
+                            <h4>{{ selectedStudentData.name }}</h4>
+                        </div>
+                        <div class="grid grid-cols-2 ml-5">
+                            <h4>Grade</h4>
+                            <h4>{{ selectedStudentData.grade ? selectedStudentData.grade.name : '' }}</h4>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div>
-                <h1 class="font-semibold text-lg">Schedule</h1>
-                <div class="grid grid-cols-2 ml-5">
-                    <h4>Day</h4>
-                    <h4>{{ selectedCourseData.id ? selectedCourseData.schedule[0].day : '' }}</h4>
-                </div>
-                <div class="grid grid-cols-2 ml-5">
-                    <h4>Time</h4>
-                    <h4>{{ selectedCourseData.id ? selectedCourseData.schedule[0].time : '' }}</h4>
-                </div>
-                <div class="grid grid-cols-2 ml-5">
-                    <h4>Venue / Hall</h4>
-                    <h4>{{ selectedCourseData.id ? selectedCourseData.schedule[0].venue : '' }}</h4>
-                </div>
-            </div>
-            <div>
-                <h1 class="font-semibold text-lg">Course Fee</h1>
-                <div class="grid grid-cols-2 ml-5">
-                    <h4>Fee Type</h4>
-                    <h4>{{ selectedCourseData.id ? selectedCourseData.fee.type : '' }}</h4>
-                </div>
-                <div class="grid grid-cols-2 ml-5">
-                    <h4>Fee</h4>
-                    <h4>{{ selectedCourseData.id ? selectedCourseData.fee.amount : '' }}</h4>
-                </div>
-            </div>
-        </div>
-        <TableComponent :table-columns="['ID', 'Student Name', 'Suspended', 'Price Concession']"
-            :table-rows="enrollmentsDataForTable" @edit-emit="editEnrollment" :actions="tableActions"
-            :refresh-func="async () => { await loadEnrollments(); return true }" @delete-emit="delEnrollment" />
+                <TableComponent :table-columns="['ID', 'Course Name', 'Suspended', 'Price Concession']"
+                    :table-rows="enrollmentsDataForByStudentTab" @edit-emit="editEnrollment" :actions="tableActions"
+                    :refresh-func="async () => { await loadEnrollments(); return true }" @delete-emit="delEnrollment" />
 
-        <div class="flex justify-center mt-4 mb-10">
-            <PaginateComponent :total-count="countTotEnrollments" :page-size="limitLoadEnrollments"
-                @load-page-emit="loadEnrollments" />
-        </div>
+                <div class="flex justify-center mt-4 mb-10">
+                    <PaginateComponent :total-count="countTotEnrollmentsTabStudent" :page-size="limitLoadEnrollments"
+                        @load-page-emit="loadEnrollments" />
+                </div>
+            </tab>
+
+            <tab name="by Course">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center mr-5">
+                        <h4 class="mr-5 font-semibold">Select a Course</h4>
+                        <SelectionBox :options="courseGroupOptionFields" :value="selectedCourseGroup"
+                            @input="(val) => { selectedCourseGroup = val }" class="w-[300px] mr-5" />
+
+                        <h4 class="mr-5 font-semibold ml-10" v-show="coursesOptionFields.length !== 0">Select a Group
+                        </h4>
+                        <SelectionBox v-show="coursesOptionFields.length !== 0" :options="coursesOptionFields"
+                            :value="selectedCourseForTable" @input="(val) => { selectedCourseForTable = val }"
+                            class="w-[300px] mr-5" />
+                    </div>
+                    <NewItemButton text="Enroll a Student" :on-click="addNewEnrollment"
+                        :disabled="selectedCourseForTable === 0" />
+                </div>
+                <div class="mb-10 grid grid-cols-3 gap-x-10 border rounded-xl py-3 px-10 mt-4 text-slate-600">
+                    <div class="">
+                        <h1 class="font-semibold text-lg">Basic Info</h1>
+                        <div class="grid grid-cols-2 ml-5">
+                            <h4>Instructor</h4>
+                            <h4>{{ selectedCourseData.id ? selectedCourseData.instructor.name : '' }}</h4>
+                        </div>
+                        <div class="grid grid-cols-2 ml-5">
+                            <h4>Enrollment Open</h4>
+                            <h4>{{ selectedCourseData.id ? (selectedCourseData.enrollment_open ? 'Open' : 'Closed') : ''
+                                }}
+                            </h4>
+                        </div>
+                    </div>
+                    <div>
+                        <h1 class="font-semibold text-lg">Schedule</h1>
+                        <div class="grid grid-cols-2 ml-5">
+                            <h4>Day</h4>
+                            <h4>{{ selectedCourseData.id ? selectedCourseData.schedule[0].day : '' }}</h4>
+                        </div>
+                        <div class="grid grid-cols-2 ml-5">
+                            <h4>Time</h4>
+                            <h4>{{ selectedCourseData.id ? selectedCourseData.schedule[0].time : '' }}</h4>
+                        </div>
+                        <div class="grid grid-cols-2 ml-5">
+                            <h4>Venue / Hall</h4>
+                            <h4>{{ selectedCourseData.id ? selectedCourseData.schedule[0].venue : '' }}</h4>
+                        </div>
+                    </div>
+                    <div>
+                        <h1 class="font-semibold text-lg">Course Fee</h1>
+                        <div class="grid grid-cols-2 ml-5">
+                            <h4>Fee Type</h4>
+                            <h4>{{ selectedCourseData.id ? selectedCourseData.fee.type : '' }}</h4>
+                        </div>
+                        <div class="grid grid-cols-2 ml-5">
+                            <h4>Fee</h4>
+                            <h4>{{ selectedCourseData.id ? selectedCourseData.fee.amount : '' }}</h4>
+                        </div>
+                    </div>
+                </div>
+                <TableComponent :table-columns="['ID', 'Student Name', 'Suspended', 'Price Concession']"
+                    :table-rows="enrollmentsDataForByCourseTab" @edit-emit="editEnrollment" :actions="tableActions"
+                    :refresh-func="async () => { await loadEnrollments(); return true }" @delete-emit="delEnrollment" />
+
+                <div class="flex justify-center mt-4 mb-10">
+                    <PaginateComponent :total-count="countTotEnrollmentsTabCourse" :page-size="limitLoadEnrollments"
+                        @load-page-emit="loadEnrollments" />
+                </div>
+            </tab>
+        </tabs>
     </div>
 </template>
