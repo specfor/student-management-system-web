@@ -49,7 +49,7 @@ function moveSelection(direction) {
 
 <template>
     <!-- @keydown.space="() => {if (!isOpen) { isOpen = true }}" -->
-    <div class="relative w-full" @keydown.esc="(event) => { if (isOpen) event.preventDefault(); isOpen = false }"
+    <div class="relative" @keydown.esc="(event) => { if (isOpen) event.preventDefault(); isOpen = false }"
         @keydown.tab="(event) => { if (isOpen) event.preventDefault(); searchBox.focus() }"
         @keydown.up="() => { moveSelection('up') }" @keydown.down="() => { moveSelection('down') }" @keydown.enter="() => {
             if (isOpen) setSelected(focusSelection)
