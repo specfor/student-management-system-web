@@ -9,12 +9,6 @@ const systemInfoStore = useSystemInfoStore()
 let { sysInfo } = storeToRefs(systemInfoStore)
 const showProfileDropdown = ref(false)
 
-// function closeProfileDropdown(event) {
-//     console.log(event.target.class);
-//     console.log(this);
-//     if (showProfileDropdown.value)
-//         showProfileDropdown.value = false
-// }
 </script>
 
 <template>
@@ -24,14 +18,15 @@ const showProfileDropdown = ref(false)
                 <img src="/logo.png" alt="company logo" class="h-10">
                 <h4 class="font-semibold text-xl text-white">{{ sysInfo['company-name'] }}</h4>
             </div>
-            <div class="flex">
+            <Popper>
                 <UserCircleIcon class="h-10 w-10 hover:bg-white rounded-md cursor-pointer"
-                    @click="showProfileDropdown = !showProfileDropdown" id="header-profile-icon" />
-            </div>
+                    @click="showProfileDropdown = !showProfileDropdown" />
+
+                <template #content>
+                    <HeaderProfileIconDropdown />
+                </template>
+            </Popper>
         </div>
-    </div>
-    <div class="relative">
-        <HeaderProfileIconDropdown class="absolute top-14 right-2" v-show="showProfileDropdown" />
     </div>
 </template>
 
