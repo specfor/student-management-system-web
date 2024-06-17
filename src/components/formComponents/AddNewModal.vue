@@ -5,6 +5,7 @@ import { storeToRefs } from 'pinia';
 import { ArrowPathIcon, XCircleIcon } from '@heroicons/vue/24/solid';
 import SelectionBox from '../primary/SelectionBox.vue';
 import CheckBoxGroup from '../primary/CheckBoxGroup.vue';
+import FileInput from '../primary/FileInput.vue';
 
 const dataEntryForm = useDataEntryFormsStore()
 const { show, previewUrls, submitted, allowSubmit, success, title, fields, fieldValues, successBtnText, errorMessages, generalErrorMessages } = storeToRefs(dataEntryForm)
@@ -34,12 +35,6 @@ function validateInput(name: string) {
       anyError = true;
   }
   allowSubmit.value = !anyError;
-}
-
-function handleFiles(fieldName: string, event: any) {
-  var file = event.target.files[0]
-  previewUrls.value[fieldName] = URL.createObjectURL(file)
-
 }
 </script>
 
@@ -99,7 +94,8 @@ function handleFiles(fieldName: string, event: any) {
                       <h3 class="text-xl text-red-700 pr-1" v-if="field['required']">*</h3>
                     </div>
                     <div class="col-span-2 grid grid-cols-2">
-                      <CheckBoxGroup :options="field['options']" />
+                      <CheckBoxGroup :options="field['options']"
+                        @change="(val) => { fieldValues[field['name']] = val; validateInput(field['name']) }" />
                       <div class="mb-2 mt-1 px-2 flex items-center justify-between col-span-3 bg-red-300 text-red-900"
                         v-if="errorMessages[field['name']]">
                         <h1>{{ errorMessages[field['name']] }}</h1>
@@ -143,16 +139,9 @@ function handleFiles(fieldName: string, event: any) {
                       </div>
                       <h3 class="text-xl text-red-700 pr-1" v-if="field['required']">*</h3>
                     </div>
-                    <div class="col-span-2 flex flex-col">
-                      <input type="file" class="border border-slate-400 rounded-md px-3 py-0.5 w-full"
-                        :accept="field['accept'] ? field['accept'] : null"
-                        @input="(event) => { fieldValues[field['name']] = event.target.files; handleFiles(field['name'], event); validateInput(field['name']) }">
-                      <div v-show="field['preview'] && !previewUrls[field['name']]"
-                        class="h-[300px] w-[300px] mt-4 rounded-md bg-slate-200 flex items-center justify-center">
-                        <h4 class="text-slate-500">Select the File to Preview</h4>
-                      </div>
-                      <img v-show="field['preview'] && previewUrls[field['name']]" :src="previewUrls[field['name']]"
-                        alt="selected file" class="w-auto mt-4 h-[300px] rounded-md">
+                    <div class="col-span-2 flex">
+                      <FileInput
+                        @select="(val) => { fieldValues[field['name']] = val; validateInput(field['name']) }" />
                     </div>
                     <div class="mb-2 mt-1 px-2 flex items-center justify-between col-span-3 bg-red-300 text-red-900"
                       v-if="errorMessages[field['name']]">
