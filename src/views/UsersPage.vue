@@ -1,5 +1,5 @@
 <!-- eslint-disable no-constant-condition -->
-<script setup>
+<script setup lang="ts">
 import { getUserRoles } from '@/apiConnections/userRoles';
 import { createUser, deleteUser, getUsers, updateUser } from '@/apiConnections/users';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
@@ -7,7 +7,7 @@ import TableComponent from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
-import { ref } from 'vue';
+import { ref, type Ref } from 'vue';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
 import PaginateComponent from '@/components/PaginateComponent.vue';
 
@@ -16,8 +16,8 @@ const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
 const confirmForm = useConfirmationFormsStore()
 
-let userData = []
-let userDataForTable = ref([])
+let userData: User[] = []
+let userDataForTable: Ref<any[][]> = ref([])
 const tableActions = [{ type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }]
 
 const limitLoadUsers = 30
@@ -31,7 +31,7 @@ async function loadUsers(startIndex = 0) {
     } else {
         userData = data.data.users
         countTotUsers.value = data.data.tot_count
-        data.data.users.forEach(user => {
+        userData.forEach(user => {
             userDataForTable.value.push([user.id, user.name, user.email, user.role.role_name])
         });
     }
@@ -54,9 +54,10 @@ async function addNewUser() {
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
-                    if (typeof msg[1] === 'object')
-                        msg[1] = msg[1].join(', ')
-                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                    let err = ""
+                    if (Array.isArray(msg[1]) && !msg[1] === null)
+                        err = msg[1].join(', ')
+                    dataEntryForm.insertErrorMessage(msg[0], err)
                 })
             else
                 alertStore.insertAlert('An error occured.', resp.message, 'error')
@@ -70,7 +71,7 @@ async function addNewUser() {
     }
 }
 
-async function editUser(id) {
+async function editUser(id: number) {
     let user = userData.find(u => u.id === id)
 
     dataEntryForm.newDataEntryForm('Update User', 'Update', [
@@ -87,9 +88,10 @@ async function editUser(id) {
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
-                    if (typeof msg[1] === 'object')
-                        msg[1] = msg[1].join(', ')
-                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                    let err = ""
+                    if (Array.isArray(msg[1]) && !msg[1] === null)
+                        err = msg[1].join(', ')
+                    dataEntryForm.insertErrorMessage(msg[0], err)
                 })
             else
                 alertStore.insertAlert('An error occured.', resp.message, 'error')
@@ -122,11 +124,11 @@ let userRoleOptionFields = []
 
 
 async function init() {
-    let userRoles = await getUserRoles()
-    if (userRoles.status === 'error') {
+    let userRolesRes = await getUserRoles()
+    if (userRolesRes.status === 'error') {
         return
     }
-    userRoles = userRoles.data.roles
+    const userRoles = userRolesRes.data.roles as UserRole[]
 
     userRoles.forEach(userRole => {
         userRoleOptionFields.push({ text: userRole.role_name, value: userRole.id })

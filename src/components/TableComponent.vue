@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { defineProps, ref } from "vue";
 import { ArrowPathIcon } from "@heroicons/vue/24/solid";
 

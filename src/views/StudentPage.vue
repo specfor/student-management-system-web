@@ -1,5 +1,5 @@
 <!-- eslint-disable no-constant-condition -->
-<script setup>
+<script setup lang="ts">
 import { getGrades } from '@/apiConnections/grades';
 import { createStudent, deleteStudent, getStudents, updateStudent, updateStudentImage } from '@/apiConnections/students';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';

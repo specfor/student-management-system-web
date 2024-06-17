@@ -1,5 +1,5 @@
 <!-- eslint-disable no-constant-condition -->
-<script setup>
+<script setup lang="ts">
 import { createInstructor, deleteInstructor, getInstructors, updateInstructor, updateInstructorImage } from '@/apiConnections/instructors';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import TableComponent from '@/components/TableComponent.vue';

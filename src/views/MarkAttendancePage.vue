@@ -1,5 +1,5 @@
 <!-- eslint-disable no-constant-condition -->
-<script setup>
+<script setup lang="ts">
 import { sendMarkAttendance } from '@/apiConnections/attendance';
 import { getCourses } from '@/apiConnections/courses';
 import { getStudentEnrollmentOfCourse } from '@/apiConnections/enrollments';

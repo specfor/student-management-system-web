@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ExclamationTriangleIcon } from '@heroicons/vue/24/solid';
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';

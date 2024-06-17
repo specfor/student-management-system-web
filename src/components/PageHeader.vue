@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { useSystemInfoStore } from '@/stores/systemInfo';
 import { UserCircleIcon } from '@heroicons/vue/24/solid'
 import { ref } from 'vue'; ``

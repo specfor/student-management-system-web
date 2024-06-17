@@ -1,10 +1,10 @@
-<script setup>
+<script setup lang="ts">
 import { useAuthStore } from '@/stores/authorization';
 import { storeToRefs } from 'pinia';
 import { RouterLink } from 'vue-router';
 import {
     BanknotesIcon, UsersIcon, Squares2X2Icon, AcademicCapIcon, UserGroupIcon, BookOpenIcon, RocketLaunchIcon, IdentificationIcon,
-    FolderOpenIcon, BookmarkIcon
+    FolderOpenIcon, BookmarkIcon, DocumentChartBarIcon
 } from '@heroicons/vue/24/outline';
 
 const authStore = useAuthStore()
@@ -24,11 +24,11 @@ let { userPermissions } = storeToRefs(authStore)
             <RocketLaunchIcon class="h-6 w-6 mr-3" />
             Mark Attendance
         </RouterLink>
-        <RouterLink v-if="userPermissions.all || userPermissions.attendance" to="/attendance"
+        <!-- <RouterLink v-if="userPermissions.all || userPermissions.attendance" to="/attendance"
             class="flex items-center py-2 px-4 w-full text-white hover:bg-blue-700" active-class="bg-blue-600">
-            <RocketLaunchIcon class="h-6 w-6 mr-3" />
+            <DocumentChartBarIcon class="h-6 w-6 mr-3" />
             Attendance
-        </RouterLink>
+        </RouterLink> -->
         <RouterLink v-if="userPermissions.all || userPermissions.enrollment" to="/enrollments"
             class="flex items-center py-2 px-4 w-full text-white hover:bg-blue-700" active-class="bg-blue-600">
             <BookmarkIcon class="h-6 w-6 mr-3" />

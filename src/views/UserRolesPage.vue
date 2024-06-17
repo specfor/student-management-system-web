@@ -1,5 +1,5 @@
 <!-- eslint-disable no-constant-condition -->
-<script setup>
+<script setup lang="ts">
 import { useAlertsStore } from '@/stores/alerts';
 import { ref } from 'vue';
 import TableComponent from '@/components/TableComponent.vue';
