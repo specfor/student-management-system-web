@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { useExtendablePopUpStore } from '@/stores/formManagers/extendablePopUp';
 import { storeToRefs } from 'pinia';

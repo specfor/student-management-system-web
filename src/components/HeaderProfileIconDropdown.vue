@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import router from '@/router';
 import { useAuthStore } from '@/stores/authorization';
 

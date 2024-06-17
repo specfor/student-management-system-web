@@ -1,5 +1,5 @@
 <!-- eslint-disable no-constant-condition -->
-<script setup>
+<script setup lang="ts">
 import { getPayments, refundPayment } from '@/apiConnections/payments';
 import TableComponent from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
@@ -72,9 +72,17 @@ async function delGrade() {
 
 <template>
     <div class="container">
-        <div class="flex justify-between items-center mb-16">
+        <div class="flex justify-between items-center mb-10">
             <h4 class="font-semibold text-3xl">Payments</h4>
         </div>
+        <!--
+        <tabs nav-class="flex border-b-2 pb-[6px] justify-center" nav-item-link-class="border px-10 py-2 font-semibold"
+            nav-item-link-active-class="bg-slate-200" panels-wrapper-class="pt-10">
+            <tab name="by Student">
+                <h1>aa</h1>
+            </tab>
+
+            <tab name="by Course">-->
         <TableComponent :table-columns="['ID', 'Payment For', 'Amount', 'Student', 'Course', 'Method', 'Refunded']"
             :table-rows="paymentDataForTable" @edit-emit="editPayment" :actions="tableActions"
             :refresh-func="async () => { await loadPayment(); return true }" @delete-emit="delGrade" />
@@ -83,5 +91,7 @@ async function delGrade() {
             <PaginateComponent :total-count="countTotPayments" :page-size="limitLoadPayments"
                 @load-page-emit="loadPayment" />
         </div>
+        <!--</tab>
+        </tabs> -->
     </div>
 </template>

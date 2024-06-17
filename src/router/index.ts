@@ -10,6 +10,7 @@ import CoursesPage from '@/views/CoursesPage.vue'
 import EnrollmentPage from '@/views/EnrollmentPage.vue'
 import PaymentsPage from '@/views/PaymentsPage.vue'
 import MarkAttendancePage from '@/views/MarkAttendancePage.vue'
+import AttendancePage from '@/views/AttendancePage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -68,6 +69,11 @@ const router = createRouter({
       path: '/mark-attendance',
       name: 'mark-attendance',
       component: MarkAttendancePage
+    },
+    {
+      path: '/attendance',
+      name: 'attendance',
+      component: AttendancePage
     }
     // {
     //   path: '/about',

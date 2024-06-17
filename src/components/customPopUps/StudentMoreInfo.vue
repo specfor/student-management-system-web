@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { downloadStudentImage } from '@/apiConnections/students';
 import { ref } from 'vue';
 

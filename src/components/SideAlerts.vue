@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { CheckCircleIcon, XMarkIcon, ExclamationCircleIcon } from '@heroicons/vue/24/solid';
 import { useAlertsStore } from "@/stores/alerts";
 

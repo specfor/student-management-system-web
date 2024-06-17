@@ -1,19 +1,18 @@
-<!-- eslint-disable vue/require-v-for-key -->
-<script setup>
+<script setup lang="ts">
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { storeToRefs } from 'pinia';
 import { ArrowPathIcon, XCircleIcon } from '@heroicons/vue/24/solid';
 import SelectionBox from '../primary/SelectionBox.vue';
-
+import CheckBoxGroup from '../primary/CheckBoxGroup.vue';
 
 const dataEntryForm = useDataEntryFormsStore()
 const { show, previewUrls, submitted, allowSubmit, success, title, fields, fieldValues, successBtnText, errorMessages, generalErrorMessages } = storeToRefs(dataEntryForm)
 
-function validateInput(name) {
+function validateInput(name: string) {
   let anyError = false;
   for (const field of fields.value) {
-    if (field['name'] === name) {
+    if (field['name'] === name && typeof fieldValues.value[name] !== 'number') {
       if (fieldValues.value[name].length === 0)
         if (field['required'])
           errorMessages.value[name] = 'This field is required.'
@@ -29,7 +28,7 @@ function validateInput(name) {
         anyError = true
   }
   for (const field of fields.value) {
-    if (field['type'] !== 'heading' || field['type'] !== 'message')
+    if (field['type'] === 'heading' || field['type'] === 'message')
       continue
     if (errorMessages.value[field['name']] !== '')
       anyError = true;
@@ -37,7 +36,7 @@ function validateInput(name) {
   allowSubmit.value = !anyError;
 }
 
-function handleFiles(fieldName, event) {
+function handleFiles(fieldName: string, event: any) {
   var file = event.target.files[0]
   previewUrls.value[fieldName] = URL.createObjectURL(file)
 
@@ -100,12 +99,7 @@ function handleFiles(fieldName, event) {
                       <h3 class="text-xl text-red-700 pr-1" v-if="field['required']">*</h3>
                     </div>
                     <div class="col-span-2 grid grid-cols-2">
-                      <div v-for="(option, index3) in field['options']" :key="index3" class="flex mt-1">
-                        <input class="w-5 h-5 mt-0.5" :disabled="field['disabled']" type="checkbox"
-                          :checked="option['checked']"
-                          @input="event => fieldValues[field['name']][option['name']] = event.target.checked">
-                        <p class="ml-2 font-semibold ">{{ option['text'] }}</p>
-                      </div>
+                      <CheckBoxGroup :options="field['options']" />
                       <div class="mb-2 mt-1 px-2 flex items-center justify-between col-span-3 bg-red-300 text-red-900"
                         v-if="errorMessages[field['name']]">
                         <h1>{{ errorMessages[field['name']] }}</h1>

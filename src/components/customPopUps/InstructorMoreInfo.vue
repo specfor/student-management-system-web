@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { getInstructorsImage } from '@/apiConnections/instructors';
 import { ref } from 'vue';
 

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline';
 import { ref, watch } from 'vue';
 

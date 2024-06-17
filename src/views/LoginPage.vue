@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { useSystemInfoStore } from '@/stores/systemInfo';
 import { ref, watch } from 'vue';
 
