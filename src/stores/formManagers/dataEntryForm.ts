@@ -1,5 +1,6 @@
 import { ref, type Ref } from "vue";
 import { defineStore } from "pinia";
+import type { CheckboxFields } from "@/types/inputBoxTypes";
 
 export const useDataEntryFormsStore = defineStore(
   "form-manager-data-entry",
@@ -28,7 +29,7 @@ export const useDataEntryFormsStore = defineStore(
       fields_: InputField[],
       options: {
         allowSubmit: boolean;
-      }
+      } = { allowSubmit: false }
     ) {
       fieldValues.value = {};
       success.value = false;
@@ -115,7 +116,14 @@ export const useDataEntryFormsStore = defineStore(
   }
 );
 
-type InputField = (
+type InputField = InputTypes & {
+  text?: string;
+  name: string;
+  required?: boolean;
+  validate?: Function;
+};
+
+type InputTypes =
   | Checkbox
   | {
       type:
@@ -128,14 +136,7 @@ type InputField = (
         | "password";
       disabled?: boolean;
       value?: string | number | boolean;
-    }
-) &
-  {
-    text?: string;
-    name: string;
-    required?: boolean;
-    validate?: Function;
-  }[];
+    };
 
 export type Checkbox = CheckboxFields & {
   type: "checkbox";
