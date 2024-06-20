@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { defineProps, ref } from "vue";
+import { defineProps, ref, type FunctionalComponent, type Ref } from "vue";
 import { ArrowPathIcon } from "@heroicons/vue/24/solid";
 
 let selectedIds = ref([])
 let isDisabled = ref(true)
 let isActive = ref(false)
-let searchInput = ref({})
+let searchInput: Ref<any> = ref({})
 let isHidden = ref(true)
 let filterBgColor = ref('bg-white');
 
@@ -25,9 +25,38 @@ let {
   actions,
   search,
   refreshFunc
-} = defineProps(['tableColumns', 'tableRows', 'actions', 'search', 'refreshFunc'])
+} = defineProps<{
+  tableColumns: string[]
+  tableRows: any[][]
+  actions: TableActionType[]
+  search?: any
+  refreshFunc?: () => Promise<boolean>
+}>()
 
 let refreshingData = ref(false)
+
+export type TableActionType =
+  ({
+    renderAsRouterLink: true
+    url: string
+    params?: any
+  } | {
+    renderAsRouterLink: false
+  }) & Inputs
+
+type Inputs = {
+  type: "icon"
+  icon: FunctionalComponent;
+  emit: string
+  css?: string
+} |
+{
+  type: 'text'
+  text: string
+  emit: string
+  css?: string
+}
+
 </script>
 
 <template>
@@ -41,8 +70,8 @@ let refreshingData = ref(false)
           class="flex hover:cursor-pointer px-4 py-2 rounded-tr-lg items-center border mr-3 disabled:cursor-not-allowed disabled:text-slate-400"
           :disabled="isDisabled"
           :class="{ 'bg-red-400 text-white hover:bg-red-700': isActive, 'text-slate-400  ': !isActive }" @click="() => {
-            ; $emit('deleteEmit', selectedIds); isDisabled = true; isActive = false; selectedIds = []; if (selectedIds) { isDisabled = true };
-            selectedIds = []
+            $emit('deleteEmit', selectedIds); isDisabled = true; isActive = false; selectedIds = []; if (selectedIds) { isDisabled = true };
+            selectedIds = [];
           }">Delete
         </button>
       </div>
@@ -50,8 +79,8 @@ let refreshingData = ref(false)
         <button
           class="flex hover:cursor-pointer hover:bg-slate-100 p-2 rounded-t-lg items-center border mr-3 disabled:cursor-not-allowed disabled:text-slate-400"
           @click="() => {
-            refreshingData = true; refreshFunc().then((finished) => {
-              ; if (finished) refreshingData = false
+            refreshingData = true; if (refreshFunc !== undefined) refreshFunc().then((finished: boolean) => {
+              if (finished) refreshingData = false
             });
           }" :disabled="refreshingData">
           <ArrowPathIcon class="h-6 mr-3" :class="{ 'animate-spin': refreshingData }" />
@@ -103,8 +132,9 @@ let refreshingData = ref(false)
             <input type="checkbox" class="h-5 w-5" :value="row[0]" v-model="selectedIds" v-on:change="isChecked">
           </td>
           <td colspan="100%" class="py-1 font-semibold bg-white pl-6"
-            v-if="x = row.find(value => { return typeof value == 'object' && value !== null && value.type === 'group' })">
-            {{ x.value }}
+            v-if="row.find(value => { return typeof value == 'object' && value !== null && value.type === 'group' })">
+            {{ row.find(value => { return typeof value == 'object' && value !== null && value.type === 'group' }).value
+            }}
           </td>
           <template
             v-if="!row.some(value => { return typeof value == 'object' && value !== null && value.type === 'group' })">

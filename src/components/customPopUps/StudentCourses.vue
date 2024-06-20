@@ -1,27 +1,27 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, type Ref } from 'vue';
 import TableComponent from '../TableComponent.vue';
 import { getStudentEnrollments } from '@/apiConnections/enrollments';
 
-let courses = ref([])
+let courses: Ref<any[]> = ref([])
 let student = ref({})
 
 let { args } = defineProps(['args'])
 
-async function init(studentId) {
+async function init(studentId: number) {
     let res = await getStudentEnrollments(studentId)
     if (res.status === 'error') {
         console.log('failed to load data.');
         return
     }
-    res.data.enrollments.forEach(enrollment => {
+    (res.data.enrollments as Enrollment[]).forEach(enrollment => {
         let cName = enrollment.course.name
-        let fee = enrollment.course.fee.amount
+        let fee = Number(enrollment.course.fee.amount)
         if (enrollment.price_adjustments != null) {
             if (enrollment.price_adjustments.type == 'fixed')
-                fee = fee - enrollment.price_adjustments.amount
+                fee = fee - enrollment.price_adjustments.amount!
             else
-                fee = fee * (1 - enrollment.price_adjustments.percentage)
+                fee = fee * (1 - enrollment.price_adjustments.percentage!)
         }
         if (enrollment.course.group_name != null)
             cName = cName + ' - ' + enrollment.course.group_name

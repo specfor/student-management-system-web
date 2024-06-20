@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { getInstructorsImage } from '@/apiConnections/instructors';
-import { ref } from 'vue';
+import { ref, type Ref } from 'vue';
 
-const imageUrl = ref(null)
+const imageUrl: Ref<null | string> = ref(null)
 
 let { args } = defineProps(['args'])
 
-async function loadImage(instructorId) {
+async function loadImage(instructorId: number) {
     let resp = await getInstructorsImage(instructorId);
     if (resp.status === 'error') {
         imageUrl.value = '/default-profile.png'

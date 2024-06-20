@@ -3,7 +3,7 @@
 import { getUserRoles } from '@/apiConnections/userRoles';
 import { createUser, deleteUser, getUsers, updateUser } from '@/apiConnections/users';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
-import TableComponent from '@/components/TableComponent.vue';
+import TableComponent, { type TableActionType } from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
@@ -18,10 +18,12 @@ const confirmForm = useConfirmationFormsStore()
 
 let userData: User[] = []
 let userDataForTable: Ref<any[][]> = ref([])
-const tableActions = [{ type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }]
+const tableActions: TableActionType[] = [{ renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }]
 
 const limitLoadUsers = 30
 const countTotUsers = ref(0)
+
+let userRoleOptionFields: { text: string, value: any }[] = []
 
 async function loadUsers(startIndex = 0) {
     userDataForTable.value = []
@@ -50,13 +52,15 @@ async function addNewUser() {
         if (!results.submitted)
             return
 
-        let resp = await createUser(results.data.name, results.data.email, results.data.password, results.data.role)
+        let resp = await createUser(results.data.name as string, results.data.email as string, results.data.password as string, results.data.role as number)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
                     let err = ""
                     if (Array.isArray(msg[1]) && !msg[1] === null)
                         err = msg[1].join(', ')
+                    else
+                        err = msg[1] as string
                     dataEntryForm.insertErrorMessage(msg[0], err)
                 })
             else
@@ -72,7 +76,7 @@ async function addNewUser() {
 }
 
 async function editUser(id: number) {
-    let user = userData.find(u => u.id === id)
+    let user = userData.find(u => u.id === id)!
 
     dataEntryForm.newDataEntryForm('Update User', 'Update', [
         { name: 'name', type: 'text', text: 'Name', required: true, value: user.name },
@@ -84,13 +88,15 @@ async function editUser(id: number) {
         if (!results.submitted)
             return
 
-        let resp = await updateUser(id, results.data.name, results.data.role)
+        let resp = await updateUser(id, results.data.name as string, results.data.role as number)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
                     let err = ""
                     if (Array.isArray(msg[1]) && !msg[1] === null)
                         err = msg[1].join(', ')
+                    else
+                        err = msg[1] as string
                     dataEntryForm.insertErrorMessage(msg[0], err)
                 })
             else
@@ -105,7 +111,7 @@ async function editUser(id: number) {
     }
 }
 
-async function delUser(ids) {
+async function delUser(ids: number[]) {
     let confirmed = await confirmForm.newConfirmationForm("Confirm Deletion", "Are you sure you want to delete these users with IDs: " + ids.join(', ') + "?")
     if (!confirmed)
         return
@@ -120,7 +126,6 @@ async function delUser(ids) {
     });
     loadUsers()
 }
-let userRoleOptionFields = []
 
 
 async function init() {

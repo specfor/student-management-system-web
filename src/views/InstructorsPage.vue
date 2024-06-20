@@ -2,11 +2,11 @@
 <script setup lang="ts">
 import { createInstructor, deleteInstructor, getInstructors, updateInstructor, updateInstructorImage } from '@/apiConnections/instructors';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
-import TableComponent from '@/components/TableComponent.vue';
+import TableComponent, { type TableActionType } from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
-import { ref } from "vue"
+import { ref, type Ref } from "vue"
 import { MagnifyingGlassIcon, PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { useExtendablePopUpStore } from '@/stores/formManagers/extendablePopUp';
 import PaginateComponent from '@/components/PaginateComponent.vue';
@@ -18,11 +18,11 @@ const dataEntryForm = useDataEntryFormsStore()
 const confirmationForm = useConfirmationFormsStore()
 const extendablePopUpStore = useExtendablePopUpStore()
 
-let instructorData = []
-const instructorDataForTable = ref([])
-const tableActions = [
-    { type: 'icon', emit: 'ShowMore', icon: MagnifyingGlassIcon, css: 'fill-blue-600 w-5' },
-    { type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
+let instructorData: Instructor[] = []
+const instructorDataForTable: Ref<any[]> = ref([])
+const tableActions: TableActionType[] = [
+    { renderAsRouterLink: false, type: 'icon', emit: 'ShowMore', icon: MagnifyingGlassIcon, css: 'fill-blue-600 w-5' },
+    { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
 
 
@@ -40,7 +40,7 @@ async function loadInstructors(startIndex = 0) {
     countTotInstructors.value = resp.data.tot_count
 
     instructorDataForTable.value = []
-    resp.data.instructors.forEach(instructor => {
+    instructorData.forEach(instructor => {
         instructorDataForTable.value.push([instructor.id, instructor.name, instructor.email, instructor.phone_number, instructor.work_place])
     });
 }
@@ -66,14 +66,18 @@ async function addNewInstructor() {
         if (!results.submitted)
             return
 
-        console.log(results.data);
-        let resp = await createInstructor(...Object.values(results.data))
+        const instr = results.data
+        let resp = await createInstructor(instr.name as string, instr.email as string, instr.phone_number as string,
+            instr.birthday as string, instr.address as string, instr.work_place as string)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
-                    if (typeof msg[1] === 'object')
-                        msg[1] = msg[1].join(', ')
-                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                    let err = ""
+                    if (Array.isArray(msg[1]) && !msg[1] === null)
+                        err = msg[1].join(', ')
+                    else
+                        err = msg[1] as string
+                    dataEntryForm.insertErrorMessage(msg[0], err)
                 })
             else
                 alertStore.insertAlert('An error occurred.', resp.message, 'error')
@@ -88,7 +92,7 @@ async function addNewInstructor() {
     uploadInstructorImage(insId)
 }
 
-async function uploadInstructorImage(insId) {
+async function uploadInstructorImage(insId: number) {
     dataEntryForm.newDataEntryForm('Instructor\'s Image', 'Upload', [
         { text: "You can update the image later also. Click 'Cancel' to continue without image.", type: 'message' },
         { name: 'profile', text: 'Select Image', type: 'file', accept: '.jpg,.jpeg,.png', preview: true, required: true }
@@ -97,13 +101,17 @@ async function uploadInstructorImage(insId) {
     if (!results.submitted)
         return
 
-    let res = await updateInstructorImage(insId, results.data.profile[0]);
+    let img: any = results.data.profile
+    let res = await updateInstructorImage(insId, img[0]);
     if (res.status === 'error') {
         if (res.data.type === 'user_error')
             Object.entries(res.data.messages).forEach(msg => {
-                if (typeof msg[1] === 'object')
-                    msg[1] = msg[1].join(', ')
-                dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                let err = ""
+                if (Array.isArray(msg[1]) && !msg[1] === null)
+                    err = msg[1].join(', ')
+                else
+                    err = msg[1] as string
+                dataEntryForm.insertErrorMessage(msg[0], err)
             })
         else
             alertStore.insertAlert('An error occurred.', res.message, 'error')
@@ -113,8 +121,8 @@ async function uploadInstructorImage(insId) {
     alertStore.insertAlert('Action completed.', 'Instructor photo updated successfully.')
 }
 
-async function editInstructor(id) {
-    let instructor = instructorData.find(s => s.id === id)
+async function editInstructor(id: number) {
+    let instructor = instructorData.find(s => s.id === id)!
 
     dataEntryForm.newDataEntryForm('Update Instructor', 'Update', [
         { name: 'id', text: 'ID', type: 'text', disabled: true, value: instructor.id },
@@ -131,13 +139,17 @@ async function editInstructor(id) {
         if (!results.submitted)
             return
 
-        let resp = await updateInstructor(...Object.values(results.data))
+        let resp = await updateInstructor(id, results.data.name as string, results.data.email as string, results.data.phone_number as string,
+            results.data.birthday as string, results.data.address as string, results.data.work_place as string)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
-                    if (typeof msg[1] === 'object')
-                        msg[1] = msg[1].join(', ')
-                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                    let err = ""
+                    if (Array.isArray(msg[1]) && !msg[1] === null)
+                        err = msg[1].join(', ')
+                    else
+                        err = msg[1] as string
+                    dataEntryForm.insertErrorMessage(msg[0], err)
                 })
             else
                 alertStore.insertAlert('An error occured.', resp.message, 'error')
@@ -150,7 +162,7 @@ async function editInstructor(id) {
     }
 }
 
-async function delInstructor(ids) {
+async function delInstructor(ids: number[]) {
     let confirmed = await confirmationForm.newConfirmationForm("Confirm Deletion", "Are you sure you want to delete these instructors with IDs: " + ids.join(', ') + "?")
     if (!confirmed)
         return
@@ -166,7 +178,7 @@ async function delInstructor(ids) {
     loadInstructors()
 }
 
-function showMoreInfo(id) {
+function showMoreInfo(id: number) {
     let instructor = instructorData.find(s => s.id === id)
     extendablePopUpStore.showComponent(InstructorMoreInfo, { instructor: instructor, uploadImageFunc: uploadInstructorImage })
 }

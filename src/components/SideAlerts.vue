@@ -4,7 +4,7 @@ import { useAlertsStore } from "@/stores/alerts";
 
 const alertStore = useAlertsStore()
 
-function removeNotification(id) {
+function removeNotification(id: number) {
   alertStore.removeAlert(id)
 }
 </script>

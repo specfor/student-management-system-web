@@ -1,212 +1,218 @@
-<!-- eslint-disable no-constant-condition -->
+eslint-disable no-constant-condition
 <script setup lang="ts">
-import { getCourses } from '@/apiConnections/courses';
-import { enrollCourse, getEnrollmentsOfCourse, updateEnrollment } from '@/apiConnections/enrollments';
-import { getStudents } from '@/apiConnections/students';
-import TableComponent from '@/components/TableComponent.vue';
-import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
-import { useAlertsStore } from '@/stores/alerts';
-import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
-import { PencilSquareIcon } from '@heroicons/vue/24/solid';
-import { ref, watch } from 'vue';
-import PaginateComponent from '@/components/PaginateComponent.vue';
-import SelectionBox from '@/components/primary/SelectionBox.vue';
+// import { getCourses } from '@/apiConnections/courses';
+// import { enrollCourse, getEnrollmentsOfCourse, updateEnrollment } from '@/apiConnections/enrollments';
+// import { getStudents } from '@/apiConnections/students';
+// import TableComponent from '@/components/TableComponent.vue';
+// import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
+// import { useAlertsStore } from '@/stores/alerts';
+// import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
+// import { PencilSquareIcon } from '@heroicons/vue/24/solid';
+// import { ref, watch } from 'vue';
+// import PaginateComponent from '@/components/PaginateComponent.vue';
+// import SelectionBox from '@/components/primary/SelectionBox.vue';
 
 
-const dataEntryForm = useDataEntryFormsStore()
-const alertStore = useAlertsStore()
+// const dataEntryForm = useDataEntryFormsStore()
+// const alertStore = useAlertsStore()
 
-const selectedCourseForTable = ref(0)
-const selectedCourseGroup = ref('')
-const selectedCourseData = ref([])
-let courseGroupOptionFields = ref([])
+// const selectedCourseForTable = ref(0)
+// const selectedCourseGroup = ref('')
+// const selectedCourseData = ref([])
+// let courseGroupOptionFields: { text: string, value: any }[] = ref([])
 
-let courses = []
+// let courses: Course[] = []
 
-const enrollmentsDataForTable = ref([])
-let enrollmentsData = []
-const tableActions = [
-    { type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
-]
+// const enrollmentsDataForTable = ref([])
+// let enrollmentsData: Enrollment[] = []
+// const tableActions = [
+//     { type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
+// ]
 
-let courseIdToFetchEnrollments = null;
-
-
-const limitLoadEnrollments = 30
-const countTotEnrollments = ref(0)
-
-async function loadEnrollments(startIndex = 0) {
-    if (courseIdToFetchEnrollments === null)
-        return
-
-    let resp = await getEnrollmentsOfCourse(courseIdToFetchEnrollments, startIndex, limitLoadEnrollments)
-    if (resp.status === 'error') {
-        alertStore.insertAlert('An error occured.', resp.message, 'error')
-        return
-    }
-
-    enrollmentsData = resp.data.enrollments
-    countTotEnrollments.value = resp.data.tot_count
-
-    enrollmentsDataForTable.value = []
-    resp.data.enrollments.forEach(enrollment => {
-        let priceOffer = 'NOT GIVEN'
-        if (enrollment.price_adjustments !== null) {
-            if (enrollment.price_adjustments.type === 'fixed')
-                priceOffer = enrollment.price_adjustments.amount + ' fixed reduction'
-            else
-                priceOffer = enrollment.price_adjustments.percentage + '% reduction'
-        }
-        enrollmentsDataForTable.value.push([enrollment.id, enrollment.student.name, enrollment.suspended, priceOffer])
-    });
-}
+// let courseIdToFetchEnrollments = null;
 
 
-watch(selectedCourseGroup, async (gName) => {
-    selectedCourseData.value = []
-    coursesOptionFields.value = []
-    let groups = courses.filter(c => c.name == gName)
-    if (groups.length === 1) {
-        selectedCourseForTable.value = groups[0].id
-    } else {
-        selectedCourseForTable.value = 0
-        groups.forEach(group => {
-            coursesOptionFields.value.push({ value: group.id, text: group.group_name ? group.group_name : 'No Name' })
-        })
-    }
-})
-watch(selectedCourseForTable, async (courseId) => {
-    if (courseId === 0) return
-    courseIdToFetchEnrollments = courseId
-    loadEnrollments()
-    selectedCourseData.value = courses.find(c => c.id == courseId)
-})
+// const limitLoadEnrollments = 30
+// const countTotEnrollments = ref(0)
 
-let coursesOptionFields = ref([])
-let studentOptionFields = []
+// async function loadEnrollments(startIndex = 0) {
+//     if (courseIdToFetchEnrollments === null)
+//         return
 
-async function init() {
-    let resp = await getCourses()
-    if (resp.status === 'error') {
-        return
-    }
-    Object.entries(resp.data.courses).forEach(item => {
-        courseGroupOptionFields.value.push({ value: item[0], text: item[0] })
-        item[1].forEach(course => {
-            courses.push(course)
-        })
-    })
+//     let resp = await getEnrollmentsOfCourse(courseIdToFetchEnrollments, startIndex, limitLoadEnrollments)
+//     if (resp.status === 'error') {
+//         alertStore.insertAlert('An error occured.', resp.message, 'error')
+//         return
+//     }
 
-    resp = await getStudents()
-    if (resp.status === 'error')
-        return
+//     enrollmentsData = resp.data.enrollments
+//     countTotEnrollments.value = resp.data.tot_count
 
-    let students = resp.data.students
-    students.forEach(student => {
-        studentOptionFields.push({ text: student.name, value: student.id })
-    })
-}
+//     enrollmentsDataForTable.value = []
+//     resp.data.enrollments.forEach(enrollment => {
+//         let priceOffer = 'NOT GIVEN'
+//         if (enrollment.price_adjustments !== null) {
+//             if (enrollment.price_adjustments.type === 'fixed')
+//                 priceOffer = enrollment.price_adjustments.amount + ' fixed reduction'
+//             else
+//                 priceOffer = enrollment.price_adjustments.percentage + '% reduction'
+//         }
+//         enrollmentsDataForTable.value.push([enrollment.id, enrollment.student.name, enrollment.suspended, priceOffer])
+//     });
+// }
 
-init()
 
-async function addNewEnrollment() {
-    let courseOptions = []
-    let selectedCourseName = courses.find(c => c.id == selectedCourseForTable.value).name
-    let coursesWithSameName = courses.filter(c => c.name === selectedCourseName)
-    coursesWithSameName.forEach(course => {
-        courseOptions.push({ text: selectedCourseName + ' - ' + (course.group_name ? course.group_name : 'No Name'), value: course.id })
-    })
-    dataEntryForm.newDataEntryForm('Enroll to Course', 'Enroll', [
-        { name: 'course_id', type: 'select', text: 'Course', options: courseOptions, value: courseIdToFetchEnrollments, required: true },
-        { name: 'student_id', type: 'select', text: 'Student', options: studentOptionFields, required: true },
-        { type: 'heading', text: 'Any price concession? (optional)' },
-        {
-            name: 'discount_type', type: 'select', text: 'Concession Type', options: [
-                { text: 'Fixed', value: 'fixed' },
-                { text: 'Percentage', value: 'percentage' },
-            ]
-        },
-        { name: 'amount', type: 'number', text: 'Amount / Percentage' },
-        { name: 'reason', type: 'text', text: 'Reason' },
-    ])
+// watch(selectedCourseGroup, async (gName) => {
+//     selectedCourseData.value = []
+//     coursesOptionFields.value = []
+//     let groups = courses.filter(c => c.name == gName)
+//     if (groups.length === 1) {
+//         selectedCourseForTable.value = groups[0].id
+//     } else {
+//         selectedCourseForTable.value = 0
+//         groups.forEach(group => {
+//             coursesOptionFields.value.push({ value: group.id, text: group.group_name ? group.group_name : 'No Name' })
+//         })
+//     }
+// })
+// watch(selectedCourseForTable, async (courseId) => {
+//     if (courseId === 0) return
+//     courseIdToFetchEnrollments = courseId
+//     loadEnrollments()
+//     selectedCourseData.value = courses.find(c => c.id == courseId)
+// })
 
-    while (true) {
-        let results = await dataEntryForm.waitForSubmittedData()
-        if (!results.submitted)
-            return
+// let coursesOptionFields = ref([])
+// let studentOptionFields = []
 
-        let resp = await enrollCourse(results.data['course_id'], results.data['student_id'], results.data['discount_type'], results.data['amount'], results.data['reason'])
-        if (resp.status === 'error') {
-            if (resp.data.type === 'user_error')
-                Object.entries(resp.data.messages).forEach(msg => {
-                    if (typeof msg[1] === 'object')
-                        msg[1] = msg[1].join(', ')
-                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
-                })
-            else
-                alertStore.insertAlert('An error occured.', resp.message, 'error')
-            continue
-        } else {
-            dataEntryForm.finishSubmission()
-            alertStore.insertAlert('Action completed.', resp.message)
-            loadEnrollments()
-            break
-        }
-    }
-}
+// async function init() {
+//     let resp = await getCourses()
+//     if (resp.status === 'error') {
+//         return
+//     }
+//     Object.entries(resp.data.courses).forEach(item => {
+//         courseGroupOptionFields.value.push({ value: item[0], text: item[0] })
+//         item[1].forEach(course => {
+//             courses.push(course)
+//         })
+//     })
 
-async function editEnrollment(id) {
-    let enrollment = enrollmentsData.find(g => g.id === id)
+//     resp = await getStudents()
+//     if (resp.status === 'error')
+//         return
 
-    dataEntryForm.newDataEntryForm('Update Enrollment', 'Update', [
-        { name: 'id', type: 'text', text: 'Enrollment ID', disabled: true, value: enrollment.id },
-        {
-            name: 'suspend', type: 'select', text: 'Suspend Student', value: enrollment.suspended, options: [
-                { text: 'Yes', value: true },
-                { text: 'No', value: false }
-            ],
-        },
-        { type: 'heading', text: 'Any price concession? (optional)' },
-        {
-            name: 'discount_type', type: 'select', text: 'Concession Type', value: enrollment.price_adjustments ? enrollment.price_adjustments.type : '', options: [
-                { text: 'Fixed', value: 'fixed' },
-                { text: 'Percentage', value: 'percentage' },
-            ]
-        },
-        {
-            name: 'amount', type: 'number', text: 'Amount / Percentage',
-            value: enrollment.price_adjustments ? (enrollment.price_adjustments.type === 'fixed' ? enrollment.price_adjustments.amount : enrollment.price_adjustments.percentage) : ''
-        },
-        { name: 'reason', type: 'text', text: 'Reason', value: enrollment.price_adjustments ? enrollment.price_adjustments.reason : '' },])
+//     let students = resp.data.students
+//     students.forEach(student => {
+//         studentOptionFields.push({ text: student.name, value: student.id })
+//     })
+// }
 
-    while (true) {
-        let results = await dataEntryForm.waitForSubmittedData()
-        if (!results.submitted)
-            return
+// init()
 
-        let resp = await updateEnrollment(id, results.data['suspend'] === 'true', results.data['discount_type'], results.data['amount'], results.data['reason'])
-        if (resp.status === 'error') {
-            if (resp.data.type === 'user_error')
-                Object.entries(resp.data.messages).forEach(msg => {
-                    if (typeof msg[1] === 'object')
-                        msg[1] = msg[1].join(', ')
-                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
-                })
-            else
-                alertStore.insertAlert('An error occured.', resp.message, 'error')
-            continue
-        } else {
-            dataEntryForm.finishSubmission()
-            alertStore.insertAlert('Action completed.', resp.message)
-            loadEnrollments()
-            break
-        }
-    }
-}
+// async function addNewEnrollment() {
+//     let courseOptions = []
+//     let selectedCourseName = courses.find(c => c.id == selectedCourseForTable.value).name
+//     let coursesWithSameName = courses.filter(c => c.name === selectedCourseName)
+//     coursesWithSameName.forEach(course => {
+//         courseOptions.push({ text: selectedCourseName + ' - ' + (course.group_name ? course.group_name : 'No Name'), value: course.id })
+//     })
+//     dataEntryForm.newDataEntryForm('Enroll to Course', 'Enroll', [
+//         { name: 'course_id', type: 'select', text: 'Course', options: courseOptions, value: courseIdToFetchEnrollments, required: true },
+//         { name: 'student_id', type: 'select', text: 'Student', options: studentOptionFields, required: true },
+//         { type: 'heading', text: 'Any price concession? (optional)' },
+//         {
+//             name: 'discount_type', type: 'select', text: 'Concession Type', options: [
+//                 { text: 'Fixed', value: 'fixed' },
+//                 { text: 'Percentage', value: 'percentage' },
+//             ]
+//         },
+//         { name: 'amount', type: 'number', text: 'Amount / Percentage' },
+//         { name: 'reason', type: 'text', text: 'Reason' },
+//     ])
 
-async function delEnrollment() {
-    alertStore.insertAlert('Can not delete.', 'Enrollments can not be deleted.', 'error')
-}
+//     while (true) {
+//         let results = await dataEntryForm.waitForSubmittedData()
+//         if (!results.submitted)
+//             return
+
+//         let resp = await enrollCourse(results.data['course_id'], results.data['student_id'], results.data['discount_type'], results.data['amount'], results.data['reason'])
+//         if (resp.status === 'error') {
+//             if (resp.data.type === 'user_error')
+//                 Object.entries(resp.data.messages).forEach(msg => {
+//                     let err = ""
+//                     if (Array.isArray(msg[1]) && !msg[1] === null)
+//                         err = msg[1].join(', ')
+//                     else
+//                         err = msg[1] as string
+//                     dataEntryForm.insertErrorMessage(msg[0], err)
+//                 })
+//             else
+//                 alertStore.insertAlert('An error occured.', resp.message, 'error')
+//             continue
+//         } else {
+//             dataEntryForm.finishSubmission()
+//             alertStore.insertAlert('Action completed.', resp.message)
+//             loadEnrollments()
+//             break
+//         }
+//     }
+// }
+
+// async function editEnrollment(id) {
+//     let enrollment = enrollmentsData.find(g => g.id === id)
+
+//     dataEntryForm.newDataEntryForm('Update Enrollment', 'Update', [
+//         { name: 'id', type: 'text', text: 'Enrollment ID', disabled: true, value: enrollment.id },
+//         {
+//             name: 'suspend', type: 'select', text: 'Suspend Student', value: enrollment.suspended, options: [
+//                 { text: 'Yes', value: true },
+//                 { text: 'No', value: false }
+//             ],
+//         },
+//         { type: 'heading', text: 'Any price concession? (optional)' },
+//         {
+//             name: 'discount_type', type: 'select', text: 'Concession Type', value: enrollment.price_adjustments ? enrollment.price_adjustments.type : '', options: [
+//                 { text: 'Fixed', value: 'fixed' },
+//                 { text: 'Percentage', value: 'percentage' },
+//             ]
+//         },
+//         {
+//             name: 'amount', type: 'number', text: 'Amount / Percentage',
+//             value: enrollment.price_adjustments ? (enrollment.price_adjustments.type === 'fixed' ? enrollment.price_adjustments.amount : enrollment.price_adjustments.percentage) : ''
+//         },
+//         { name: 'reason', type: 'text', text: 'Reason', value: enrollment.price_adjustments ? enrollment.price_adjustments.reason : '' },])
+
+//     while (true) {
+//         let results = await dataEntryForm.waitForSubmittedData()
+//         if (!results.submitted)
+//             return
+
+//         let resp = await updateEnrollment(id, results.data['suspend'] === 'true', results.data['discount_type'], results.data['amount'], results.data['reason'])
+//         if (resp.status === 'error') {
+//             if (resp.data.type === 'user_error')
+//                 Object.entries(resp.data.messages).forEach(msg => {
+//                     let err = ""
+//                     if (Array.isArray(msg[1]) && !msg[1] === null)
+//                         err = msg[1].join(', ')
+//                     else
+//                         err = msg[1] as string
+//                     dataEntryForm.insertErrorMessage(msg[0], err)
+//                 })
+//             else
+//                 alertStore.insertAlert('An error occured.', resp.message, 'error')
+//             continue
+//         } else {
+//             dataEntryForm.finishSubmission()
+//             alertStore.insertAlert('Action completed.', resp.message)
+//             loadEnrollments()
+//             break
+//         }
+//     }
+// }
+
+// async function delEnrollment() {
+//     alertStore.insertAlert('Can not delete.', 'Enrollments can not be deleted.', 'error')
+// }
 </script>
 
 <template>
@@ -215,7 +221,7 @@ async function delEnrollment() {
             <h4 class="font-semibold text-3xl">Course Attendance</h4>
         </div>
 
-        <tabs nav-class="flex border-b-2 pb-[6px] justify-center" nav-item-link-class="border px-10 py-2 font-semibold"
+        <!-- <tabs nav-class="flex border-b-2 pb-[6px] justify-center" nav-item-link-class="border px-10 py-2 font-semibold"
             nav-item-link-active-class="bg-slate-200" panels-wrapper-class="pt-10">
             <tab name="by Student">
                 <div class="flex justify-between items-center">
@@ -321,7 +327,7 @@ async function delEnrollment() {
                         @load-page-emit="loadEnrollments" />
                 </div>
             </tab>
-        </tabs>
+        </tabs> -->
 
     </div>
 </template>

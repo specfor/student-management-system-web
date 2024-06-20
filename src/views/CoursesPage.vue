@@ -3,13 +3,13 @@
 import { createCourse, deleteCourse, getCourses, updateCourse } from '@/apiConnections/courses';
 import { getGrades } from '@/apiConnections/grades';
 import { getInstructors } from '@/apiConnections/instructors';
-import TableComponent from '@/components/TableComponent.vue';
+import TableComponent, { type TableActionType } from '@/components/TableComponent.vue';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
-import { ref } from 'vue';
+import { ref, type Ref } from 'vue';
 import PaginateComponent from '@/components/PaginateComponent.vue';
 
 
@@ -17,10 +17,10 @@ const confirmationForm = useConfirmationFormsStore()
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
 
-const coursesDataForTable = ref([])
-let coursesData = []
-const tableActions = [
-    { type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
+const coursesDataForTable: Ref<any[]> = ref([])
+let coursesData: Course[] = []
+const tableActions: TableActionType[] = [
+    { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
 
 
@@ -38,25 +38,26 @@ async function loadCourses(startIndex = 0) {
 
     coursesDataForTable.value = []
     coursesData = []
-    Object.entries(resp.data.courses).forEach(item => {
+    Object.entries(resp.data.courses as Course[][]).forEach((item) => {
         coursesDataForTable.value.push([{ value: 'Course - ' + item[0], type: 'group' }])
-        item[1].forEach(course => {
-            coursesDataForTable.value.push([course.id, course.group_name, course.grade ? course.grade.name : 'None', course.schedule[0].day, course.schedule[0].time, course.fee.amount, course.fee.type, course.instructor.name])
+        item[1].forEach((course: Course) => {
+            coursesDataForTable.value.push([course.id, course.group_name, course.grade ? course.grade.name : 'None', course.schedule[0].day,
+            course.schedule[0].time, course.fee.amount, course.fee.type, course.instructor.name])
             coursesData.push(course)
         })
     })
 }
 loadCourses()
 
-let instructorOptionFields = []
-let gradeOptionFields = []
+let instructorOptionFields: { text: string, value: number }[] = []
+let gradeOptionFields: { text: string, value: number }[] = []
 
 async function init() {
     let resp = await getInstructors()
     if (resp.status === 'error') {
         return
     }
-    let instructors = resp.data.instructors
+    let instructors: Instructor[] = resp.data.instructors
 
     instructors.forEach(instructor => {
         instructorOptionFields.push({ text: instructor.name, value: instructor.id })
@@ -65,7 +66,7 @@ async function init() {
     // get grade data for selection boxes
     resp = await getGrades()
     if (resp.status === 'success') {
-        resp.data.grades.forEach(grade => {
+        resp.data.grades.forEach((grade: Grade) => {
             gradeOptionFields.push({ value: grade.id, text: grade.name })
         });
     }
@@ -110,13 +111,18 @@ async function addNewCourse() {
         if (!results.submitted)
             return
 
-        let resp = await createCourse(...Object.values(results.data))
+        let resp = await createCourse(results.data.name as string, results.data.group_name as string, results.data.instructor_id as number,
+            results.data.day as CourseSchedule['day'], results.data.s_time as string, results.data.e_time as string, results.data.venue as string,
+            results.data.fee_type as CourseFee['type'], results.data.amount as number, results.data.grade_id as number)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
-                    if (typeof msg[1] === 'object')
-                        msg[1] = msg[1].join(', ')
-                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                    let err = ""
+                    if (Array.isArray(msg[1]) && !msg[1] === null)
+                        err = msg[1].join(', ')
+                    else
+                        err = msg[1] as string
+                    dataEntryForm.insertErrorMessage(msg[0], err)
                 })
             else
                 alertStore.insertAlert('An error occured.', resp.message, 'error')
@@ -130,8 +136,8 @@ async function addNewCourse() {
     }
 }
 
-async function editCourse(id) {
-    let course = coursesData.find(g => g.id === id)
+async function editCourse(id: number) {
+    let course = coursesData.find(g => g.id === id)!
 
     dataEntryForm.newDataEntryForm('Update Course', 'Update', [
         { name: 'id', type: 'text', text: 'Course ID', disabled: true, value: course.id },
@@ -171,13 +177,18 @@ async function editCourse(id) {
         if (!results.submitted)
             return
 
-        let resp = await updateCourse(...Object.values(results.data))
+        let resp = await updateCourse(id, results.data.name as string, results.data.group_name as string, results.data.instructor_id as number,
+            results.data.day as CourseSchedule['day'], results.data.s_time as string, results.data.e_time as string, results.data.venue as string,
+            results.data.fee_type as CourseFee['type'], results.data.amount as number, results.data.grade_id as number)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
-                    if (typeof msg[1] === 'object')
-                        msg[1] = msg[1].join(', ')
-                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                    let err = ""
+                    if (Array.isArray(msg[1]) && !msg[1] === null)
+                        err = msg[1].join(', ')
+                    else
+                        err = msg[1] as string
+                    dataEntryForm.insertErrorMessage(msg[0], err)
                 })
             else
                 alertStore.insertAlert('An error occured.', resp.message, 'error')
@@ -191,7 +202,7 @@ async function editCourse(id) {
     }
 }
 
-async function delCourse(ids) {
+async function delCourse(ids: number[]) {
     let confirmed = await confirmationForm.newConfirmationForm("Confirm Deletion", "Are you sure you want to delete these courses with IDs: " + ids.join(', ') + "?")
     if (!confirmed)
         return

@@ -26,7 +26,7 @@ export const useExtendablePopUpStore = defineStore(
 
     function showComponent(
       component: Component | FunctionalComponent,
-      args = []
+      args: any = []
     ) {
       argsPassed.value = args;
       htmlBody.value = "";

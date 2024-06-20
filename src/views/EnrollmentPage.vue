@@ -3,12 +3,12 @@
 import { getCourses } from '@/apiConnections/courses';
 import { enrollCourse, getEnrollmentsOfCourse, getStudentEnrollments, updateEnrollment } from '@/apiConnections/enrollments';
 import { downloadStudentImage, getStudents } from '@/apiConnections/students';
-import TableComponent from '@/components/TableComponent.vue';
+import TableComponent, { type TableActionType } from '@/components/TableComponent.vue';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
-import { ref, watch } from 'vue';
+import { ref, watch, type Ref } from 'vue';
 import PaginateComponent from '@/components/PaginateComponent.vue';
 import SelectionBox from '@/components/primary/SelectionBox.vue';
 
@@ -16,29 +16,29 @@ import SelectionBox from '@/components/primary/SelectionBox.vue';
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
 
-const tabSelectMode = ref(null)
+const tabSelectMode: Ref<any> = ref(null)
 
 const selectedCourseForTable = ref(0)
 const selectedCourseGroup = ref('')
-const selectedCourseData = ref([])
-let courseGroupOptionFields = ref([])
+const selectedCourseData: Ref<Course | null> = ref(null)
+let courseGroupOptionFields: Ref<{ text: string, value: any }[]> = ref([])
 const selectedStudent = ref(0)
-const selectedStudentData = ref({})
+const selectedStudentData: Ref<Student | null> = ref(null)
 const selectedStudentImageUrl = ref('/default-profile.png')
 
-let courses = []
-let students = []
+let courses: Course[] = []
+let students: Student[] = []
 
-const enrollmentsDataForByCourseTab = ref([])
-const enrollmentsDataForByStudentTab = ref([])
-let enrollmentsDataTabCourse = []
-let enrollmentsDataTabStudent = []
+const enrollmentsDataForByCourseTab: Ref<any[]> = ref([])
+const enrollmentsDataForByStudentTab: Ref<any[]> = ref([])
+let enrollmentsDataTabCourse: any[] = []
+let enrollmentsDataTabStudent: any[] = []
 
-const tableActions = [
-    { type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
+const tableActions: TableActionType[] = [
+    { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
 
-let courseIdToFetchEnrollments = null;
+let courseIdToFetchEnrollments: number | null = null;
 
 
 const limitLoadEnrollments = 30
@@ -48,7 +48,7 @@ const countTotEnrollmentsTabStudent = ref(0)
 async function loadEnrollments(startIndex = 0) {
     let resp = null
 
-    if (tabSelectMode.value.activeTabHash == '#by-student') {
+    if (tabSelectMode.value!.activeTabHash == '#by-student') {
         resp = await getStudentEnrollments(selectedStudent.value, startIndex, limitLoadEnrollments)
         if (resp.status === 'error') {
             alertStore.insertAlert('An error occured.', resp.message, 'error')
@@ -73,7 +73,7 @@ async function loadEnrollments(startIndex = 0) {
     }
 
 
-    resp.data.enrollments.forEach(enrollment => {
+    resp.data.enrollments.forEach((enrollment: Enrollment) => {
         let priceOffer = 'NOT GIVEN'
         if (enrollment.price_adjustments !== null) {
             if (enrollment.price_adjustments.type === 'fixed')
@@ -93,7 +93,7 @@ async function loadEnrollments(startIndex = 0) {
 }
 
 watch(selectedStudent, async (studentID) => {
-    selectedStudentData.value = students.find(s => s.id == studentID)
+    selectedStudentData.value = students.find(s => s.id == studentID)!
     loadEnrollments()
     if (selectedStudentData.value.image) {
         let resp = await downloadStudentImage(studentID)
@@ -105,7 +105,7 @@ watch(selectedStudent, async (studentID) => {
 })
 
 watch(selectedCourseGroup, async (gName) => {
-    selectedCourseData.value = []
+    selectedCourseData.value = null
     coursesOptionFields.value = []
     let groups = courses.filter(c => c.name == gName)
     if (groups.length === 1) {
@@ -121,18 +121,18 @@ watch(selectedCourseForTable, async (courseId) => {
     if (courseId === 0) return
     courseIdToFetchEnrollments = courseId
     loadEnrollments()
-    selectedCourseData.value = courses.find(c => c.id == courseId)
+    selectedCourseData.value = courses.find(c => c.id == courseId)!
 })
 
-let coursesOptionFields = ref([])
-let studentOptionFields = ref([])
+let coursesOptionFields: Ref<{ text: string, value: any }[]> = ref([])
+let studentOptionFields: Ref<{ text: string, value: any }[]> = ref([])
 
 async function init() {
     let resp = await getCourses()
     if (resp.status === 'error') {
         return
     }
-    Object.entries(resp.data.courses).forEach(item => {
+    Object.entries(resp.data.courses as Course[][]).forEach(item => {
         courseGroupOptionFields.value.push({ value: item[0], text: item[0] })
         item[1].forEach(course => {
             courses.push(course)
@@ -152,22 +152,22 @@ async function init() {
 init()
 
 async function addNewEnrollment() {
-    let courseOptions = []
-    let studentValue = ""
+    let courseOptions: { text: string, value: any }[] = []
+    let studentValue = -1
     if (tabSelectMode.value.activeTabHash == '#by-student') {
         studentValue = selectedStudent.value
         courses.forEach(course => {
             courseOptions.push({ text: course.id + ' - ' + course.name + (course.group_name ? ' - ' + course.group_name : ''), value: course.id })
         })
     } else {
-        let selectedCourseName = courses.find(c => c.id == selectedCourseForTable.value).name
+        let selectedCourseName = courses.find(c => c.id == selectedCourseForTable.value)!.name
         let coursesWithSameName = courses.filter(c => c.name === selectedCourseName)
         coursesWithSameName.forEach(course => {
             courseOptions.push({ text: course.id + ' - ' + selectedCourseName + (course.group_name ? ' - ' + course.group_name : ''), value: course.id })
         })
     }
     dataEntryForm.newDataEntryForm('Enroll to Course', 'Enroll', [
-        { name: 'course_id', type: 'select', text: 'Course', options: courseOptions, value: courseIdToFetchEnrollments, required: true },
+        { name: 'course_id', type: 'select', text: 'Course', options: courseOptions, value: courseIdToFetchEnrollments!, required: true },
         { name: 'student_id', type: 'select', text: 'Student', options: studentOptionFields.value, required: true, value: studentValue },
         { type: 'heading', text: 'Any price concession? (optional)' },
         {
@@ -185,13 +185,17 @@ async function addNewEnrollment() {
         if (!results.submitted)
             return
 
-        let resp = await enrollCourse(results.data['course_id'], results.data['student_id'], results.data['discount_type'], results.data['amount'], results.data['reason'])
+        let resp = await enrollCourse(results.data['course_id'] as number, results.data['student_id'] as number,
+            results.data['discount_type'] as EnrollmentPriceAdjustment['type'], results.data['amount'] as number, results.data['reason'] as string)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
-                    if (typeof msg[1] === 'object')
-                        msg[1] = msg[1].join(', ')
-                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                    let err = ""
+                    if (Array.isArray(msg[1]) && !msg[1] === null)
+                        err = msg[1].join(', ')
+                    else
+                        err = msg[1] as string
+                    dataEntryForm.insertErrorMessage(msg[0], err)
                 })
             else
                 alertStore.insertAlert('An error occured.', resp.message, 'error')
@@ -205,7 +209,7 @@ async function addNewEnrollment() {
     }
 }
 
-async function editEnrollment(id) {
+async function editEnrollment(id: number) {
     let enrollment = null
 
     if (tabSelectMode.value.activeTabHash == '#by-student')
@@ -239,13 +243,17 @@ async function editEnrollment(id) {
         if (!results.submitted)
             return
 
-        let resp = await updateEnrollment(id, results.data['suspend'] === 'true', results.data['discount_type'], results.data['amount'], results.data['reason'])
+        let resp = await updateEnrollment(id, results.data['suspend'] as boolean, results.data['discount_type'] as EnrollmentPriceAdjustment['type'],
+            results.data['amount'] as number, results.data['reason'] as string)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
-                    if (typeof msg[1] === 'object')
-                        msg[1] = msg[1].join(', ')
-                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                    let err = ""
+                    if (Array.isArray(msg[1]) && !msg[1] === null)
+                        err = msg[1].join(', ')
+                    else
+                        err = msg[1] as string
+                    dataEntryForm.insertErrorMessage(msg[0], err)
                 })
             else
                 alertStore.insertAlert('An error occured.', resp.message, 'error')
@@ -290,15 +298,16 @@ async function delEnrollment() {
                         <h1 class="font-semibold text-lg">Student Info</h1>
                         <div class="grid grid-cols-2 ml-5">
                             <h4>Student Id</h4>
-                            <h4>{{ selectedStudentData.custom_id }}</h4>
+                            <h4>{{ selectedStudentData ? selectedStudentData.custom_id : '' }}</h4>
                         </div>
                         <div class="grid grid-cols-2 ml-5">
                             <h4>Name</h4>
-                            <h4>{{ selectedStudentData.name }}</h4>
+                            <h4>{{ selectedStudentData ? selectedStudentData.name : '' }}</h4>
                         </div>
                         <div class="grid grid-cols-2 ml-5">
                             <h4>Grade</h4>
-                            <h4>{{ selectedStudentData.grade ? selectedStudentData.grade.name : '' }}</h4>
+                            <h4>{{ selectedStudentData ? (selectedStudentData.grade ? selectedStudentData.grade.name :
+                                '') : '' }}</h4>
                         </div>
                     </div>
                 </div>
@@ -333,11 +342,11 @@ async function delEnrollment() {
                         <h1 class="font-semibold text-lg">Basic Info</h1>
                         <div class="grid grid-cols-2 ml-5">
                             <h4>Instructor</h4>
-                            <h4>{{ selectedCourseData.id ? selectedCourseData.instructor.name : '' }}</h4>
+                            <h4>{{ selectedCourseData ? selectedCourseData.instructor.name : '' }}</h4>
                         </div>
                         <div class="grid grid-cols-2 ml-5">
                             <h4>Enrollment Open</h4>
-                            <h4>{{ selectedCourseData.id ? (selectedCourseData.enrollment_open ? 'Open' : 'Closed') : ''
+                            <h4>{{ selectedCourseData ? (selectedCourseData.enrollment_open ? 'Open' : 'Closed') : ''
                                 }}
                             </h4>
                         </div>
@@ -346,26 +355,26 @@ async function delEnrollment() {
                         <h1 class="font-semibold text-lg">Schedule</h1>
                         <div class="grid grid-cols-2 ml-5">
                             <h4>Day</h4>
-                            <h4>{{ selectedCourseData.id ? selectedCourseData.schedule[0].day : '' }}</h4>
+                            <h4>{{ selectedCourseData ? selectedCourseData.schedule[0].day : '' }}</h4>
                         </div>
                         <div class="grid grid-cols-2 ml-5">
                             <h4>Time</h4>
-                            <h4>{{ selectedCourseData.id ? selectedCourseData.schedule[0].time : '' }}</h4>
+                            <h4>{{ selectedCourseData ? selectedCourseData.schedule[0].time : '' }}</h4>
                         </div>
                         <div class="grid grid-cols-2 ml-5">
                             <h4>Venue / Hall</h4>
-                            <h4>{{ selectedCourseData.id ? selectedCourseData.schedule[0].venue : '' }}</h4>
+                            <h4>{{ selectedCourseData ? selectedCourseData.schedule[0].venue : '' }}</h4>
                         </div>
                     </div>
                     <div>
                         <h1 class="font-semibold text-lg">Course Fee</h1>
                         <div class="grid grid-cols-2 ml-5">
                             <h4>Fee Type</h4>
-                            <h4>{{ selectedCourseData.id ? selectedCourseData.fee.type : '' }}</h4>
+                            <h4>{{ selectedCourseData ? selectedCourseData.fee.type : '' }}</h4>
                         </div>
                         <div class="grid grid-cols-2 ml-5">
                             <h4>Fee</h4>
-                            <h4>{{ selectedCourseData.id ? selectedCourseData.fee.amount : '' }}</h4>
+                            <h4>{{ selectedCourseData ? selectedCourseData.fee.amount : '' }}</h4>
                         </div>
                     </div>
                 </div>

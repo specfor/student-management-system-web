@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, type Ref } from 'vue';
 const emit = defineEmits(['loadPageEmit'])
 
 let props = defineProps(['totalCount', 'pageSize'])
 
-let pageNums = ref([])
+let pageNums: Ref<number[]> = ref([])
 let currentPage = ref(1)
 
 watch(props, () => {
@@ -16,7 +16,7 @@ watch(props, () => {
   }
 })
 
-function loadPage(pageNum) {
+function loadPage(pageNum: number) {
   let sIndex = (pageNum - 1) * props.pageSize;
   emit('loadPageEmit', sIndex)
   currentPage.value = pageNum
@@ -50,8 +50,8 @@ function nextPage() {
         </a>
       </li>
       <li v-for="num in pageNums" :key="num">
-        <a href="#" :aria-current="currentPage === num ? 'page' : ''"
-          class=" flex items-center justify-center px-3 h-8 leading-tight border" @click="loadPage(num)" :class="currentPage == num ?
+        <a href="#" class=" flex items-center justify-center px-3 h-8 leading-tight border" @click="loadPage(num)"
+          :class="currentPage == num ?
             'text-blue-600  border-blue-300 bg-blue-100 hover:bg-blue-200 hover:text-blue-700' :
             'text-gray-500  bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700'">
           {{ num }}</a>

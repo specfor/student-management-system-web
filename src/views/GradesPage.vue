@@ -1,13 +1,13 @@
 <!-- eslint-disable no-constant-condition -->
 <script setup lang="ts">
 import { createGrade, deleteGrade, getGrades, updateGrade } from '@/apiConnections/grades';
-import TableComponent from '@/components/TableComponent.vue';
+import TableComponent, { type TableActionType } from '@/components/TableComponent.vue';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
-import { ref } from 'vue';
+import { ref, type Ref } from 'vue';
 import PaginateComponent from '@/components/PaginateComponent.vue';
 
 
@@ -15,10 +15,10 @@ const confirmationForm = useConfirmationFormsStore()
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
 
-const gradeDataForTable = ref([])
-let gradeData = []
-const tableActions = [
-    { type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
+const gradeDataForTable: Ref<any[]> = ref([])
+let gradeData: Grade[] = []
+const tableActions: TableActionType[] = [
+    { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
 
 
@@ -36,7 +36,7 @@ async function loadGrades(startIndex = 0) {
     countTotGrades.value = resp.data.tot_count
 
     gradeDataForTable.value = []
-    resp.data.grades.forEach(grade => {
+    gradeData.forEach(grade => {
         gradeDataForTable.value.push([grade.id, grade.name])
     });
 }
@@ -52,13 +52,16 @@ async function addNewGrade() {
         if (!results.submitted)
             return
 
-        let resp = await createGrade(results.data.name)
+        let resp = await createGrade(results.data.name as string)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
-                    if (typeof msg[1] === 'object')
-                        msg[1] = msg[1].join(', ')
-                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                    let err = ""
+                    if (Array.isArray(msg[1]) && !msg[1] === null)
+                        err = msg[1].join(', ')
+                    else
+                        err = msg[1] as string
+                    dataEntryForm.insertErrorMessage(msg[0], err)
                 })
             else
                 alertStore.insertAlert('An error occured.', resp.message, 'error')
@@ -72,8 +75,8 @@ async function addNewGrade() {
     }
 }
 
-async function editGrade(id) {
-    let grade = gradeData.find(g => g.id === id)
+async function editGrade(id: number) {
+    let grade = gradeData.find(g => g.id === id)!
 
     dataEntryForm.newDataEntryForm('Update Grade', 'Update', [
         { name: 'name', type: 'text', text: 'Name', required: true, value: grade.name }
@@ -84,13 +87,16 @@ async function editGrade(id) {
         if (!results.submitted)
             return
 
-        let resp = await updateGrade(id, results.data.name)
+        let resp = await updateGrade(id, results.data.name as string)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
-                    if (typeof msg[1] === 'object')
-                        msg[1] = msg[1].join(', ')
-                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                    let err = ""
+                    if (Array.isArray(msg[1]) && !msg[1] === null)
+                        err = msg[1].join(', ')
+                    else
+                        err = msg[1] as string
+                    dataEntryForm.insertErrorMessage(msg[0], err)
                 })
             else
                 alertStore.insertAlert('An error occured.', resp.message, 'error')
@@ -104,7 +110,7 @@ async function editGrade(id) {
     }
 }
 
-async function delGrade(ids) {
+async function delGrade(ids: number[]) {
     let confirmed = await confirmationForm.newConfirmationForm("Confirm Deletion", "Are you sure you want to delete these grades with IDs: " + ids.join(', ') + "?")
     if (!confirmed)
         return

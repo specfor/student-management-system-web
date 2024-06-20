@@ -7,7 +7,7 @@ import {
   sendJsonPostRequest,
 } from "@/baseFunctions/requests";
 
-export function getStudents(startIndex = 0, limit = null) {
+export function getStudents(startIndex = 0, limit: number | null = null) {
   const params: { [key: string]: any } = { start: startIndex };
   if (limit) params["size"] = limit;
 
@@ -15,7 +15,7 @@ export function getStudents(startIndex = 0, limit = null) {
 }
 
 export function createStudent(
-  custom_id: number,
+  custom_id: string,
   name: string,
   fullname: string,
   grade_id: number,
@@ -44,7 +44,7 @@ export function createStudent(
 
 export function updateStudent(
   id: number,
-  custom_id: number,
+  custom_id: string,
   name: string,
   fullname: string,
   grade_id: number,

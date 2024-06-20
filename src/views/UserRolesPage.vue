@@ -1,8 +1,8 @@
 <!-- eslint-disable no-constant-condition -->
 <script setup lang="ts">
 import { useAlertsStore } from '@/stores/alerts';
-import { ref } from 'vue';
-import TableComponent from '@/components/TableComponent.vue';
+import { ref, type Ref } from 'vue';
+import TableComponent, { type TableActionType } from '@/components/TableComponent.vue';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { useCacheStore } from '@/stores/cache';
@@ -17,10 +17,10 @@ const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
 const cacheStore = useCacheStore()
 
-let roleData = []
-let roleDataForTable = ref([])
-const tableActions = [
-    { type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
+let roleData: UserRole[] = []
+let roleDataForTable: Ref<any> = ref([])
+const tableActions: TableActionType[] = [
+    { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
 
 
@@ -36,18 +36,18 @@ async function loadUserRoles(startIndex = 0) {
         roleData = data.data.roles
         countTotUserRoles.value = data.data.tot_count
 
-        data.data.roles.forEach(role => {
+        roleData.forEach(role => {
             roleDataForTable.value.push([role.id, role.role_name, JSON.stringify(role.permissions)])
         });
     }
 }
 loadUserRoles()
 
-let permissions = []
+let permissions: UserRole['permissions'] | undefined = undefined
 
 async function loadPermissions() {
     if ('all-permissions' in cacheStore.caches) {
-        permissions = cacheStore.caches['all-permissions']
+        permissions = JSON.parse(cacheStore.caches['all-permissions'])
         return
     }
     let data = await getAllPermissions()
@@ -61,12 +61,12 @@ async function loadPermissions() {
 loadPermissions()
 
 async function newUserRole() {
-    let fields = [
+    let fields: any = [
         { name: 'role_name', type: 'text', text: "Role Name", required: true },
         { type: 'heading', text: 'Select Permissions for this Role' },
     ]
-    for (const [role, perms] of Object.entries(permissions)) {
-        let p = []
+    for (const [role, perms] of Object.entries(permissions!)) {
+        let p: { name: string, text: string }[] = []
         perms.forEach(perm => {
             p.push({ name: perm, text: perm.charAt(0).toUpperCase() + perm.slice(1) })
         });
@@ -82,13 +82,16 @@ async function newUserRole() {
 
         let permissionsToAdd = extractSelectedPermsFromAddNewFormData(results.data)
 
-        let resp = await createUserRole(results.data.role_name, permissionsToAdd)
+        let resp = await createUserRole(results.data.role_name as string, permissionsToAdd)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
-                    if (typeof msg[1] === 'object')
-                        msg[1] = msg[1].join(', ')
-                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                    let err = ""
+                    if (Array.isArray(msg[1]) && !msg[1] === null)
+                        err = msg[1].join(', ')
+                    else
+                        err = msg[1] as string
+                    dataEntryForm.insertErrorMessage(msg[0], err)
                 })
             else
                 alertStore.insertAlert('An error occured creating user role.', resp.message, 'error')
@@ -102,7 +105,7 @@ async function newUserRole() {
     }
 }
 
-function createCategName(name) {
+function createCategName(name: string) {
     name = name.replace('_', ' ')
     let parts = name.split(' ')
     let result = ""
@@ -112,7 +115,7 @@ function createCategName(name) {
     return result
 }
 
-async function deleteRoles(ids) {
+async function deleteRoles(ids: number[]) {
     let confirmed = await confirmForm.newConfirmationForm("Confirm Deletion", "Are you sure you want to delete these user roles with IDs: " + ids.join(', ') + "?")
     if (!confirmed)
         return
@@ -128,15 +131,15 @@ async function deleteRoles(ids) {
     loadUserRoles()
 }
 
-async function editRole(id) {
-    let role = roleData.find(r => r['id'] === id)
+async function editRole(id: number) {
+    let role = roleData.find(r => r['id'] === id)!
 
-    let fields = [
+    let fields: any[] = [
         { name: 'role_name', type: 'text', text: "Role Name", required: true, value: role['role_name'] },
         { type: 'heading', text: 'Select Permissions for this Role' },
     ]
-    for (const [categ, perms] of Object.entries(permissions)) {
-        let p = []
+    for (const [categ, perms] of Object.entries(permissions!)) {
+        let p: { name: string, text: string, checked?: boolean }[] = []
         perms.forEach(perm => {
             let permsAlreadySelected = role['permissions'][categ] ?? null
             if (permsAlreadySelected === null) {
@@ -161,13 +164,16 @@ async function editRole(id) {
 
         let permissionsToAdd = extractSelectedPermsFromAddNewFormData(results.data)
 
-        let resp = await updateUserRole(id, results.data.role_name, permissionsToAdd)
+        let resp = await updateUserRole(id, results.data.role_name as string, permissionsToAdd)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
-                    if (typeof msg[1] === 'object')
-                        msg[1] = msg[1].join(', ')
-                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                    let err = ""
+                    if (Array.isArray(msg[1]) && !msg[1] === null)
+                        err = msg[1].join(', ')
+                    else
+                        err = msg[1] as string
+                    dataEntryForm.insertErrorMessage(msg[0], err)
                 })
             else
                 alertStore.insertAlert('An error occured updating user role.', resp.message, 'error')
@@ -181,8 +187,8 @@ async function editRole(id) {
     }
 }
 
-function extractSelectedPermsFromAddNewFormData(data) {
-    let permissionsToAdd = {}
+function extractSelectedPermsFromAddNewFormData(data: any) {
+    let permissionsToAdd: { [key: string]: string[] } = {}
 
     for (const [key, val] of Object.entries(data)) {
         if (val === null || typeof val !== 'object' || Array.isArray(val))
