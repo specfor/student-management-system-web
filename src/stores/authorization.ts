@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { ref, type Ref } from "vue";
 import { defineStore } from "pinia";
 import { sendGetRequest, sendJsonPostRequest } from "@/baseFunctions/requests";
 import { useHeaderStore } from "./headers";
@@ -6,7 +6,7 @@ import { useHeaderStore } from "./headers";
 export const useAuthStore = defineStore("auth", () => {
   const LoggedIn = ref(false);
   const authToken = ref("");
-  const userPermissions = ref({});
+  const userPermissions: Ref<{ [key: string]: string[] }> = ref({});
 
   async function login(email: string, password: string) {
     const data = await sendJsonPostRequest("/login", {

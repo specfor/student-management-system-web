@@ -1,19 +1,19 @@
 <!-- eslint-disable no-constant-condition -->
 <script setup lang="ts">
 import { getPayments, refundPayment } from '@/apiConnections/payments';
-import TableComponent from '@/components/TableComponent.vue';
+import TableComponent, { type TableActionType } from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
-import { ref } from 'vue';
+import { ref, type Ref } from 'vue';
 import PaginateComponent from '@/components/PaginateComponent.vue';
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
 
-const paymentDataForTable = ref([])
-const tableActions = [
-    { type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
+const paymentDataForTable: Ref<any[]> = ref([])
+const tableActions: TableActionType[] = [
+    { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
 
 const limitLoadPayments = 30
@@ -28,16 +28,17 @@ async function loadPayment(startIndex = 0) {
 
     countTotPayments.value = resp.data.tot_count
     paymentDataForTable.value = []
-    resp.data.payments.forEach(payment => {
+    let payments: Payment[] = resp.data.payments
+    payments.forEach(payment => {
         paymentDataForTable.value.push([payment.id, payment.payment_for, payment.amount,
         payment.enrollment.student.name, payment.enrollment.course.name, payment.payment_method, payment.refunded ? 'Yes' : 'No'])
     });
 }
 loadPayment()
 
-async function editPayment(id) {
+async function editPayment(id: number) {
     dataEntryForm.newDataEntryForm('Refund Payment', 'Refund', [
-        { name: 'reason', type: 'text', text: 'Reason', require: true }
+        { name: 'reason', type: 'text', text: 'Reason', required: true }
     ])
 
     while (true) {
@@ -45,13 +46,16 @@ async function editPayment(id) {
         if (!results.submitted)
             return
 
-        let resp = await refundPayment(id, results.data.reason)
+        let resp = await refundPayment(id, results.data.reason as string)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
-                    if (typeof msg[1] === 'object')
-                        msg[1] = msg[1].join(', ')
-                    dataEntryForm.insertErrorMessage(msg[0], msg[1])
+                    let err = ""
+                    if (Array.isArray(msg[1]) && !msg[1] === null)
+                        err = msg[1].join(', ')
+                    else
+                        err = msg[1] as string
+                    dataEntryForm.insertErrorMessage(msg[0], err)
                 })
             else
                 alertStore.insertAlert('An error occured.', resp.message, 'error')

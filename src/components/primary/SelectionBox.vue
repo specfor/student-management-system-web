@@ -1,22 +1,26 @@
 <script setup lang="ts">
+import type { SelectionBoxFields } from '@/types/inputBoxTypes';
 import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline';
-import { ref, watch } from 'vue';
+import { ref, watch, type Ref } from 'vue';
 
-let props = defineProps(['options', 'value'])
-let emit = defineEmits(['input'])
+const props = defineProps<SelectionBoxFields>()
+
+const emit = defineEmits<{
+    input: [any]
+}>()
 
 // Use to select search box element
-const searchBox = ref(null)
+const searchBox: any = ref(null)
 
 let isOpen = ref(false)
-let selected = ref('')
+let selected: Ref<string | boolean | number> = ref('')
 let search = ref('')
-let optionsRendered = ref([])
-let focusSelection = ref('')
+let optionsRendered: Ref<SelectionBoxFields['options']> = ref([{ text: "", value: "" }])
+let focusSelection: Ref<string | boolean | number> = ref('')
 
 optionsRendered.value = props.options
 watch(props, (newVal) => {
-    selected.value = newVal.value
+    selected.value = newVal.value!
     optionsRendered.value = newVal.options
 }, { deep: true })
 
@@ -25,7 +29,7 @@ watch(optionsRendered, (newVal) => {
         focusSelection.value = optionsRendered.value[0]['value']
 })
 
-function setSelected(value) {
+function setSelected(value: string | number | boolean) {
     selected.value = value
     isOpen.value = false
     emit('input', value)
@@ -37,8 +41,8 @@ function searchItem() {
     })
 }
 
-function moveSelection(direction) {
-    let index = optionsRendered.value.indexOf(optionsRendered.value.find(option => option['value'] == focusSelection.value));
+function moveSelection(direction: 'up' | 'down') {
+    let index = optionsRendered.value.indexOf(optionsRendered.value.find(option => option['value'] == focusSelection.value)!);
     if (direction == 'up' && index > 0)
         focusSelection.value = optionsRendered.value[index - 1]['value']
     else if (direction == 'down' && index < optionsRendered.value.length - 1)
@@ -59,7 +63,7 @@ function moveSelection(direction) {
                 class="border w-full min-h-9 border-gray-400 bg-white hover:bg-gray-100 rounded-md py-1 flex justify-between items-center">
                 <h1 class="mx-5 overflow-hidden">{{ props.options.find(o => o['value'] == props.value) ?
                     props.options.find(o => o['value'] ==
-                        props.value)['text'] : '' }}</h1>
+                        props.value)!['text'] : '' }}</h1>
                 <ChevronDownIcon class="w-4 h-4 stroke-2 mr-1" />
             </div>
 
@@ -70,12 +74,12 @@ function moveSelection(direction) {
                             <MagnifyingGlassIcon class="w-5 h-5 stroke-2 stroke-slate-600" aria-hidden="true" />
                         </div>
                         <input type="text" :value="search"
-                            @input="(event) => { search = event.target.value; searchItem() }"
+                            @input="(event: any) => { search = event.target.value; searchItem() }"
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-300 focus:border-blue-300 block w-full ps-10 p-2.5"
                             placeholder="Search" ref="searchBox">
                     </div>
                     <div class="max-h-96 h-auto border overflow-y-auto">
-                        <h3 v-for="(option) in optionsRendered" :key="option['value']" class="py-1 px-5"
+                        <h3 v-for="(option, index) in optionsRendered" :key="index" class="py-1 px-5"
                             :class="{ 'bg-slate-200': option['value'] == focusSelection }"
                             v-on:mouseover="() => { focusSelection = option['value'] }"
                             @click="() => { setSelected(option['value']); close() }">

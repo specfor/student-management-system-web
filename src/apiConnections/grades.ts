@@ -5,7 +5,7 @@ import {
   sendGetRequest,
 } from "@/baseFunctions/requests";
 
-export function getGrades(startIndex = 0, limit = null) {
+export function getGrades(startIndex = 0, limit: number | null = null) {
   const params: { [key: string]: any } = { start: startIndex };
   if (limit) params["size"] = limit;
   return sendGetRequest("/grades", params);

@@ -7,17 +7,18 @@ import { createPayment } from '@/apiConnections/payments';
 import { downloadStudentImage, getStudents } from '@/apiConnections/students';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
-import { ref, watch } from 'vue';
+import { ref, watch, type Ref } from 'vue';
 import SelectionBox from '@/components/primary/SelectionBox.vue';
+import type { InputField, MessageField } from '@/stores/formManagers/dataEntryForm';
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
 
-let coursesOptionFields = ref([])
-let courseGroupOptionFields = ref([])
-let studentOptionFields = ref([])
-let courses = []
-let students = []
+let coursesOptionFields: Ref<{ text: string, value: any }[]> = ref([])
+let courseGroupOptionFields: Ref<{ text: string, value: any }[]> = ref([])
+let studentOptionFields: Ref<{ text: string, value: any }[]> = ref([])
+let courses: Course[] = []
+let students: Student[] = []
 
 async function init() {
     enrollStatusText.value = 'Select a Course & a Student'
@@ -26,9 +27,9 @@ async function init() {
         return
     }
 
-    Object.entries(resp.data.courses).forEach(item => {
-        courseGroupOptionFields.value.push({ value: item[0], text: item[0] })
-        item[1].forEach(course => {
+    Object.entries(resp.data.courses as { [key: string]: Course[] }).forEach((courseGroup: [string, Course[]]) => {
+        courseGroupOptionFields.value.push({ value: courseGroup[0], text: courseGroup[0] })
+        courseGroup[1].forEach((course) => {
             courses.push(course)
         })
     })
@@ -45,22 +46,22 @@ async function init() {
 
 const selectedCourseId = ref(0)
 const selectedCourseGroup = ref('')
-const selectedCourseData = ref([])
+const selectedCourseData: Ref<Course | null> = ref(null)
 
 const selectedStudentId = ref(0)
-const selectedStudentData = ref([])
+const selectedStudentData: Ref<Student | null> = ref(null)
 
-const studentImageUrl = ref(null)
+const studentImageUrl = ref("")
 
 watch(selectedCourseGroup, async (gName) => {
-    feeToPay.value = ''
+    feeToPay.value = -1
     coursesOptionFields.value = []
     let groups = courses.filter(c => c.name == gName)
     if (groups.length === 1) {
         selectedCourseId.value = groups[0].id
     } else {
         selectedCourseId.value = 0
-        selectedCourseData.value = []
+        selectedCourseData.value = null
         groups.forEach(group => {
             coursesOptionFields.value.push({ value: group.id, text: group.group_name ? group.group_name : 'No Name' })
         })
@@ -68,14 +69,14 @@ watch(selectedCourseGroup, async (gName) => {
 })
 watch(selectedCourseId, async (courseId) => {
     if (courseId === 0) return
-    selectedCourseData.value = courses.find(c => c.id == courseId)
+    selectedCourseData.value = courses.find(c => c.id == courseId)!
     checkEnrolled()
 })
 watch(selectedStudentId, async (studentId) => {
     checkEnrolled()
-    selectedStudentData.value = students.find(s => s.id == studentId)
+    selectedStudentData.value = students.find(s => s.id == studentId)!
 
-    studentImageUrl.value = null
+    studentImageUrl.value = ""
     let resp = await downloadStudentImage(studentId)
     if (resp.status === 'error') {
         studentImageUrl.value = '/default-profile.png'
@@ -90,12 +91,13 @@ function checkEnrolled() {
         return
 
     enrollActionsEnabled.value = false
-    enrollmentData.value = { loading: true }
+    enrollmentLoading.value = true
 
     loadStudentEnrollmentOfCourse()
 }
 
-const enrollmentData = ref({})
+const enrollmentData: Ref<{ enrolled: boolean, enrollment: Enrollment | null } | null> = ref(null)
+const enrollmentLoading = ref(false)
 
 async function loadStudentEnrollmentOfCourse() {
     let resp = await getStudentEnrollmentOfCourse(selectedCourseId.value, selectedStudentId.value)
@@ -103,24 +105,26 @@ async function loadStudentEnrollmentOfCourse() {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
         return
     }
+
     enrollmentData.value = resp.data
+    enrollmentLoading.value = false
     calculateFee()
 }
 
 async function markPayment() {
     enrollActionsEnabled.value = false
     let cName = ''
-    if (selectedCourseData.value['group_name'] === null)
-        cName = selectedCourseData.value['id'] + ' - ' + selectedCourseData.value['name']
+    if (selectedCourseData.value!['group_name'] === null)
+        cName = selectedCourseData.value!['id'] + ' - ' + selectedCourseData.value!['name']
     else
-        cName = selectedCourseData.value['id'] + ' - ' + selectedCourseData.value['name'] + ' - ' + selectedCourseData.value['group_name']
+        cName = selectedCourseData.value!['id'] + ' - ' + selectedCourseData.value!['name'] + ' - ' + selectedCourseData.value!['group_name']
 
-    let sName = selectedStudentData.value['id'] + ' - ' + selectedStudentData.value['name']
+    let sName = selectedStudentData.value!['id'] + ' - ' + selectedStudentData.value!['name']
 
-    let timeP = { name: 'time', type: 'month', text: 'Month', value: new Date().toJSON().slice(0, 7) }
-    if (selectedCourseData.value['fee']['type'] === 'daily')
+    let timeP: InputField | MessageField = { name: 'time', type: 'month', text: 'Month', value: new Date().toJSON().slice(0, 7) }
+    if (selectedCourseData.value!['fee']['type'] === 'daily')
         timeP = { name: 'time', type: 'date', text: 'Day', value: new Date().toJSON().slice(0, 10) }
-    else if (selectedCourseData.value['fee']['type'] === 'onetime')
+    else if (selectedCourseData.value!['fee']['type'] === 'onetime')
         timeP = { type: 'message', text: 'Course fee is a one time fee.' }
 
     dataEntryForm.newDataEntryForm('Payment Confirmation', 'Confirm', [
@@ -138,7 +142,7 @@ async function markPayment() {
         return
     }
 
-    let resp = await createPayment(enrollmentData.value.enrollment.id, feeToPay.value)
+    let resp = await createPayment((enrollmentData.value!.enrollment as Enrollment).id, feeToPay.value)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
     } else {
@@ -161,37 +165,42 @@ async function markAttendance() {
 const enrollActionsEnabled = ref(false)
 const enrollStatusText = ref('')
 
-watch(enrollmentData, () => {
-    if (enrollmentData.value.loading) {
+watch(enrollmentLoading, () => {
+    if (enrollmentLoading.value)
         enrollStatusText.value = 'Loading...'
+})
+watch(enrollmentData, () => {
+    if (enrollmentData.value!.enrollment !== null && (enrollmentData.value!.enrollment as Enrollment).suspended) {
+        enrollStatusText.value = 'Student is Banned from the Course'
         return
     }
-
-    if (enrollmentData.value.enrollment)
-        if (enrollmentData.value.enrollment.suspended) {
-            enrollStatusText.value = 'Student is Banned from the Course'
-            return
-        }
-
-    if (enrollmentData.value.enrolled) {
+    else if (enrollmentData.value!.enrolled) {
         enrollActionsEnabled.value = true
         enrollStatusText.value = 'Enrolled With the Course'
     } else
         enrollStatusText.value = 'Not Enrolled With the Course'
+
 })
 
-const feeToPay = ref('')
+const feeToPay = ref(-1)
 
 function calculateFee() {
-    let courseFee = courses.find(c => c.id == selectedCourseId.value).fee.amount
+    let courseFee = Number(courses.find(c => c.id == selectedCourseId.value)!.fee.amount)
 
     let discount = 0
 
-    if (enrollmentData.value.enrollment.price_adjustments)
-        if (enrollmentData.value.enrollment.price_adjustments.type === 'fixed')
-            discount = enrollmentData.value.enrollment.price_adjustments.amount
+    if (enrollmentData.value!.enrollment === null) {
+        feeToPay.value = -1
+        return
+    }
+
+    let price_adjustments = (enrollmentData.value!.enrollment as Enrollment).price_adjustments
+
+    if (price_adjustments !== null)
+        if (price_adjustments.type === 'fixed')
+            discount = price_adjustments.amount!
         else
-            discount = (courseFee * enrollmentData.value.enrollment.price_adjustments.percentage) / 100
+            discount = (courseFee * price_adjustments.percentage!) / 100
 
     feeToPay.value = courseFee - discount
 }
@@ -210,20 +219,23 @@ init()
             <SelectionBox v-show="coursesOptionFields.length !== 0" :options="coursesOptionFields"
                 :value="selectedCourseId" @input="(val) => { selectedCourseId = val }" class="w-[300px] mr-5" />
         </div>
+
+
+
         <div class="mb-10 grid grid-cols-3 gap-x-10 border rounded-xl py-3 px-10 mt-4 text-slate-800">
             <div class="">
                 <h1 class="font-semibold text-lg">Basic Info</h1>
                 <div class="grid grid-cols-2 ml-5">
                     <h4>ID</h4>
-                    <h4>{{ selectedCourseData.id ? selectedCourseData.id : '' }}</h4>
+                    <h4>{{ selectedCourseData ? selectedCourseData!.id : '' }}</h4>
                 </div>
                 <div class="grid grid-cols-2 ml-5">
                     <h4>Instructor</h4>
-                    <h4>{{ selectedCourseData.id ? selectedCourseData.instructor.name : '' }}</h4>
+                    <h4>{{ selectedCourseData ? selectedCourseData!.instructor.name : '' }}</h4>
                 </div>
                 <div class="grid grid-cols-2 ml-5">
                     <h4>Enrollment Open</h4>
-                    <h4>{{ selectedCourseData.id ? (selectedCourseData.enrollment_open ? 'Open' : 'Closed') : '' }}
+                    <h4>{{ selectedCourseData ? (selectedCourseData!.enrollment_open ? 'Open' : 'Closed') : '' }}
                     </h4>
                 </div>
             </div>
@@ -231,26 +243,26 @@ init()
                 <h1 class="font-semibold text-lg">Schedule</h1>
                 <div class="grid grid-cols-2 ml-5">
                     <h4>Day</h4>
-                    <h4>{{ selectedCourseData.id ? selectedCourseData.schedule[0].day : '' }}</h4>
+                    <h4>{{ selectedCourseData ? selectedCourseData!.schedule[0].day : '' }}</h4>
                 </div>
                 <div class="grid grid-cols-2 ml-5">
                     <h4>Time</h4>
-                    <h4>{{ selectedCourseData.id ? selectedCourseData.schedule[0].time : '' }}</h4>
+                    <h4>{{ selectedCourseData ? selectedCourseData!.schedule[0].time : '' }}</h4>
                 </div>
                 <div class="grid grid-cols-2 ml-5">
                     <h4>Venue / Hall</h4>
-                    <h4>{{ selectedCourseData.id ? selectedCourseData.schedule[0].venue : '' }}</h4>
+                    <h4>{{ selectedCourseData ? selectedCourseData!.schedule[0].venue : '' }}</h4>
                 </div>
             </div>
             <div>
                 <h1 class="font-semibold text-lg">Course Fee</h1>
                 <div class="grid grid-cols-2 ml-5">
                     <h4>Fee Type</h4>
-                    <h4>{{ selectedCourseData.id ? selectedCourseData.fee.type : '' }}</h4>
+                    <h4>{{ selectedCourseData ? selectedCourseData!.fee.type : '' }}</h4>
                 </div>
                 <div class="grid grid-cols-2 ml-5">
                     <h4>Fee</h4>
-                    <h4>{{ selectedCourseData.id ? selectedCourseData.fee.amount : '' }}</h4>
+                    <h4>{{ selectedCourseData ? selectedCourseData!.fee.amount : '' }}</h4>
                 </div>
             </div>
         </div>
@@ -266,22 +278,23 @@ init()
                     <h1 class="font-semibold text-lg">Basic Info</h1>
                     <div class="grid grid-cols-2 ml-5">
                         <h4>ID</h4>
-                        <h4>{{ selectedStudentData.id ? selectedStudentData.id : '' }}</h4>
+                        <h4>{{ selectedStudentData ? selectedStudentData!.id : '' }}</h4>
                     </div>
                     <div class="grid grid-cols-2 ml-5">
                         <h4>Name</h4>
-                        <h4>{{ selectedStudentData.id ? selectedStudentData.name : '' }}</h4>
+                        <h4>{{ selectedStudentData ? selectedStudentData!.name : '' }}</h4>
                     </div>
                     <div class="grid grid-cols-2 ml-5">
                         <h4>Grade</h4>
-                        <h4>{{ selectedStudentData.id ? selectedStudentData.grade.name : '' }}</h4>
+                        <h4>{{ selectedStudentData ? (selectedStudentData!.grade ? selectedStudentData!.grade.name :
+                            'Deleted Grade') : '' }}</h4>
                     </div>
                     <div class="grid grid-cols-2 ml-5">
                         <h4>School</h4>
-                        <h4>{{ selectedStudentData.id ? selectedStudentData.school : '' }}</h4>
+                        <h4>{{ selectedStudentData ? selectedStudentData!.school : '' }}</h4>
                     </div>
                     <div class="flex flex-col items-center mt-3">
-                        <div v-show="studentImageUrl === null"
+                        <div v-show="studentImageUrl === ''"
                             class="flex items-center justify-center w-[300px] h-[300px]">
                             <div v-show="selectedStudentId !== 0"
                                 class="animate-pulse bg-gray-300 w-full h-full rounded-lg flex items-center justify-center">
@@ -292,7 +305,7 @@ init()
                                 <h4 class="text-2xl text-slate-700">Select a Student</h4>
                             </div>
                         </div>
-                        <div v-show="studentImageUrl !== null" class="w-[300px]">
+                        <div v-show="studentImageUrl !== ''" class="w-[300px]">
                             <img :src="studentImageUrl" alt="student image">
                         </div>
                     </div>
@@ -300,14 +313,14 @@ init()
             </div>
             <div class="flex flex-col items-center">
                 <div class="py-3 w-full text-center text-xl"
-                    :class="enrollmentData.loading ? 'bg-slate-400' : (enrollActionsEnabled ? 'bg-blue-500' : 'bg-red-500')">
+                    :class="enrollmentLoading ? 'bg-slate-400' : (enrollActionsEnabled ? 'bg-blue-500' : 'bg-red-500')">
                     <h3 class="text-white font-bold">{{ enrollStatusText }}</h3>
                 </div>
                 <button :disabled="!enrollActionsEnabled" @click="markPayment"
                     class="mt-10 border-2 rounded-xl w-[300px] bg-green-400 hover:bg-green-600 py-8 items-center disabled:bg-slate-200 flex flex-col shadow-lg">
                     <h3 class="font-semibold text-2xl">Mark Payment</h3>
                     <div class="gap-x-3 mt-3 text-lg font-bold text-white">
-                        <h5>{{ feeToPay !== '' ? 'Rs. ' + feeToPay : '' }}</h5>
+                        <h5>{{ feeToPay !== -1 ? 'Rs. ' + feeToPay : '' }}</h5>
                     </div>
                 </button>
                 <button :disabled="!enrollActionsEnabled" @click="markAttendance"

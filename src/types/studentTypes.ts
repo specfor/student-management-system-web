@@ -13,5 +13,5 @@ type Student = {
   created_at: string;
   updated_at: string;
   custom_id?: string;
-  grade: Grade;
+  grade: Grade | null;
 };

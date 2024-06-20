@@ -69,6 +69,10 @@ export function updateEnrollment(
   return sendJsonPatchRequest(`/enroll/${id}`, params);
 }
 
-export function getStudentEnrollments(studentId: number) {
+export function getStudentEnrollments(
+  studentId: number,
+  startIndex = 0,
+  limit: null | number = null
+) {
   return sendGetRequest(`/enroll/student/${studentId}`);
 }

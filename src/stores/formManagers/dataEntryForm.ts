@@ -1,6 +1,10 @@
 import { ref, type Ref } from "vue";
 import { defineStore } from "pinia";
-import type { CheckboxFields } from "@/types/inputBoxTypes";
+import type {
+  CheckboxFields,
+  FileInputFields,
+  SelectionBoxFields,
+} from "@/types/inputBoxTypes";
 
 export const useDataEntryFormsStore = defineStore(
   "form-manager-data-entry",
@@ -9,24 +13,24 @@ export const useDataEntryFormsStore = defineStore(
     const submitted = ref(false);
     const success = ref(false);
     const title = ref("");
-    const fields: Ref<InputField[]> = ref([]);
+    const fields: Ref<(InputField | MessageField)[]> = ref([]);
     const fieldValues: Ref<{
       [key: string]:
         | string
         | number
         | boolean
-        | { [key: string]: string | boolean | number };
+        | any[]
+        | { [key: string]: string | boolean | number | Array<any> };
     }> = ref({});
     const successBtnText = ref("");
     const errorMessages: Ref<{ [key: string]: string }> = ref({});
     const allowSubmit = ref(false);
-    const previewUrls: Ref<{ [key: string]: string }> = ref({});
     const generalErrorMessages: Ref<{ [key: string]: string }> = ref({});
 
     function newDataEntryForm(
       title_: string,
       successBtn_: string,
-      fields_: InputField[],
+      fields_: (InputField | MessageField)[],
       options: {
         allowSubmit: boolean;
       } = { allowSubmit: false }
@@ -38,25 +42,30 @@ export const useDataEntryFormsStore = defineStore(
       successBtnText.value = successBtn_;
       submitted.value = false;
       allowSubmit.value = options.allowSubmit;
-      previewUrls.value = [];
       errorMessages.value = {};
       generalErrorMessages.value = {};
 
       for (const field of fields_) {
-        if (field["type"] === "checkbox") {
-          fieldValues.value[field["name"]] = {};
-          if (field["options"] !== undefined)
-            for (const option of field["options"]) {
-              fieldValues.value[field["name"]][option["name"]] =
-                !!option["checked"];
-            }
-        } else if (field["type"] === "heading" || field["type"] === "message") {
+        if (field.type === "heading" || field.type === "message") {
           continue;
         } else {
-          if (field["value"]) fieldValues.value[field["name"]] = field["value"];
-          else fieldValues.value[field["name"]] = "";
+          const t: InputField = field as InputField;
+          if (t.type === "checkbox") {
+            fieldValues.value[t.name] = {};
+            if (t.options !== undefined)
+              for (const option of t["options"]) {
+                (fieldValues.value[t.name] as { [key: string]: boolean })[
+                  option.name
+                ] = !!option.checked;
+              }
+          } else {
+            if ("value" in t && "name" in t && t.value)
+              fieldValues.value[t.name] = t.value;
+            else fieldValues.value[t.name] = "";
+          }
+
+          errorMessages.value[t.name] = "";
         }
-        errorMessages.value[field["name"]] = "";
       }
       show.value = true;
     }
@@ -99,7 +108,6 @@ export const useDataEntryFormsStore = defineStore(
       show,
       submitted,
       allowSubmit,
-      previewUrls,
       success,
       title,
       fields,
@@ -116,7 +124,7 @@ export const useDataEntryFormsStore = defineStore(
   }
 );
 
-type InputField = InputTypes & {
+export type InputField = InputTypes & {
   text?: string;
   name: string;
   required?: boolean;
@@ -125,20 +133,39 @@ type InputField = InputTypes & {
 
 type InputTypes =
   | Checkbox
+  | FileInput
+  | SelectionBox
   | {
       type:
-        | "select"
         | "textarea"
-        | "message"
-        | "heading"
-        | "file"
         | "text"
-        | "password";
+        | "password"
+        | "date"
+        | "month"
+        | "time"
+        | "number";
       disabled?: boolean;
-      value?: string | number | boolean;
+      value?: string | number | boolean | null;
+      min?: number;
+      max?: number;
     };
 
-export type Checkbox = CheckboxFields & {
+type Checkbox = CheckboxFields & {
   type: "checkbox";
   name: string;
+};
+
+type FileInput = FileInputFields & {
+  type: "file";
+  name: string;
+};
+
+type SelectionBox = SelectionBoxFields & {
+  type: "select";
+  name: string;
+};
+
+export type MessageField = {
+  type: "message" | "heading";
+  text: string;
 };

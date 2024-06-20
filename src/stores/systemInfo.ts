@@ -1,8 +1,8 @@
-import { ref } from "vue";
+import { ref, type Ref } from "vue";
 import { defineStore } from "pinia";
 
 export const useSystemInfoStore = defineStore("systemInfo", () => {
-  const sysInfo = ref({});
+  const sysInfo: Ref<any> = ref({});
   let loaded = false;
 
   if (!loaded) {

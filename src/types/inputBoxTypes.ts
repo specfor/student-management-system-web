@@ -11,4 +11,14 @@ export type FileInputFields = {
   disabled?: boolean;
   accept?: string;
   preview?: boolean;
+  multiple?: boolean;
+};
+
+export type SelectionBoxFields = {
+  disabled?: boolean;
+  value?: string | number | boolean;
+  options: {
+    text: string;
+    value: string | number | boolean;
+  }[];
 };

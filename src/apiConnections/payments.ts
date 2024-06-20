@@ -1,6 +1,6 @@
 import { sendJsonPostRequest, sendGetRequest } from "@/baseFunctions/requests";
 
-export function getPayments(startIndex = 0, limit = null) {
+export function getPayments(startIndex = 0, limit: null | number = null) {
   const params: { [key: string]: any } = { start: startIndex };
   if (limit) params["size"] = limit;
 
