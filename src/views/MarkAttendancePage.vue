@@ -39,9 +39,6 @@ async function init() {
         return
 
     students = resp.data.students
-    // students.forEach(student => {
-    //     studentOptionFields.value.push({ text: student.name, value: student.id })
-    // })
 }
 
 const selectedCourseId = ref(0)
@@ -61,7 +58,8 @@ watch(showAllStudentsForSelection, (newVal) => {
             studentOptionFields.value.push({ text: student.name, value: student.id })
         })
     } else {
-        loadStudentsOfCourse(selectedCourseId.value)
+        if (selectedCourseId.value > 0)
+            loadStudentsOfCourse(selectedCourseId.value)
     }
 })
 watch(selectedCourseGroup, async (gName) => {
