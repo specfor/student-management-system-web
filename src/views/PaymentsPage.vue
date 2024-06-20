@@ -31,7 +31,8 @@ async function loadPayment(startIndex = 0) {
     let payments: Payment[] = resp.data.payments
     payments.forEach(payment => {
         paymentDataForTable.value.push([payment.id, payment.payment_for, payment.amount,
-        payment.enrollment.student.name, payment.enrollment.course.name, payment.payment_method, payment.refunded ? 'Yes' : 'No'])
+        payment.enrollment.student ? payment.enrollment.student.name : 'Deleted Student', payment.enrollment.course ? payment.enrollment.course.name : 'Deleted Course',
+        payment.payment_method, payment.refunded ? 'Yes' : 'No'])
     });
 }
 loadPayment()
