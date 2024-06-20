@@ -5,8 +5,8 @@ type Enrollment = {
   created_at: string;
   updated_at: string;
   price_adjustments: null | EnrollmentPriceAdjustment;
-  course: Course;
-  student: Student;
+  course: Course | null;
+  student: Student | null;
 };
 
 type EnrollmentPriceAdjustment = {

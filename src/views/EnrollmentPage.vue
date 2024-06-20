@@ -82,13 +82,13 @@ async function loadEnrollments(startIndex = 0) {
                 priceOffer = enrollment.price_adjustments.percentage + '% reduction'
         }
         if (tabSelectMode.value.activeTabHash == '#by-student') {
-            let course = enrollment.course.name
-            if (enrollment.course.group_name)
-                course += " - " + enrollment.course.group_name
+            let course = enrollment.course!.name
+            if (enrollment.course!.group_name)
+                course += " - " + enrollment.course!.group_name
             enrollmentsDataForByStudentTab.value.push([enrollment.id, course, enrollment.suspended, priceOffer])
         }
         else
-            enrollmentsDataForByCourseTab.value.push([enrollment.id, enrollment.student.name, enrollment.suspended, priceOffer])
+            enrollmentsDataForByCourseTab.value.push([enrollment.id, enrollment.student ? enrollment.student.name : 'Deleted Student', enrollment.suspended, priceOffer])
     });
 }
 
