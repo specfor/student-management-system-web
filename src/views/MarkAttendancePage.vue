@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { sendMarkAttendance } from '@/apiConnections/attendance';
 import { getCourses } from '@/apiConnections/courses';
-import { getStudentEnrollmentOfCourse } from '@/apiConnections/enrollments';
+import { getEnrollmentsOfCourse, getStudentEnrollmentOfCourse } from '@/apiConnections/enrollments';
 import { createPayment } from '@/apiConnections/payments';
 import { downloadStudentImage, getStudents } from '@/apiConnections/students';
 import { useAlertsStore } from '@/stores/alerts';
@@ -39,9 +39,9 @@ async function init() {
         return
 
     students = resp.data.students
-    students.forEach(student => {
-        studentOptionFields.value.push({ text: student.name, value: student.id })
-    })
+    // students.forEach(student => {
+    //     studentOptionFields.value.push({ text: student.name, value: student.id })
+    // })
 }
 
 const selectedCourseId = ref(0)
@@ -52,7 +52,18 @@ const selectedStudentId = ref(0)
 const selectedStudentData: Ref<Student | null> = ref(null)
 
 const studentImageUrl = ref("")
+const showAllStudentsForSelection = ref(false)
 
+watch(showAllStudentsForSelection, (newVal) => {
+    if (newVal) {
+        studentOptionFields.value = []
+        students.forEach(student => {
+            studentOptionFields.value.push({ text: student.name, value: student.id })
+        })
+    } else {
+        loadStudentsOfCourse(selectedCourseId.value)
+    }
+})
 watch(selectedCourseGroup, async (gName) => {
     feeToPay.value = -1
     coursesOptionFields.value = []
@@ -69,6 +80,10 @@ watch(selectedCourseGroup, async (gName) => {
 })
 watch(selectedCourseId, async (courseId) => {
     if (courseId === 0) return
+
+    if (!showAllStudentsForSelection.value)
+        loadStudentsOfCourse(selectedCourseId.value)
+
     selectedCourseData.value = courses.find(c => c.id == courseId)!
     checkEnrolled()
 })
@@ -98,6 +113,20 @@ function checkEnrolled() {
 
 const enrollmentData: Ref<{ enrolled: boolean, enrollment: Enrollment | null } | null> = ref(null)
 const enrollmentLoading = ref(false)
+
+async function loadStudentsOfCourse(courseId: number) {
+    let resp = await getEnrollmentsOfCourse(courseId)
+    if (resp.status === 'error') {
+        alertStore.insertAlert('An error occured.', resp.message, 'error')
+        return
+    }
+
+    studentOptionFields.value = [];
+    (resp.data.enrollments as Enrollment[]).forEach(enrollment => {
+        if (enrollment.student)
+            studentOptionFields.value.push({ text: enrollment.student.name, value: enrollment.student.id })
+    })
+}
 
 async function loadStudentEnrollmentOfCourse() {
     let resp = await getStudentEnrollmentOfCourse(selectedCourseId.value, selectedStudentId.value)
@@ -268,11 +297,14 @@ init()
         </div>
         <div class="grid grid-cols-2 gap-x-10">
             <div>
-                <div class="flex">
+                <div class="flex items-center">
                     <h4 class="mr-5 font-semibold">Select a Student</h4>
 
                     <SelectionBox :options="studentOptionFields" :value="selectedStudentId"
                         @input="(val) => { selectedStudentId = val }" class="w-[300px] mr-5" />
+
+                    <p class="mr-3">Show all Students</p>
+                    <input v-model="showAllStudentsForSelection" type="checkbox" class="w-6 h-6" />
                 </div>
                 <div class="mb-10 border rounded-xl py-3 px-10 mt-4 text-slate-800">
                     <h1 class="font-semibold text-lg">Basic Info</h1>
