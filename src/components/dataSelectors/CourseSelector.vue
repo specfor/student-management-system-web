@@ -66,7 +66,7 @@ watch(selectedCourseForTable, async (courseId) => {
                 class="w-[300px] mr-5" />
         </div>
     </div>
-    <div class="mb-10 grid grid-cols-3 gap-x-10 border rounded-xl py-3 px-10 mt-4 text-slate-600">
+    <div class="grid grid-cols-3 gap-x-10 border rounded-xl py-3 px-10 mt-4 text-slate-600">
         <div class="">
             <h1 class="font-semibold text-lg">Basic Info</h1>
             <div class="grid grid-cols-2 ml-5">
