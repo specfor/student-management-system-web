@@ -7,11 +7,15 @@ export function getPayments(startIndex = 0, limit: null | number = null) {
   return sendGetRequest("/payments", params);
 }
 
-export function createPayment(enrollmentId: number, amount: number) {
+export function createPayment(
+  enrollmentId: number,
+  amount: number,
+  paymentTime: string = ""
+) {
   return sendJsonPostRequest("/payments/" + enrollmentId, {
     payment_method: "cash",
     amount: amount,
-    // payment_for: "2024-04-29"
+    payment_for: paymentTime,
   });
 }
 

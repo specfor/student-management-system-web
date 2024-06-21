@@ -163,13 +163,14 @@ async function markPayment() {
         timeP
     ], { allowSubmit: true })
     let confirmed = await dataEntryForm.waitForSubmittedData()
+
     dataEntryForm.finishSubmission()
     if (!confirmed.submitted) {
         enrollActionsEnabled.value = true
         return
     }
 
-    let resp = await createPayment((enrollmentData.value!.enrollment as Enrollment).id, feeToPay.value)
+    let resp = await createPayment((enrollmentData.value!.enrollment as Enrollment).id, feeToPay.value, confirmed.data.time as string)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
     } else {
