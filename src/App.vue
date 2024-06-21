@@ -16,6 +16,19 @@ const authStore = useAuthStore()
 useSystemInfoStore()
 const loading = ref(true)
 
+async function checkAppUpdates() {
+  let resp = await fetch('/build')
+  let data = (await resp.text()).trim()
+
+  let cachedVal = localStorage.getItem('appBuild')
+  if (cachedVal === null || cachedVal !== data) {
+    localStorage.setItem('appBuild', data)
+  }
+  if (cachedVal !== data)
+    location.reload()
+}
+checkAppUpdates()
+
 onMounted(async () => {
   await authStore.checkLoggedIn()
   if (authStore.LoggedIn) {
