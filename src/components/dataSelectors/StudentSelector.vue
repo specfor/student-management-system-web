@@ -47,7 +47,7 @@ loadStudents()
                 @input="(val) => { selectedStudent = val }" class="w-[300px] mr-5" />
         </div>
     </div>
-    <div class="mb-10 grid grid-cols-3 gap-x-10 border rounded-xl py-3 px-10 mt-4 text-slate-600">
+    <div class="grid grid-cols-3 gap-x-10 border rounded-xl py-3 px-10 mt-4 text-slate-600">
         <div class="justify-self-center">
             <img :src="selectedStudentImageUrl" alt="student photo" class="object-cover w-[100px]">
         </div>
