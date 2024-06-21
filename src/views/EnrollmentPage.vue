@@ -247,7 +247,9 @@ async function delEnrollment() {
                     <NewItemButton text="Enroll a Student" :on-click="addNewEnrollment"
                         :disabled="selectedStudentId === 0" />
                 </div>
-                <StudentSelector @student="(s) => { selectedStudentId = s.id }" />
+                <div class="mb-5">
+                    <StudentSelector @student="(s) => { selectedStudentId = s.id }" />
+                </div>
                 <TableComponent :table-columns="['ID', 'Course Name', 'Suspended', 'Price Concession']"
                     :table-rows="enrollmentsDataForByStudentTab" @edit-emit="editEnrollment" :actions="tableActions"
                     :refresh-func="async () => { await loadEnrollments(); return true }" @delete-emit="delEnrollment" />
@@ -263,7 +265,9 @@ async function delEnrollment() {
                     <NewItemButton text="Enroll a Student" :on-click="addNewEnrollment"
                         :disabled="selectedCourseId === 0" />
                 </div>
-                <CourseSelector @course="(c) => { selectedCourseId = c.id }" />
+                <div class="mb-5">
+                    <CourseSelector @course="(c) => { selectedCourseId = c.id }" />
+                </div>
                 <TableComponent :table-columns="['ID', 'Student Name', 'Suspended', 'Price Concession']"
                     :table-rows="enrollmentsDataForByCourseTab" @edit-emit="editEnrollment" :actions="tableActions"
                     :refresh-func="async () => { await loadEnrollments(); return true }" @delete-emit="delEnrollment" />

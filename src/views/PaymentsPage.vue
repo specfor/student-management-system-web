@@ -113,7 +113,9 @@ function setStudent(student: Student) {
         <tabs nav-class="flex border-b-2 pb-[6px] justify-center" nav-item-link-class="border px-10 py-2 font-semibold"
             nav-item-link-active-class="bg-slate-200" panels-wrapper-class="pt-10" ref="tabSelectMode">
             <tab name="by Student">
-                <StudentSelector @student="setStudent" />
+                <div class="mb-5">
+                    <StudentSelector @student="setStudent" />
+                </div>
                 <TableComponent
                     :table-columns="['ID', 'Payment For', 'Amount', 'Student', 'Course', 'Method', 'Refunded']"
                     :table-rows="paymentDatByStudentTable" @edit-emit="editPayment" :actions="tableActions"
@@ -126,7 +128,9 @@ function setStudent(student: Student) {
             </tab>
 
             <tab name="by Course">
-                <CourseSelector @course="setCourse" />
+                <div class="mb-5">
+                    <CourseSelector @course="setCourse" />
+                </div>
                 <TableComponent
                     :table-columns="['ID', 'Payment For', 'Amount', 'Student', 'Course', 'Method', 'Refunded']"
                     :table-rows="paymentDatByCourseTable" @edit-emit="editPayment" :actions="tableActions"
