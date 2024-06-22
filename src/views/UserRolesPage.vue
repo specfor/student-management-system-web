@@ -9,8 +9,6 @@ import { useCacheStore } from '@/stores/cache';
 import { createUserRole, deleteUserRole, getAllPermissions, getUserRoles, updateUserRole } from '@/apiConnections/userRoles';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
-import PaginateComponent from '@/components/PaginateComponent.vue';
-
 
 const confirmForm = useConfirmationFormsStore()
 const dataEntryForm = useDataEntryFormsStore()
@@ -215,13 +213,11 @@ function extractSelectedPermsFromAddNewFormData(data: any) {
             <h4 class="font-semibold text-3xl">User Roles</h4>
             <NewItemButton text="New Role" :on-click="newUserRole" />
         </div>
-        <TableComponent :table-columns="['ID', 'Role Name', 'Permissions']" :table-rows="roleDataForTable"
-            :actions="tableActions" :refresh-func="async () => { await loadUserRoles(); return true }"
-            @delete-emit="deleteRoles" @edit-emit="editRole" />
-
-        <div class="flex justify-center mt-4 mb-10">
-            <PaginateComponent :total-count="countTotUserRoles" :page-size="limitLoadUserRoles"
-                @load-page-emit="loadUserRoles" />
+        <div class="mb-10">
+            <TableComponent :table-columns="['ID', 'Role Name', 'Permissions']" :table-rows="roleDataForTable"
+                :actions="tableActions" :refresh-func="async () => { await loadUserRoles(); return true }"
+                @delete-emit="deleteRoles" @edit-emit="editRole" @load-page-emit="loadUserRoles"
+                :paginate-page-size="limitLoadUserRoles" :paginate-total="countTotUserRoles" />
         </div>
     </div>
 </template>

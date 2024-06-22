@@ -13,7 +13,6 @@ import { BookOpenIcon } from '@heroicons/vue/24/outline';
 import { useExtendablePopUpStore } from '@/stores/formManagers/extendablePopUp';
 import StudentMoreInfo from '@/components/customPopUps/StudentMoreInfo.vue';
 import StudentCourses from '@/components/customPopUps/StudentCourses.vue';
-import PaginateComponent from '@/components/PaginateComponent.vue';
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
@@ -224,14 +223,12 @@ function showStudentCourses(id: number) {
             <h4 class="font-semibold text-3xl">Students</h4>
             <NewItemButton text="New Student" :on-click="addNewStudent" />
         </div>
-        <TableComponent :table-columns="['ID', 'Custom ID', 'Name', 'Grade', 'Email', 'School']"
-            :table-rows="studentDataForTable" :actions="tableActions" @edit-emit="editStudent" @show-more="showMoreInfo"
-            :refresh-func="async () => { await loadStudents(); return true }" @delete-emit="delStudent"
-            @courses-emit="showStudentCourses" />
-
-        <div class="flex justify-center mt-4 mb-10">
-            <PaginateComponent :total-count="countTotStudents" :page-size="limitLoadStudents"
-                @load-page-emit="loadStudents" />
+        <div class="mb-10">
+            <TableComponent :table-columns="['ID', 'Custom ID', 'Name', 'Grade', 'Email', 'School']"
+                :table-rows="studentDataForTable" :actions="tableActions" @edit-emit="editStudent"
+                @show-more="showMoreInfo" :refresh-func="async () => { await loadStudents(); return true }"
+                @delete-emit="delStudent" @courses-emit="showStudentCourses" @load-page-emit="loadStudents"
+                :paginate-page-size="limitLoadStudents" :paginate-total="countTotStudents" />
         </div>
     </div>
 </template>

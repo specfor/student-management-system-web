@@ -71,7 +71,8 @@ watch(selectedCourseForTable, async (courseId) => {
             <h1 class="font-semibold text-lg">Basic Info</h1>
             <div class="grid grid-cols-2 ml-5">
                 <h4>Instructor</h4>
-                <h4>{{ selectedCourseData ? selectedCourseData.instructor.name : '' }}</h4>
+                <h4>{{ selectedCourseData ? (selectedCourseData.instructor ? selectedCourseData.instructor.name :
+                    'Deleted') : '' }}</h4>
             </div>
             <div class="grid grid-cols-2 ml-5">
                 <h4>Enrollment Open</h4>

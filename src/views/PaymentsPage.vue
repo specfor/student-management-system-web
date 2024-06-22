@@ -6,7 +6,6 @@ import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { ref, type Ref } from 'vue';
-import PaginateComponent from '@/components/PaginateComponent.vue';
 import CourseSelector from '@/components/dataSelectors/CourseSelector.vue';
 import StudentSelector from '@/components/dataSelectors/StudentSelector.vue';
 
@@ -116,14 +115,13 @@ function setStudent(student: Student) {
                 <div class="mb-5">
                     <StudentSelector @student="setStudent" />
                 </div>
-                <TableComponent
-                    :table-columns="['ID', 'Payment For', 'Amount', 'Student', 'Course', 'Method', 'Refunded']"
-                    :table-rows="paymentDatByStudentTable" @edit-emit="editPayment" :actions="tableActions"
-                    :refresh-func="async () => { await loadPayment(); return true }" @delete-emit="delGrade" />
-
-                <div class="flex justify-center mt-4 mb-10">
-                    <PaginateComponent :total-count="countTotPaymentsForByStudent" :page-size="limitLoadPayments"
-                        @load-page-emit="loadPayment" />
+                <div class="mb-10">
+                    <TableComponent
+                        :table-columns="['ID', 'Payment For', 'Amount', 'Student', 'Course', 'Method', 'Refunded']"
+                        :table-rows="paymentDatByStudentTable" @edit-emit="editPayment" :actions="tableActions"
+                        :refresh-func="async () => { await loadPayment(); return true }" @delete-emit="delGrade"
+                        @load-page-emit="loadPayment" :paginate-page-size="limitLoadPayments"
+                        :paginate-total="countTotPaymentsForByStudent" />
                 </div>
             </tab>
 
@@ -131,13 +129,12 @@ function setStudent(student: Student) {
                 <div class="mb-5">
                     <CourseSelector @course="setCourse" />
                 </div>
-                <TableComponent
-                    :table-columns="['ID', 'Payment For', 'Amount', 'Student', 'Course', 'Method', 'Refunded']"
-                    :table-rows="paymentDatByCourseTable" @edit-emit="editPayment" :actions="tableActions"
-                    :refresh-func="async () => { await loadPayment(); return true }" @delete-emit="delGrade" />
-
-                <div class="flex justify-center mt-4 mb-10">
-                    <PaginateComponent :total-count="countTotPaymentsForByCourse" :page-size="limitLoadPayments"
+                <div class="mb-10">
+                    <TableComponent
+                        :table-columns="['ID', 'Payment For', 'Amount', 'Student', 'Course', 'Method', 'Refunded']"
+                        :table-rows="paymentDatByCourseTable" @edit-emit="editPayment" :actions="tableActions"
+                        :refresh-func="async () => { await loadPayment(); return true }" @delete-emit="delGrade"
+                        :paginate-page-size="limitLoadPayments" :paginate-total="countTotPaymentsForByCourse"
                         @load-page-emit="loadPayment" />
                 </div>
             </tab>

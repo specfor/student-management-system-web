@@ -9,8 +9,6 @@ import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationFor
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { ref, type Ref } from 'vue';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
-import PaginateComponent from '@/components/PaginateComponent.vue';
-
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
@@ -151,12 +149,11 @@ init()
             <h4 class="font-semibold text-3xl">Users</h4>
             <NewItemButton text="New User" :on-click="addNewUser" />
         </div>
-        <TableComponent :table-columns="['ID', 'Name', 'Email', 'Role']" :table-rows="userDataForTable"
-            :actions="tableActions" @edit-emit="editUser" :refresh-func="async () => { await loadUsers(); return true }"
-            @delete-emit="delUser" />
-
-        <div class="flex justify-center mt-4 mb-10">
-            <PaginateComponent :total-count="countTotUsers" :page-size="limitLoadUsers" @load-page-emit="loadUsers" />
+        <div class="mb-10">
+            <TableComponent :table-columns="['ID', 'Name', 'Email', 'Role']" :table-rows="userDataForTable"
+                :actions="tableActions" @edit-emit="editUser"
+                :refresh-func="async () => { await loadUsers(); return true }" @delete-emit="delUser"
+                @load-page-emit="loadUsers" :paginate-page-size="limitLoadUsers" :paginate-total="countTotUsers" />
         </div>
     </div>
 </template>

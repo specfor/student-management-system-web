@@ -9,7 +9,6 @@ import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { ref, watch, type Ref } from 'vue';
-import PaginateComponent from '@/components/PaginateComponent.vue';
 import StudentSelector from '@/components/dataSelectors/StudentSelector.vue';
 import CourseSelector from '@/components/dataSelectors/CourseSelector.vue';
 
@@ -250,13 +249,12 @@ async function delEnrollment() {
                 <div class="mb-5">
                     <StudentSelector @student="(s) => { selectedStudentId = s.id }" />
                 </div>
-                <TableComponent :table-columns="['ID', 'Course Name', 'Suspended', 'Price Concession']"
-                    :table-rows="enrollmentsDataForByStudentTab" @edit-emit="editEnrollment" :actions="tableActions"
-                    :refresh-func="async () => { await loadEnrollments(); return true }" @delete-emit="delEnrollment" />
-
-                <div class="flex justify-center mt-4 mb-10">
-                    <PaginateComponent :total-count="countTotEnrollmentsTabStudent" :page-size="limitLoadEnrollments"
-                        @load-page-emit="loadEnrollments" />
+                <div class="mb-10">
+                    <TableComponent :table-columns="['ID', 'Course Name', 'Suspended', 'Price Concession']"
+                        :table-rows="enrollmentsDataForByStudentTab" @edit-emit="editEnrollment" :actions="tableActions"
+                        :refresh-func="async () => { await loadEnrollments(); return true }"
+                        @delete-emit="delEnrollment" @load-page-emit="loadEnrollments"
+                        :paginate-page-size="limitLoadEnrollments" :paginate-total="countTotEnrollmentsTabStudent" />
                 </div>
             </tab>
 
@@ -268,13 +266,12 @@ async function delEnrollment() {
                 <div class="mb-5">
                     <CourseSelector @course="(c) => { selectedCourseId = c.id }" />
                 </div>
-                <TableComponent :table-columns="['ID', 'Student Name', 'Suspended', 'Price Concession']"
-                    :table-rows="enrollmentsDataForByCourseTab" @edit-emit="editEnrollment" :actions="tableActions"
-                    :refresh-func="async () => { await loadEnrollments(); return true }" @delete-emit="delEnrollment" />
-
-                <div class="flex justify-center mt-4 mb-10">
-                    <PaginateComponent :total-count="countTotEnrollmentsTabCourse" :page-size="limitLoadEnrollments"
-                        @load-page-emit="loadEnrollments" />
+                <div class="mb-10">
+                    <TableComponent :table-columns="['ID', 'Student Name', 'Suspended', 'Price Concession']"
+                        :table-rows="enrollmentsDataForByCourseTab" @edit-emit="editEnrollment" :actions="tableActions"
+                        :refresh-func="async () => { await loadEnrollments(); return true }"
+                        @delete-emit="delEnrollment" @load-page-emit="loadEnrollments"
+                        :paginate-page-size="limitLoadEnrollments" :paginate-total="countTotEnrollmentsTabCourse" />
                 </div>
             </tab>
         </tabs>
