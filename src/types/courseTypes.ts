@@ -26,6 +26,6 @@ type Course = {
   enrollment_open: boolean;
   grade_id: number;
   group_name: string | null;
-  instructor: Instructor;
+  instructor: Instructor | null;
   grade: null | Grade;
 };

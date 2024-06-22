@@ -46,7 +46,7 @@ init(args.student.id)
         <h1 class="font-semibold text-xl">Student Enrolled Courses</h1>
 
         <TableComponent class="mt-10" :table-columns="['ID', 'Course', 'Fee', 'Suspended']" :table-rows="courses"
-            :actions="[]" />
+            :actions="[]" :paginate-page-size="30" :paginate-total="30" />
 
     </div>
 </template>

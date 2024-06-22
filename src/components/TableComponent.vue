@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { defineProps, ref, type FunctionalComponent, type Ref } from "vue";
-import { ArrowPathIcon } from "@heroicons/vue/24/solid";
+import PaginateComponent from "./PaginateComponent.vue";
 
 let selectedIds = ref([])
 let isDisabled = ref(true)
@@ -172,6 +171,11 @@ type Inputs = {
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <div class="flex justify-center mt-4">
+    <PaginateComponent :total-count="paginateTotal" :page-size="paginatePageSize"
+      @load-page-emit="$emit('loadPageEmit', $event)" />
   </div>
 </template>
 

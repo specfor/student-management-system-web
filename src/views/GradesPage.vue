@@ -8,7 +8,6 @@ import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationFor
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { ref, type Ref } from 'vue';
-import PaginateComponent from '@/components/PaginateComponent.vue';
 
 
 const confirmationForm = useConfirmationFormsStore()
@@ -133,13 +132,11 @@ async function delGrade(ids: number[]) {
             <h4 class="font-semibold text-3xl">Grades</h4>
             <NewItemButton text="New Grade" :on-click="addNewGrade" />
         </div>
-        <TableComponent :table-columns="['ID', 'Name']" :table-rows="gradeDataForTable" @edit-emit="editGrade"
-            :actions="tableActions" :refresh-func="async () => { await loadGrades(); return true }"
-            @delete-emit="delGrade" />
-
-        <div class="flex justify-center mt-4 mb-10">
-            <PaginateComponent :total-count="countTotGrades" :page-size="limitLoadGrades"
-                @load-page-emit="loadGrades" />
+        <div class="mb-10">
+            <TableComponent :table-columns="['ID', 'Name']" :table-rows="gradeDataForTable" @edit-emit="editGrade"
+                :actions="tableActions" :refresh-func="async () => { await loadGrades(); return true }"
+                @delete-emit="delGrade" @load-page-emit="loadGrades" :paginate-page-size="limitLoadGrades"
+                :paginate-total="countTotGrades" />
         </div>
     </div>
 </template>

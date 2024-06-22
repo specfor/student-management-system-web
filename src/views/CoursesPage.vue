@@ -10,7 +10,6 @@ import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationFor
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { ref, type Ref } from 'vue';
-import PaginateComponent from '@/components/PaginateComponent.vue';
 
 
 const confirmationForm = useConfirmationFormsStore()
@@ -42,7 +41,7 @@ async function loadCourses(startIndex = 0) {
         coursesDataForTable.value.push([{ value: 'Course - ' + item[0], type: 'group' }])
         item[1].forEach((course: Course) => {
             coursesDataForTable.value.push([course.id, course.group_name, course.grade ? course.grade.name : 'None', course.schedule[0].day,
-            course.schedule[0].time, course.fee.amount, course.fee.type, course.instructor.name])
+            course.schedule[0].time, course.fee.amount, course.fee.type, course.instructor ? course.instructor.name : 'Deleted'])
             coursesData.push(course)
         })
     })
@@ -143,7 +142,7 @@ async function editCourse(id: number) {
         { name: 'id', type: 'text', text: 'Course ID', disabled: true, value: course.id },
         { name: 'name', type: 'text', text: 'Course Name', required: true, value: course.name },
         { name: 'group_name', type: 'text', text: 'Group (if course has groups )', value: course.group_name },
-        { name: 'instructor_id', type: 'select', text: 'Instructor', options: instructorOptionFields, required: true, value: course.instructor.id },
+        { name: 'instructor_id', type: 'select', text: 'Instructor', options: instructorOptionFields, required: true, value: course.instructor ? course.instructor.id : '' },
         { type: 'heading', text: 'Enter Course Schedule' },
         {
             name: 'day', type: 'select', text: 'Course Day', required: true, value: course.schedule[0].day, options: [
@@ -225,14 +224,13 @@ async function delCourse(ids: number[]) {
             <h4 class="font-semibold text-3xl">Courses</h4>
             <NewItemButton text="New Course" :on-click="addNewCourse" />
         </div>
-        <TableComponent
-            :table-columns="['ID', 'Group', 'Grade', 'Course Day', 'Time', 'Fee', 'Payment Cycle', 'Instructor']"
-            :table-rows="coursesDataForTable" @edit-emit="editCourse" :actions="tableActions"
-            :refresh-func="async () => { await loadCourses(); return true }" @delete-emit="delCourse" />
-
-        <div class="flex justify-center mt-4 mb-10">
-            <PaginateComponent :total-count="countTotCourses" :page-size="limitLoadCourses"
-                @load-page-emit="loadCourses" />
+        <div class="mb-10">
+            <TableComponent
+                :table-columns="['ID', 'Group', 'Grade', 'Course Day', 'Time', 'Fee', 'Payment Cycle', 'Instructor']"
+                :table-rows="coursesDataForTable" @edit-emit="editCourse" :actions="tableActions"
+                :refresh-func="async () => { await loadCourses(); return true }" @delete-emit="delCourse"
+                @load-page-emit="loadCourses" :paginate-page-size="limitLoadCourses"
+                :paginate-total="countTotCourses" />
         </div>
     </div>
 </template>

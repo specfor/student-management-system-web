@@ -9,7 +9,6 @@ import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { ref, type Ref } from "vue"
 import { MagnifyingGlassIcon, PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { useExtendablePopUpStore } from '@/stores/formManagers/extendablePopUp';
-import PaginateComponent from '@/components/PaginateComponent.vue';
 import InstructorMoreInfo from '@/components/customPopUps/InstructorMoreInfo.vue';
 
 
@@ -190,14 +189,12 @@ function showMoreInfo(id: number) {
             <h4 class="font-semibold text-3xl">Instructors</h4>
             <NewItemButton text="New Instructor" :on-click="addNewInstructor" />
         </div>
-        <TableComponent :table-columns="['ID', 'Name', 'Email', 'Phone Number', 'Work Place']"
-            :table-rows="instructorDataForTable" :actions="tableActions" @edit-emit="editInstructor"
-            @show-more="showMoreInfo" :refresh-func="async () => { await loadInstructors(); return true }"
-            @delete-emit="delInstructor" />
-
-        <div class="flex justify-center mt-4 mb-10">
-            <PaginateComponent :total-count="countTotInstructors" :page-size="limitLoadInstructors"
-                @load-page-emit="loadInstructors" />
+        <div class="mb-10">
+            <TableComponent :table-columns="['ID', 'Name', 'Email', 'Phone Number', 'Work Place']"
+                :table-rows="instructorDataForTable" :actions="tableActions" @edit-emit="editInstructor"
+                @show-more="showMoreInfo" :refresh-func="async () => { await loadInstructors(); return true }"
+                @delete-emit="delInstructor" @load-page-emit="loadInstructors"
+                :paginate-page-size="limitLoadInstructors" :paginate-total="countTotInstructors" />
         </div>
     </div>
 </template>

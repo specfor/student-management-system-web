@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, watch, type Ref } from 'vue';
-const emit = defineEmits(['loadPageEmit'])
+const emit = defineEmits<{
+  loadPageEmit: [startingIndex: number]
+}>()
 
 let props = defineProps(['totalCount', 'pageSize'])
 
