@@ -72,9 +72,12 @@ async function loadEnrollments(startIndex = 0) {
                 priceOffer = enrollment.price_adjustments.percentage + '% reduction'
         }
         if (tabSelectMode.value.activeTabHash == '#by-student') {
-            let course = enrollment.course!.name
-            if (enrollment.course!.group_name)
-                course += " - " + enrollment.course!.group_name
+            let course = "Deleted"
+            if (enrollment.course) {
+                course = enrollment.course.name
+                if (enrollment.course.group_name)
+                    course += " - " + enrollment.course.group_name
+            }
             enrollmentsDataForByStudentTab.value.push([enrollment.id, course, enrollment.suspended, priceOffer])
         }
         else
@@ -82,9 +85,9 @@ async function loadEnrollments(startIndex = 0) {
     });
 }
 
-watch(selectedStudentId, loadEnrollments)
+watch(selectedStudentId, () => { loadEnrollments() })
 
-watch(selectedCourseId, loadEnrollments)
+watch(selectedCourseId, () => { loadEnrollments() })
 
 let studentOptionFields: Ref<{ text: string, value: any }[]> = ref([])
 
