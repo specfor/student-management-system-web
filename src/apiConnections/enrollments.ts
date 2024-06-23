@@ -57,7 +57,8 @@ export function updateEnrollment(
   const params: { [key: string]: any } = {
     suspend: suspend,
   };
-  if (discount_type && discount_amount) {
+  if (discount_type === "none") params["remove_price_adjustment"] = true;
+  else if (discount_type) {
     params["price_adjustment"] = {
       type: discount_type,
       reason: discount_reason,
