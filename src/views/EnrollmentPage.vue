@@ -1,7 +1,7 @@
 <!-- eslint-disable no-constant-condition -->
 <script setup lang="ts">
 import { getCourses } from '@/apiConnections/courses';
-import { enrollCourse, getEnrollmentsOfCourse, getStudentEnrollments, updateEnrollment } from '@/apiConnections/enrollments';
+import { deleteEnrollment, enrollCourse, getEnrollmentsOfCourse, getStudentEnrollments, updateEnrollment } from '@/apiConnections/enrollments';
 import { getStudents } from '@/apiConnections/students';
 import TableComponent, { type TableActionType } from '@/components/TableComponent.vue';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
@@ -11,10 +11,12 @@ import { PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { ref, watch, type Ref } from 'vue';
 import StudentSelector from '@/components/dataSelectors/StudentSelector.vue';
 import CourseSelector from '@/components/dataSelectors/CourseSelector.vue';
+import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
+const confirmationForm = useConfirmationFormsStore()
 
 const tabSelectMode: Ref<any> = ref(null)
 
@@ -229,8 +231,20 @@ async function editEnrollment(id: number) {
     }
 }
 
-async function delEnrollment() {
-    alertStore.insertAlert('Can not delete.', 'Enrollments can not be deleted.', 'error')
+async function delEnrollment(ids: number[]) {
+    let confirmed = await confirmationForm.newConfirmationForm("Confirm Deletion", "Are you sure you want to delete these enrollments with IDs: " + ids.join(', ') + "?")
+    if (!confirmed)
+        return
+
+    ids.forEach(async id => {
+        let resp = await deleteEnrollment(id)
+        if (resp.status === 'error') {
+            alertStore.insertAlert('An error occured deleting grade.', resp.message, 'error')
+            return
+        }
+        alertStore.insertAlert('Action completed.', resp.message)
+    });
+    loadEnrollments()
 }
 </script>
 
