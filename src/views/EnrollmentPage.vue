@@ -188,7 +188,8 @@ async function editEnrollment(id: number) {
         },
         { type: 'heading', text: 'Any price concession? (optional)' },
         {
-            name: 'discount_type', type: 'select', text: 'Concession Type', value: enrollment.price_adjustments ? enrollment.price_adjustments.type : '', options: [
+            name: 'discount_type', type: 'select', text: 'Concession Type', value: enrollment.price_adjustments ? enrollment.price_adjustments.type : 'none', options: [
+                { text: 'None', value: 'none' },
                 { text: 'Fixed', value: 'fixed' },
                 { text: 'Percentage', value: 'percentage' },
             ]
@@ -204,13 +205,13 @@ async function editEnrollment(id: number) {
         if (!results.submitted)
             return
 
-        let resp = await updateEnrollment(id, results.data['suspend'] as boolean, results.data['discount_type'] as EnrollmentPriceAdjustment['type'],
+        let resp = await updateEnrollment(id, Boolean(results.data['suspend']), results.data['discount_type'] as EnrollmentPriceAdjustment['type'],
             results.data['amount'] as number, results.data['reason'] as string)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
                     let err = ""
-                    if (Array.isArray(msg[1]) && !msg[1] === null)
+                    if (Array.isArray(msg[1]) && msg[1] !== null)
                         err = msg[1].join(', ')
                     else
                         err = msg[1] as string

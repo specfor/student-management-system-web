@@ -10,7 +10,7 @@ type Enrollment = {
 };
 
 type EnrollmentPriceAdjustment = {
-  type: "fixed" | "percentage";
+  type: "fixed" | "percentage" | "none";
   amount?: number;
   percentage?: number;
   reason: string;
