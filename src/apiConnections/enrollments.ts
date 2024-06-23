@@ -2,6 +2,7 @@ import {
   sendJsonPatchRequest,
   sendJsonPostRequest,
   sendGetRequest,
+  sendDeleteRequest,
 } from "@/baseFunctions/requests";
 
 export function getEnrollmentsOfCourse(
@@ -76,4 +77,8 @@ export function getStudentEnrollments(
   limit: null | number = null
 ) {
   return sendGetRequest(`/enroll/student/${studentId}`);
+}
+
+export function deleteEnrollment(id: number) {
+  return sendDeleteRequest("/enroll/" + id);
 }
