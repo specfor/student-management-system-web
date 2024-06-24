@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { useAlertsStore } from '@/stores/alerts';
 import { ref, type Ref } from 'vue';
-import TableComponent, { type TableActionType } from '@/components/TableComponent.vue';
+import TableComponent, { type TableActionType, type TableColumns } from '@/components/TableComponent.vue';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { useCacheStore } from '@/stores/cache';
@@ -20,13 +20,38 @@ let roleDataForTable: Ref<any> = ref([])
 const tableActions: TableActionType[] = [
     { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
+const tableColumns: TableColumns[] = [{ label: 'ID', sortable: true }, { label: 'Role Name', sortable: true }, { label: 'Permissions' }]
 
 
 const limitLoadUserRoles = 30
 const countTotUserRoles = ref(0)
 
-async function loadUserRoles(startIndex = 0) {
-    let data = await getUserRoles(startIndex, limitLoadUserRoles)
+let lastLoadSettings = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc' }
+
+function setSorting(column: string, direction: 'asc' | 'desc') {
+    switch (column) {
+        case 'ID':
+            lastLoadSettings.orderBy = 'id'
+            break;
+        case 'Role Name':
+            lastLoadSettings.orderBy = 'role_name'
+            break;
+        default:
+            break;
+    }
+    lastLoadSettings.orderDirec = direction
+}
+
+async function loadUserRoles(startIndex?: number) {
+    if (startIndex === undefined)
+        startIndex = lastLoadSettings.lastUsedIndex
+    else
+        lastLoadSettings.lastUsedIndex = startIndex
+
+    let opt: any = {}
+    opt.sort = { by: lastLoadSettings.orderBy, direction: lastLoadSettings.orderDirec }
+
+    let data = await getUserRoles(startIndex, limitLoadUserRoles, opt)
     if (data.status === 'error') {
         alertStore.insertAlert('An error occured.', data.message, 'error')
     } else {
@@ -98,7 +123,7 @@ async function newUserRole() {
 
         dataEntryForm.finishSubmission()
         alertStore.insertAlert('Action completed.', resp.message)
-        loadUserRoles()
+        loadUserRoles(0)
         break
     }
 }
@@ -214,10 +239,12 @@ function extractSelectedPermsFromAddNewFormData(data: any) {
             <NewItemButton text="New Role" :on-click="newUserRole" />
         </div>
         <div class="mb-10">
-            <TableComponent :table-columns="['ID', 'Role Name', 'Permissions']" :table-rows="roleDataForTable"
-                :actions="tableActions" :refresh-func="async () => { await loadUserRoles(); return true }"
-                @delete-emit="deleteRoles" @edit-emit="editRole" @load-page-emit="loadUserRoles"
-                :paginate-page-size="limitLoadUserRoles" :paginate-total="countTotUserRoles" />
+            <TableComponent :table-columns="tableColumns" :table-rows="roleDataForTable" :actions="tableActions"
+                :refresh-func="async () => { await loadUserRoles(); return true }" @delete-emit="deleteRoles"
+                @edit-emit="editRole" @load-page-emit="loadUserRoles" :paginate-page-size="limitLoadUserRoles"
+                :paginate-total="countTotUserRoles" :current-sorting="{ column: 'ID', direc: 'asc' }" @sort-by="(col, dir) => {
+                    setSorting(col, dir); loadUserRoles();
+                }" />
         </div>
     </div>
 </template>

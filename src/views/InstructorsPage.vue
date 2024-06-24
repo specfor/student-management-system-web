@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { createInstructor, deleteInstructor, getInstructors, updateInstructor, updateInstructorImage } from '@/apiConnections/instructors';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
-import TableComponent, { type TableActionType } from '@/components/TableComponent.vue';
+import TableComponent, { type TableActionType, type TableColumns } from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
@@ -23,13 +23,40 @@ const tableActions: TableActionType[] = [
     { renderAsRouterLink: false, type: 'icon', emit: 'ShowMore', icon: MagnifyingGlassIcon, css: 'fill-blue-600 w-5' },
     { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
+const tableColumns: TableColumns[] = [
+    { label: 'ID', sortable: true }, { label: 'Name', sortable: true }, { label: 'Email', sortable: true },
+    { label: 'Phone Number' }, { label: 'Work Place' }]
 
 
 const limitLoadInstructors = 30
 const countTotInstructors = ref(0)
 
-async function loadInstructors(startIndex = 0) {
-    let resp = await getInstructors(startIndex, limitLoadInstructors)
+let lastLoadSettings = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc' }
+
+function setSorting(column: string, direction: 'asc' | 'desc') {
+    switch (column) {
+        case 'ID':
+            lastLoadSettings.orderBy = 'id'
+            break;
+        case 'Name':
+            lastLoadSettings.orderBy = 'name'
+            break;
+        default:
+            break;
+    }
+    lastLoadSettings.orderDirec = direction
+}
+
+async function loadInstructors(startIndex?: number) {
+    if (startIndex === undefined)
+        startIndex = lastLoadSettings.lastUsedIndex
+    else
+        lastLoadSettings.lastUsedIndex = startIndex
+
+    let opt: any = {}
+    opt.sort = { by: lastLoadSettings.orderBy, direction: lastLoadSettings.orderDirec }
+
+    let resp = await getInstructors(startIndex, limitLoadInstructors, opt)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
         return
@@ -84,7 +111,7 @@ async function addNewInstructor() {
         }
         dataEntryForm.finishSubmission()
         alertStore.insertAlert('Action completed.', 'Instructor added successfully.')
-        loadInstructors()
+        loadInstructors(0)
         insId = resp.data.instructor.id
         break;
     }
@@ -190,11 +217,13 @@ function showMoreInfo(id: number) {
             <NewItemButton text="New Instructor" :on-click="addNewInstructor" />
         </div>
         <div class="mb-10">
-            <TableComponent :table-columns="['ID', 'Name', 'Email', 'Phone Number', 'Work Place']"
-                :table-rows="instructorDataForTable" :actions="tableActions" @edit-emit="editInstructor"
-                @show-more="showMoreInfo" :refresh-func="async () => { await loadInstructors(); return true }"
-                @delete-emit="delInstructor" @load-page-emit="loadInstructors"
-                :paginate-page-size="limitLoadInstructors" :paginate-total="countTotInstructors" />
+            <TableComponent :table-columns="tableColumns" :table-rows="instructorDataForTable" :actions="tableActions"
+                @edit-emit="editInstructor" @show-more="showMoreInfo"
+                :refresh-func="async () => { await loadInstructors(); return true }" @delete-emit="delInstructor"
+                @load-page-emit="loadInstructors" :paginate-page-size="limitLoadInstructors"
+                :paginate-total="countTotInstructors" :current-sorting="{ column: 'ID', direc: 'asc' }" @sort-by="(col, dir) => {
+                    setSorting(col, dir); loadInstructors();
+                }" />
         </div>
     </div>
 </template>

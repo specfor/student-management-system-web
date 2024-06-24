@@ -3,7 +3,7 @@
 import { getGrades } from '@/apiConnections/grades';
 import { createStudent, deleteStudent, getStudents, updateStudent, updateStudentImage } from '@/apiConnections/students';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
-import TableComponent, { type TableActionType } from '@/components/TableComponent.vue';
+import TableComponent, { type TableActionType, type TableColumns } from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
@@ -26,12 +26,53 @@ const tableActions: TableActionType[] = [
     { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' },
     { renderAsRouterLink: false, type: 'icon', emit: 'coursesEmit', icon: BookOpenIcon, css: 'stroke-blue-600' },
 ]
+const tableColumns: TableColumns[] = [
+    { label: 'ID', sortable: true }, { label: 'Custom ID', sortable: true }, { label: 'Name', sortable: true },
+    { label: 'Grade', sortable: true }, { label: 'Email', sortable: true }, { label: 'School' }
+]
 
-const limitLoadStudents = 30
+const limitLoadStudents = 3
 const countTotStudents = ref(0)
 
-async function loadStudents(startIndex = 0) {
-    let resp = await getStudents(startIndex, limitLoadStudents)
+let lastLoadSettings = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc' }
+
+function setSorting(column: string, direction: 'asc' | 'desc') {
+    switch (column) {
+        case 'ID':
+            lastLoadSettings.orderBy = 'id'
+            break;
+        case 'Custom ID':
+            lastLoadSettings.orderBy = 'custom_id'
+            break;
+        case 'Name':
+            lastLoadSettings.orderBy = 'name'
+            break;
+
+        case 'Grade':
+            lastLoadSettings.orderBy = 'grade_id'
+            break;
+        case 'Email':
+            lastLoadSettings.orderBy = 'email'
+            break;
+        case 'Birthday':
+            lastLoadSettings.orderBy = 'birthday'
+            break;
+        default:
+            break;
+    }
+    lastLoadSettings.orderDirec = direction
+}
+
+async function loadStudents(startIndex?: number) {
+    if (startIndex === undefined)
+        startIndex = lastLoadSettings.lastUsedIndex
+    else
+        lastLoadSettings.lastUsedIndex = startIndex
+
+    let opt: any = {}
+    opt.sort = { by: lastLoadSettings.orderBy, direction: lastLoadSettings.orderDirec }
+
+    let resp = await getStudents(startIndex, limitLoadStudents, opt)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
         return
@@ -49,7 +90,7 @@ let gradeData: Grade[] = []
 let gradeOptions: { value: number, text: string }[] = []
 
 async function init() {
-    loadStudents()
+    loadStudents(0)
     let resp = await getGrades()
     if (resp.status === 'success') {
         gradeData = resp.data.grades
@@ -106,7 +147,7 @@ async function addNewStudent() {
         }
         dataEntryForm.finishSubmission()
         alertStore.insertAlert('Action completed.', 'Student added successfully.')
-        loadStudents()
+        loadStudents(0)
         uploadStudentImage(resp.data.student.id)
         break;
     }
@@ -224,11 +265,13 @@ function showStudentCourses(id: number) {
             <NewItemButton text="New Student" :on-click="addNewStudent" />
         </div>
         <div class="mb-10">
-            <TableComponent :table-columns="['ID', 'Custom ID', 'Name', 'Grade', 'Email', 'School']"
-                :table-rows="studentDataForTable" :actions="tableActions" @edit-emit="editStudent"
-                @show-more="showMoreInfo" :refresh-func="async () => { await loadStudents(); return true }"
-                @delete-emit="delStudent" @courses-emit="showStudentCourses" @load-page-emit="loadStudents"
-                :paginate-page-size="limitLoadStudents" :paginate-total="countTotStudents" />
+            <TableComponent :table-columns="tableColumns" :table-rows="studentDataForTable" :actions="tableActions"
+                @edit-emit="editStudent" @show-more="showMoreInfo"
+                :refresh-func="async () => { await loadStudents(); return true }" @delete-emit="delStudent"
+                @courses-emit="showStudentCourses" @load-page-emit="loadStudents"
+                :paginate-page-size="limitLoadStudents" :paginate-total="countTotStudents" @sort-by="(col, dir) => {
+                    setSorting(col, dir); loadStudents();
+                }" :current-sorting="{ column: 'ID', direc: 'asc' }" />
         </div>
     </div>
 </template>
