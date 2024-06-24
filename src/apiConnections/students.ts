@@ -7,10 +7,22 @@ import {
   sendJsonPostRequest,
 } from "@/baseFunctions/requests";
 
-export function getStudents(startIndex = 0, limit: number | null = null) {
+export function getStudents(
+  startIndex = 0,
+  limit: number | null = null,
+  options?: {
+    sort?: {
+      by: "name" | "id" | "birthday" | "email" | "grade_id" | "custom_id";
+      direction: "acs" | "desc";
+    };
+  }
+) {
   const params: { [key: string]: any } = { start: startIndex };
   if (limit) params["size"] = limit;
-
+  if (options?.sort) {
+    params.sort = options.sort.by;
+    params.sort_dir = options.sort.direction;
+  }
   return sendGetRequest("/students", params);
 }
 

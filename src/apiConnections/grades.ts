@@ -5,9 +5,23 @@ import {
   sendGetRequest,
 } from "@/baseFunctions/requests";
 
-export function getGrades(startIndex = 0, limit: number | null = null) {
+export function getGrades(
+  startIndex = 0,
+  limit: number | null = null,
+  options?: {
+    sort?: {
+      by: "name" | "id";
+      direction: "acs" | "desc";
+    };
+  }
+) {
   const params: { [key: string]: any } = { start: startIndex };
   if (limit) params["size"] = limit;
+  if (options?.sort) {
+    params.sort = options.sort.by;
+    params.sort_dir = options.sort.direction;
+  }
+
   return sendGetRequest("/grades", params);
 }
 

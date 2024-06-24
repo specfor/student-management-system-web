@@ -3,13 +3,24 @@ import { sendJsonPostRequest, sendGetRequest } from "@/baseFunctions/requests";
 export function getPayments(
   startIndex = 0,
   limit: null | number = null,
-  filters: { course_id?: number; student_id?: number } = {}
+  options?: {
+    filters?: { course_id?: number; student_id?: number };
+    sort?: {
+      by: "enrollment_id" | "created_at" | "id" | "amount";
+      direction: "acs" | "desc";
+    };
+  }
 ) {
   const params: { [key: string]: any } = { start: startIndex };
   if (limit) params["size"] = limit;
-  if (filters.course_id) params["course_id"] = filters.course_id;
-  if (filters.student_id) params["student_id"] = filters.student_id;
-
+  if (options?.filters?.course_id)
+    params["course_id"] = options?.filters?.course_id;
+  if (options?.filters?.student_id)
+    params["student_id"] = options?.filters?.student_id;
+  if (options?.sort) {
+    params.sort = options.sort.by;
+    params.sort_dir = options.sort.direction;
+  }
   return sendGetRequest("/payments", params);
 }
 
