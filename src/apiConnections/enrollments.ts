@@ -8,10 +8,21 @@ import {
 export function getEnrollmentsOfCourse(
   courseId: number,
   startIndex = 0,
-  limit: null | number = null
+  limit: null | number = null,
+  options?: {
+    sort?: {
+      by: "student_id" | "created_at" | "id";
+      direction: "acs" | "desc";
+    };
+  }
 ) {
   const params: { [key: string]: any } = { start: startIndex };
   if (limit) params["size"] = limit;
+  if (options?.sort) {
+    params.sort = options.sort.by;
+    params.sort_dir = options.sort.direction;
+  }
+
   return sendGetRequest("/enroll/" + courseId, params);
 }
 
