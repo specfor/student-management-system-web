@@ -1,7 +1,7 @@
 <!-- eslint-disable no-constant-condition -->
 <script setup lang="ts">
 import { getPayments, refundPayment } from '@/apiConnections/payments';
-import TableComponent, { type TableActionType } from '@/components/TableComponent.vue';
+import TableComponent, { type TableActionType, type TableColumns } from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
@@ -19,19 +19,66 @@ const paymentDatByStudentTable: Ref<any[]> = ref([])
 const tableActions: TableActionType[] = [
     { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
+const tableColumns: TableColumns[] = [
+    { label: 'ID', sortable: true }, { label: 'Payment For' }, { label: 'Amount', sortable: true },
+    { label: 'Student' }, { label: 'Course' }, { label: 'Method' }, { label: 'Refunded' }]
 
 const limitLoadPayments = 30
 const countTotPaymentsForByCourse = ref(0)
 const countTotPaymentsForByStudent = ref(0)
 
-async function loadPayment(startIndex = 0, courseId = 0, studentId = 0) {
-    let params: any = {}
-    if (courseId !== 0)
-        params.course_id = courseId
-    if (studentId !== 0)
-        params.student_id = studentId
+let lastLoadSettingsStudents = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc', studentId: 0 }
+let lastLoadSettingsCourses = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc', courseId: 0 }
 
-    let resp = await getPayments(startIndex, limitLoadPayments, params)
+function setSorting(column: string, direction: 'asc' | 'desc') {
+    let orderBy = ''
+    switch (column) {
+        case 'ID':
+            orderBy = 'id'
+            break;
+        case 'Amount':
+            orderBy = 'name'
+            break;
+        default:
+            break;
+    }
+    if (tabSelectMode.value.activeTabHash == '#by-student') {
+        lastLoadSettingsStudents.orderBy = orderBy
+        lastLoadSettingsStudents.orderDirec = direction
+    } else {
+        lastLoadSettingsCourses.orderBy = orderBy
+        lastLoadSettingsCourses.orderDirec = direction
+    }
+}
+
+async function loadPayment(startIndex = 0, courseId = 0, studentId = 0) {
+    if (courseId !== 0)
+        lastLoadSettingsCourses.courseId = courseId
+    if (studentId !== 0)
+        lastLoadSettingsStudents.studentId = studentId
+
+    if (startIndex === undefined)
+        if (tabSelectMode.value.activeTabHash == '#by-student')
+            startIndex = lastLoadSettingsStudents.lastUsedIndex
+        else
+            startIndex = lastLoadSettingsCourses.lastUsedIndex
+    else
+        if (tabSelectMode.value.activeTabHash == '#by-student')
+            lastLoadSettingsStudents.lastUsedIndex = startIndex
+        else
+            lastLoadSettingsCourses.lastUsedIndex = startIndex
+
+    let opt: any = {}
+    if (tabSelectMode.value.activeTabHash == '#by-student') {
+        opt.sort = { by: lastLoadSettingsStudents.orderBy, direction: lastLoadSettingsStudents.orderDirec }
+        opt.filters = { student_id: lastLoadSettingsStudents.studentId }
+    }
+    else {
+        opt.sort = { by: lastLoadSettingsCourses.orderBy, direction: lastLoadSettingsCourses.orderDirec }
+        opt.filters = { course_id: lastLoadSettingsCourses.courseId }
+    }
+
+    let resp = await getPayments(startIndex, limitLoadPayments, opt)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
         return
@@ -116,12 +163,14 @@ function setStudent(student: Student) {
                     <StudentSelector @student="setStudent" />
                 </div>
                 <div class="mb-10">
-                    <TableComponent
-                        :table-columns="['ID', 'Payment For', 'Amount', 'Student', 'Course', 'Method', 'Refunded']"
-                        :table-rows="paymentDatByStudentTable" @edit-emit="editPayment" :actions="tableActions"
+                    <TableComponent :table-columns="tableColumns" :table-rows="paymentDatByStudentTable"
+                        @edit-emit="editPayment" :actions="tableActions"
                         :refresh-func="async () => { await loadPayment(); return true }" @delete-emit="delGrade"
                         @load-page-emit="loadPayment" :paginate-page-size="limitLoadPayments"
-                        :paginate-total="countTotPaymentsForByStudent" />
+                        :paginate-total="countTotPaymentsForByStudent" :current-sorting="{ column: 'ID', direc: 'asc' }"
+                        @sort-by="(col, dir) => {
+                            setSorting(col, dir); loadPayment();
+                        }" />
                 </div>
             </tab>
 
@@ -130,12 +179,13 @@ function setStudent(student: Student) {
                     <CourseSelector @course="setCourse" />
                 </div>
                 <div class="mb-10">
-                    <TableComponent
-                        :table-columns="['ID', 'Payment For', 'Amount', 'Student', 'Course', 'Method', 'Refunded']"
-                        :table-rows="paymentDatByCourseTable" @edit-emit="editPayment" :actions="tableActions"
+                    <TableComponent :table-columns="tableColumns" :table-rows="paymentDatByCourseTable"
+                        @edit-emit="editPayment" :actions="tableActions"
                         :refresh-func="async () => { await loadPayment(); return true }" @delete-emit="delGrade"
                         :paginate-page-size="limitLoadPayments" :paginate-total="countTotPaymentsForByCourse"
-                        @load-page-emit="loadPayment" />
+                        @load-page-emit="loadPayment" :current-sorting="{ column: 'ID', direc: 'asc' }" @sort-by="(col, dir) => {
+                            setSorting(col, dir); loadPayment();
+                        }" />
                 </div>
             </tab>
         </tabs>

@@ -3,7 +3,7 @@
 import { getUserRoles } from '@/apiConnections/userRoles';
 import { createUser, deleteUser, getUsers, updateUser } from '@/apiConnections/users';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
-import TableComponent, { type TableActionType } from '@/components/TableComponent.vue';
+import TableComponent, { type TableActionType, type TableColumns } from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
@@ -17,18 +17,49 @@ const confirmForm = useConfirmationFormsStore()
 let userData: User[] = []
 let userDataForTable: Ref<any[][]> = ref([])
 const tableActions: TableActionType[] = [{ renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }]
+const tableColumns: TableColumns[] = [{ label: 'ID', sortable: true }, { label: 'Name', sortable: true }, { label: 'Email', sortable: true }, { label: 'Role' }]
 
 const limitLoadUsers = 30
 const countTotUsers = ref(0)
 
 let userRoleOptionFields: { text: string, value: any }[] = []
 
-async function loadUsers(startIndex = 0) {
-    userDataForTable.value = []
-    let data = await getUsers(startIndex, limitLoadUsers)
+let lastLoadSettings = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc' }
+
+function setSorting(column: string, direction: 'asc' | 'desc') {
+    switch (column) {
+        case 'ID':
+            lastLoadSettings.orderBy = 'id'
+            break;
+        case 'Name':
+            lastLoadSettings.orderBy = 'name'
+            break;
+        case 'Email':
+            lastLoadSettings.orderBy = 'email'
+            break;
+        case 'Role':
+            lastLoadSettings.orderBy = 'role_id'
+            break;
+        default:
+            break;
+    }
+    lastLoadSettings.orderDirec = direction
+}
+
+async function loadUsers(startIndex?: number) {
+    if (startIndex === undefined)
+        startIndex = lastLoadSettings.lastUsedIndex
+    else
+        lastLoadSettings.lastUsedIndex = startIndex
+
+    let opt: any = {}
+    opt.sort = { by: lastLoadSettings.orderBy, direction: lastLoadSettings.orderDirec }
+
+    let data = await getUsers(startIndex, limitLoadUsers, opt)
     if (data.status === 'error') {
         alertStore.insertAlert('An error occured.', data.message, 'error')
     } else {
+        userDataForTable.value = []
         userData = data.data.users
         countTotUsers.value = data.data.tot_count
         userData.forEach(user => {
@@ -66,7 +97,7 @@ async function addNewUser() {
             continue
         } else {
             alertStore.insertAlert('Action completed.', resp.message)
-            loadUsers()
+            loadUsers(0)
             dataEntryForm.finishSubmission()
             return
         }
@@ -150,10 +181,12 @@ init()
             <NewItemButton text="New User" :on-click="addNewUser" />
         </div>
         <div class="mb-10">
-            <TableComponent :table-columns="['ID', 'Name', 'Email', 'Role']" :table-rows="userDataForTable"
-                :actions="tableActions" @edit-emit="editUser"
-                :refresh-func="async () => { await loadUsers(); return true }" @delete-emit="delUser"
-                @load-page-emit="loadUsers" :paginate-page-size="limitLoadUsers" :paginate-total="countTotUsers" />
+            <TableComponent :table-columns="tableColumns" :table-rows="userDataForTable" :actions="tableActions"
+                @edit-emit="editUser" :refresh-func="async () => { await loadUsers(); return true }"
+                @delete-emit="delUser" @load-page-emit="loadUsers" :paginate-page-size="limitLoadUsers"
+                :paginate-total="countTotUsers" :current-sorting="{ column: 'ID', direc: 'asc' }" @sort-by="(col, dir) => {
+                    setSorting(col, dir); loadUsers();
+                }" />
         </div>
     </div>
 </template>

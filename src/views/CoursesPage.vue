@@ -3,7 +3,7 @@
 import { createCourse, deleteCourse, getCourses, updateCourse } from '@/apiConnections/courses';
 import { getGrades } from '@/apiConnections/grades';
 import { getInstructors } from '@/apiConnections/instructors';
-import TableComponent, { type TableActionType } from '@/components/TableComponent.vue';
+import TableComponent, { type TableActionType, type TableColumns } from '@/components/TableComponent.vue';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
@@ -21,13 +21,39 @@ let coursesData: Course[] = []
 const tableActions: TableActionType[] = [
     { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
-
+const tableColumns: TableColumns[] = [
+    { label: 'ID', sortable: false }, { label: 'Group', sortable: false }, { label: 'Grade' },
+    { label: 'Course Day' }, { label: 'Time' }, { label: 'Fee' }, { label: 'Payment Cycle' }, { label: 'Instructor' }]
 
 const limitLoadCourses = 30
 const countTotCourses = ref(0)
 
-async function loadCourses(startIndex = 0) {
-    let resp = await getCourses(startIndex, limitLoadCourses)
+let lastLoadSettings = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc' }
+
+function setSorting(column: string, direction: 'asc' | 'desc') {
+    switch (column) {
+        case 'ID':
+            lastLoadSettings.orderBy = 'id'
+            break;
+        case 'Group':
+            lastLoadSettings.orderBy = 'name'
+            break;
+        default:
+            break;
+    }
+    lastLoadSettings.orderDirec = direction
+}
+
+async function loadCourses(startIndex?: number) {
+    if (startIndex === undefined)
+        startIndex = lastLoadSettings.lastUsedIndex
+    else
+        lastLoadSettings.lastUsedIndex = startIndex
+
+    let opt: any = {}
+    opt.sort = { by: lastLoadSettings.orderBy, direction: lastLoadSettings.orderDirec }
+
+    let resp = await getCourses(startIndex, limitLoadCourses, opt)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
         return
@@ -129,7 +155,7 @@ async function addNewCourse() {
         } else {
             dataEntryForm.finishSubmission()
             alertStore.insertAlert('Action completed.', resp.message)
-            loadCourses()
+            loadCourses(0)
             break
         }
     }
@@ -225,12 +251,12 @@ async function delCourse(ids: number[]) {
             <NewItemButton text="New Course" :on-click="addNewCourse" />
         </div>
         <div class="mb-10">
-            <TableComponent
-                :table-columns="['ID', 'Group', 'Grade', 'Course Day', 'Time', 'Fee', 'Payment Cycle', 'Instructor']"
-                :table-rows="coursesDataForTable" @edit-emit="editCourse" :actions="tableActions"
-                :refresh-func="async () => { await loadCourses(); return true }" @delete-emit="delCourse"
-                @load-page-emit="loadCourses" :paginate-page-size="limitLoadCourses"
-                :paginate-total="countTotCourses" />
+            <TableComponent :table-columns="tableColumns" :table-rows="coursesDataForTable" @edit-emit="editCourse"
+                :actions="tableActions" :refresh-func="async () => { await loadCourses(); return true }"
+                @delete-emit="delCourse" @load-page-emit="loadCourses" :paginate-page-size="limitLoadCourses"
+                :paginate-total="countTotCourses" :current-sorting="{ column: 'ID', direc: 'asc' }" @sort-by="(col, dir) => {
+                    setSorting(col, dir); loadCourses();
+                }" />
         </div>
     </div>
 </template>
