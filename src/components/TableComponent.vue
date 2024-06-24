@@ -1,12 +1,16 @@
 <script setup lang="ts">
+import { defineComponent, defineProps, ref, toRef, watch, type FunctionalComponent, type Ref } from "vue";
 import PaginateComponent from "./PaginateComponent.vue";
 
-let selectedIds = ref([])
-let isDisabled = ref(true)
-let isActive = ref(false)
-let searchInput: Ref<any> = ref({})
-let isHidden = ref(true)
-let filterBgColor = ref('bg-white');
+const selectedIds = ref([])
+const isDisabled = ref(true)
+const isActive = ref(false)
+const searchInput: Ref<any> = ref({})
+const isHidden = ref(true)
+const filterBgColor = ref('bg-white');
+const refreshingData = ref(false)
+const showTableOptions = ref(false)
+let activeSorting: Ref<{ column: string, direc: 'asc' | 'desc' }> = ref({ column: '', direc: 'asc' })
 
 function isChecked() {
   if (selectedIds.value.length === 0) {
@@ -23,16 +27,24 @@ let {
   tableRows,
   actions,
   search,
+  paginatePageSize,
+  paginateTotal,
+  currentSorting,
   refreshFunc
 } = defineProps<{
-  tableColumns: string[]
+  tableColumns: TableColumns[]
   tableRows: any[][]
   actions: TableActionType[]
   search?: any
+  paginateTotal: number
+  paginatePageSize: number
   refreshFunc?: () => Promise<boolean>
+  currentSorting?: { column: string, direc: 'asc' | 'desc' }
 }>()
 
-let refreshingData = ref(false)
+if (currentSorting)
+  activeSorting.value = currentSorting
+
 
 export type TableActionType =
   ({
@@ -42,6 +54,8 @@ export type TableActionType =
   } | {
     renderAsRouterLink: false
   }) & Inputs
+
+export type TableColumns = { label: string, sortable?: boolean }
 
 type Inputs = {
   type: "icon"
@@ -111,10 +125,21 @@ type Inputs = {
     <table class="table-auto border-collapse border w-full">
 
       <thead>
-        <tr class="border-0 border-y-2 border-t-0 border-slate-500 bg-neutral-300">
-          <th class="text-left px-3 pt-4 pb-2 font-bold"></th>
-          <th class="text-left px-3 pt-4 pb-2 font-bold" v-for="(columnName, i) in tableColumns" :key="i">{{ columnName
-            }}
+        <tr class="border-0 border-y-2 border-t-0 border-slate-500 bg-neutral-200">
+          <th class="text-left px-3 pt-4 pb-2 font-bold">
+          </th>
+          <th class="text-left px-1 pt-4 pb-2 font-bold" v-for="(column, i) in tableColumns" :key="i">
+            <div class="flex">
+              {{ column.label }}
+              <ArrowLongDownIcon class="w-5 ml-1 hover:stroke-2 hover:stroke-slate-800 cursor-pointer"
+                :class="(activeSorting.column === column.label && activeSorting.direc === 'asc') ? 'stroke-slate-900' : 'stroke-slate-400'"
+                @click="() => { $emit('sortBy', column.label, 'asc'); activeSorting.column = column.label; activeSorting.direc = 'asc' }"
+                v-if="column.sortable" />
+              <ArrowLongUpIcon class="w-5 hover:stroke-2 hover:stroke-slate-800  cursor-pointer"
+                :class="(activeSorting.column === column.label && activeSorting.direc === 'desc') ? 'stroke-slate-900' : 'stroke-slate-400'"
+                @click="() => { $emit('sortBy', column.label, 'desc'); activeSorting.column = column.label; activeSorting.direc = 'desc' }"
+                v-if="column.sortable" />
+            </div>
           </th>
           <th v-if="actions.length > 0" class="text-center px-3 pt-4 pb-2 font-bold">Actions</th>
         </tr>
@@ -124,8 +149,7 @@ type Inputs = {
         <tr v-if="tableRows.length === 0">
           <td colspan="100%" class="text-center pt-2 text-slate-700">No Data To Display.</td>
         </tr>
-        <tr v-for="row in tableRows" :key="row[0]"
-          class="border-y border-slate-400 bg-neutral-100 hover:bg-neutral-200">
+        <tr v-for="row in tableRows" :key="row[0]" class="border-y border-slate-300 bg-neutral-50 hover:bg-neutral-200">
           <td class="pt-1 px-5"
             v-if="!row.some(value => { return typeof value == 'object' && value !== null && value.type === 'group' })">
             <input type="checkbox" class="h-5 w-5" :value="row[0]" v-model="selectedIds" v-on:change="isChecked">
