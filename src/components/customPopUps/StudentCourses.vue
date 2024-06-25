@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref, type Ref } from 'vue';
-import TableComponent from '../TableComponent.vue';
+import TableComponent, { type TableColumns } from '../TableComponent.vue';
 import { getStudentEnrollments } from '@/apiConnections/enrollments';
 
 let courses: Ref<any[]> = ref([])
 let student = ref({})
+const tableColumns: TableColumns[] = [
+    { label: 'ID', sortable: false }, { label: 'Course' }, { label: 'Fee' },
+    { label: 'Suspended' }]
 
 let { args } = defineProps(['args'])
 
@@ -43,10 +46,10 @@ init(args.student.id)
                 <h4 class="border px-3 py-1">aogaeogha</h4>
             </div>
         </div> -->
-        <h1 class="font-semibold text-xl">Student Enrolled Courses</h1>
+        <h1 class="font-semibold text-xl mb-10">Student Enrolled Courses</h1>
 
-        <TableComponent class="mt-10" :table-columns="['ID', 'Course', 'Fee', 'Suspended']" :table-rows="courses"
-            :actions="[]" :paginate-page-size="30" :paginate-total="30" />
+        <TableComponent class="mt-10" :table-columns="tableColumns" :table-rows="courses" :actions="[]"
+            :paginate-page-size="30" :paginate-total="30" />
 
     </div>
 </template>
