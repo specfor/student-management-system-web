@@ -3,7 +3,7 @@
 import { getCourses } from '@/apiConnections/courses';
 import { deleteEnrollment, enrollCourse, getEnrollmentsOfCourse, getStudentEnrollments, updateEnrollment } from '@/apiConnections/enrollments';
 import { getStudents } from '@/apiConnections/students';
-import TableComponent, { type TableActionType } from '@/components/TableComponent.vue';
+import TableComponent, { type TableActionType, type TableColumns } from '@/components/TableComponent.vue';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
@@ -12,7 +12,6 @@ import { ref, watch, type Ref } from 'vue';
 import StudentSelector from '@/components/dataSelectors/StudentSelector.vue';
 import CourseSelector from '@/components/dataSelectors/CourseSelector.vue';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
-
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
@@ -32,6 +31,12 @@ let enrollmentsDataTabStudent: any[] = []
 const tableActions: TableActionType[] = [
     { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
+const tableColumnsByCourse: TableColumns[] = [
+    { label: 'ID', sortable: false }, { label: 'Student Name' }, { label: 'Suspended' },
+    { label: 'Price Concession' }, { label: 'Status' }]
+const tableColumnsbyStudent: TableColumns[] = [
+    { label: 'ID', sortable: false }, { label: 'Course Name' }, { label: 'Suspended' },
+    { label: 'Price Concession' }, { label: 'Status' }]
 
 const limitLoadEnrollments = 30
 const countTotEnrollmentsTabCourse = ref(0)
@@ -71,6 +76,15 @@ async function loadEnrollments(startIndex = 0) {
             else
                 priceOffer = enrollment.price_adjustments.percentage + '% reduction'
         }
+        let lastStatus = enrollment.status[enrollment.status.length - 1];
+        let status = { type: 'colorTag', text: lastStatus.type, css: 'bg-green-200 text-green-800' }
+        if (lastStatus.type === 'discontinued')
+            status = { type: 'colorTag', text: lastStatus.type, css: 'bg-red-200 text-red-800' }
+        else if (lastStatus.type === 'pending')
+            status = { type: 'colorTag', text: lastStatus.type, css: 'bg-yellow-200 text-yellow-800' }
+        else if (lastStatus.type === 'completed')
+            status = { type: 'colorTag', text: lastStatus.type, css: 'bg-blue-200 text-blue-800' }
+
         if (tabSelectMode.value.activeTabHash == '#by-student') {
             let course = "Deleted"
             if (enrollment.course) {
@@ -78,10 +92,10 @@ async function loadEnrollments(startIndex = 0) {
                 if (enrollment.course.group_name)
                     course += " - " + enrollment.course.group_name
             }
-            enrollmentsDataForByStudentTab.value.push([enrollment.id, course, enrollment.suspended, priceOffer])
+            enrollmentsDataForByStudentTab.value.push([enrollment.id, course, enrollment.suspended, priceOffer, status])
         }
         else
-            enrollmentsDataForByCourseTab.value.push([enrollment.id, enrollment.student ? enrollment.student.name : 'Deleted Student', enrollment.suspended, priceOffer])
+            enrollmentsDataForByCourseTab.value.push([enrollment.id, enrollment.student ? enrollment.student.name : 'Deleted Student', enrollment.suspended, priceOffer, status])
     });
 }
 
@@ -179,18 +193,24 @@ async function editEnrollment(id: number) {
     let enrollment = null
 
     if (tabSelectMode.value.activeTabHash == '#by-student')
-        enrollment = enrollmentsDataTabStudent.find(g => g.id === id)
+        enrollment = enrollmentsDataTabStudent.find(g => g.id === id) as Enrollment
     else
-        enrollment = enrollmentsDataTabCourse.find(g => g.id === id)
+        enrollment = enrollmentsDataTabCourse.find(g => g.id === id) as Enrollment
 
     dataEntryForm.newDataEntryForm('Update Enrollment', 'Update', [
         { name: 'id', type: 'text', text: 'Enrollment ID', disabled: true, value: enrollment.id },
+
+        { type: 'heading', text: 'Status' },
         {
-            name: 'suspend', type: 'select', text: 'Suspend Student', value: enrollment.suspended, options: [
-                { text: 'Yes', value: true },
-                { text: 'No', value: false }
+            name: 'status', type: 'select', text: 'Select', value: enrollment.status[enrollment.status.length - 1].type, options: [
+                { text: 'Active', value: 'active' },
+                { text: 'Pending', value: 'pending' },
+                { text: 'Discontinued', value: 'discontinued' },
+                { text: 'Completed', value: 'completed' },
             ],
         },
+        { name: 'status_reason', type: 'textarea', text: 'Reason for change (for later reference)' },
+
         { type: 'heading', text: 'Any price concession? (optional)' },
         {
             name: 'discount_type', type: 'select', text: 'Concession Type', value: enrollment.price_adjustments ? enrollment.price_adjustments.type : 'none', options: [
@@ -210,8 +230,8 @@ async function editEnrollment(id: number) {
         if (!results.submitted)
             return
 
-        let resp = await updateEnrollment(id, Boolean(results.data['suspend']), results.data['discount_type'] as EnrollmentPriceAdjustment['type'],
-            results.data['amount'] as number, results.data['reason'] as string)
+        let resp = await updateEnrollment(id, false, results.data['discount_type'] as EnrollmentPriceAdjustment['type'],
+            results.data['amount'] as number, results.data['reason'] as string, results.data['status'] as EnrollmentStatus['type'], results.data['status_reason'] as string)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
@@ -260,7 +280,7 @@ async function delEnrollment(ids: number[]) {
         <tabs nav-class="flex border-b-2 pb-[6px] justify-center" nav-item-link-class="border px-10 py-2 font-semibold"
             nav-item-link-active-class="bg-slate-200" panels-wrapper-class="pt-10" ref="tabSelectMode">
             <tab name="by Student">
-                <div class="flex justify-end">
+                <div class="flex justify-end mb-3">
                     <NewItemButton text="Enroll a Student" :on-click="addNewEnrollment"
                         :disabled="selectedStudentId === 0" />
                 </div>
@@ -268,8 +288,8 @@ async function delEnrollment(ids: number[]) {
                     <StudentSelector @student="(s) => { selectedStudentId = s.id }" />
                 </div>
                 <div class="mb-10">
-                    <TableComponent :table-columns="['ID', 'Course Name', 'Suspended', 'Price Concession']"
-                        :table-rows="enrollmentsDataForByStudentTab" @edit-emit="editEnrollment" :actions="tableActions"
+                    <TableComponent :table-columns="tableColumnsbyStudent" :table-rows="enrollmentsDataForByStudentTab"
+                        @edit-emit="editEnrollment" :actions="tableActions"
                         :refresh-func="async () => { await loadEnrollments(); return true }"
                         @delete-emit="delEnrollment" @load-page-emit="loadEnrollments"
                         :paginate-page-size="limitLoadEnrollments" :paginate-total="countTotEnrollmentsTabStudent" />
@@ -277,7 +297,7 @@ async function delEnrollment(ids: number[]) {
             </tab>
 
             <tab name="by Course">
-                <div class="flex justify-end">
+                <div class="flex justify-end mb-3">
                     <NewItemButton text="Enroll a Student" :on-click="addNewEnrollment"
                         :disabled="selectedCourseId === 0" />
                 </div>
@@ -285,8 +305,8 @@ async function delEnrollment(ids: number[]) {
                     <CourseSelector @course="(c) => { selectedCourseId = c.id }" />
                 </div>
                 <div class="mb-10">
-                    <TableComponent :table-columns="['ID', 'Student Name', 'Suspended', 'Price Concession']"
-                        :table-rows="enrollmentsDataForByCourseTab" @edit-emit="editEnrollment" :actions="tableActions"
+                    <TableComponent :table-columns="tableColumnsByCourse" :table-rows="enrollmentsDataForByCourseTab"
+                        @edit-emit="editEnrollment" :actions="tableActions"
                         :refresh-func="async () => { await loadEnrollments(); return true }"
                         @delete-emit="delEnrollment" @load-page-emit="loadEnrollments"
                         :paginate-page-size="limitLoadEnrollments" :paginate-total="countTotEnrollmentsTabCourse" />
