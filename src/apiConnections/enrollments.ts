@@ -64,7 +64,9 @@ export function updateEnrollment(
   suspend: boolean,
   discount_type: EnrollmentPriceAdjustment["type"],
   discount_amount: number,
-  discount_reason: string
+  discount_reason: string,
+  status: EnrollmentStatus["type"],
+  status_reason: string
 ) {
   const params: { [key: string]: any } = {
     suspend: suspend,
@@ -79,6 +81,8 @@ export function updateEnrollment(
       params["price_adjustment"].amount = discount_amount;
     else params["price_adjustment"].percentage = discount_amount;
   }
+  params["status"] = { type: status, reason: status_reason };
+
   return sendJsonPatchRequest(`/enroll/${id}`, params);
 }
 

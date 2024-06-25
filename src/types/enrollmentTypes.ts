@@ -7,6 +7,12 @@ type Enrollment = {
   price_adjustments: null | EnrollmentPriceAdjustment;
   course: Course | null;
   student: Student | null;
+  status: EnrollmentStatus[];
+};
+
+type EnrollmentStatus = {
+  type: "active" | "completed" | "pending" | "discontinued";
+  reason: string | null;
 };
 
 type EnrollmentPriceAdjustment = {
