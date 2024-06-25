@@ -128,7 +128,7 @@ export type InputField = InputTypes & {
   text?: string;
   name: string;
   required?: boolean;
-  validate?: Function;
+  validate?: (value: any) => string | null;
 };
 
 type InputTypes =

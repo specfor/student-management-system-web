@@ -109,7 +109,15 @@ function craftGradesAsOptions() {
 
 async function addNewStudent() {
     dataEntryForm.newDataEntryForm('New Student', 'Create', [
-        { name: 'custom_id', text: 'Student ID', type: 'text', required: true },
+        {
+            name: 'custom_id', text: 'Student ID', type: 'text', required: true, validate: (val) => {
+                let strVal = String(val)
+                if (strVal.length !== 5)
+                    return "Student ID must be 5 characters long."
+                else
+                    return null
+            }
+        },
         { name: 'name', text: 'Name', type: 'text', required: true },
         { name: 'full_name', text: 'Full Name', type: 'text' },
         { name: 'grade_id', text: 'Select Grade', type: 'select', required: true, options: gradeOptions },
@@ -187,7 +195,15 @@ async function editStudent(id: number) {
 
     dataEntryForm.newDataEntryForm('Update Student', 'Update', [
         { name: 'id', text: 'ID', type: 'text', disabled: true, value: student.id },
-        { name: 'custom_id', text: 'Student ID', type: 'text', required: true, value: student.custom_id },
+        {
+            name: 'custom_id', text: 'Student ID', type: 'text', required: true, value: student.custom_id, validate: (val) => {
+                let strVal = String(val)
+                if (strVal.length !== 5)
+                    return "Student ID must be 5 characters long."
+                else
+                    return null
+            }
+        },
         { name: 'name', text: 'Name', type: 'text', required: true, value: student.name },
         { name: 'full_name', text: 'Full Name', type: 'text', value: student.full_name },
         { name: 'grade_id', text: 'Select Grade', type: 'select', required: true, value: student.grade ? student.grade.id : '', options: gradeOptions },
