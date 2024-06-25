@@ -31,7 +31,7 @@ const tableColumns: TableColumns[] = [
     { label: 'Grade', sortable: true }, { label: 'Email', sortable: true }, { label: 'School' }
 ]
 
-const limitLoadStudents = 3
+const limitLoadStudents = 30
 const countTotStudents = ref(0)
 
 let lastLoadSettings = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc' }
