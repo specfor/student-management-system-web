@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { defineComponent, defineProps, ref, toRef, watch, type FunctionalComponent, type Ref } from "vue";
+import { defineProps, ref, type FunctionalComponent, type Ref } from "vue";
+import { ArrowPathIcon, Cog6ToothIcon } from "@heroicons/vue/24/solid";
+import { ArrowLongDownIcon, ArrowLongUpIcon } from "@heroicons/vue/24/outline";
 import PaginateComponent from "./PaginateComponent.vue";
+import TableColoredTag from "./primary/TableColoredTag.vue";
 
 const selectedIds = ref([])
 const isDisabled = ref(true)
@@ -161,10 +164,11 @@ type Inputs = {
           </td>
           <template
             v-if="!row.some(value => { return typeof value == 'object' && value !== null && value.type === 'group' })">
-            <td v-for="(data, index) in row" :key="index" class="px-3 py-1 text-slate-800">
+            <td v-for="(data, index) in row" :key="index" class="pl-1 pr-3 py-1 text-slate-800">
               <span v-if="data === null || data === ''" class="">None</span>
               <span v-else-if="typeof data === 'object'">
-                <span v-if="data['type'] === 'html'" v-html="data['value']"></span>
+                <span v-if="data['type'] === 'html'" v-html="data['html']"></span>
+                <TableColoredTag v-else-if="data['type'] === 'colorTag'" :text="data['text']" :css="data['css']" />
               </span>
               <span v-else>{{ data }}</span>
             </td>
