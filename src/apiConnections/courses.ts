@@ -3,7 +3,7 @@ import {
   sendJsonPatchRequest,
   sendJsonPostRequest,
   sendGetRequest,
-} from "@/baseFunctions/requests";
+} from "@/utils/requests";
 
 export function getCourses(
   startIndex = 0,

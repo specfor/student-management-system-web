@@ -3,7 +3,7 @@ import {
   sendJsonPostRequest,
   sendGetRequest,
   sendDeleteRequest,
-} from "@/baseFunctions/requests";
+} from "@/utils/requests";
 
 export function getEnrollmentsOfCourse(
   courseId: number,

@@ -1,4 +1,4 @@
-import { sendJsonPostRequest, sendGetRequest } from "@/baseFunctions/requests";
+import { sendJsonPostRequest, sendGetRequest } from "@/utils/requests";
 
 export function getPayments(
   startIndex = 0,
