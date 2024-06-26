@@ -5,7 +5,7 @@ import {
   sendGetRequest,
   sendJsonPatchRequest,
   sendJsonPostRequest,
-} from "@/baseFunctions/requests";
+} from "@/utils/requests";
 
 export function getInstructors(
   startIndex = 0,

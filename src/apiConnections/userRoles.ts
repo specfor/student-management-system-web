@@ -3,7 +3,7 @@ import {
   sendGetRequest,
   sendJsonPatchRequest,
   sendJsonPostRequest,
-} from "@/baseFunctions/requests";
+} from "@/utils/requests";
 
 export function getUserRoles(
   startIndex = 0,
