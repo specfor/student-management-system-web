@@ -45,14 +45,14 @@ onMounted(async () => {
 <template>
   <LoadingScreen v-if="loading" />
 
-  <div class="TextNotCopy">
+  <div>
     <div v-if="authStore.LoggedIn" class="h-dvh flex flex-col">
-      <header>
+      <header class="TextNotCopy">
         <PageHeader />
       </header>
       <div class="flex flex-1 mt-14">
         <div class="relative w-[200px] h-full">
-          <SideMenu class="fixed" />
+          <SideMenu class="fixed TextNotCopy" />
         </div>
         <RouterView class="pt-8" />
       </div>
@@ -60,7 +60,7 @@ onMounted(async () => {
     <div v-if="!authStore.LoggedIn">
       <RouterView />
     </div>
-    <SideAlerts class="fixed right-4 top-14 z-30" />
+    <SideAlerts class="fixed right-4 top-20 z-30" />
     <AddNewModal />
     <ConfirmationModal />
     <ExtendablePopUp />
