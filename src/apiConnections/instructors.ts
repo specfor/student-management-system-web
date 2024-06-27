@@ -26,6 +26,10 @@ export function getInstructors(
   return sendGetRequest("/instructors", params);
 }
 
+export function getInstructor(id: number) {
+  return sendGetRequest(`/instructors/${id}`);
+}
+
 export function createInstructor(
   name: string,
   email: string,

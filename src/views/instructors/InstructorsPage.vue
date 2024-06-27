@@ -8,14 +8,12 @@ import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationFor
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { ref, type Ref } from "vue"
 import { MagnifyingGlassIcon, PencilSquareIcon } from '@heroicons/vue/24/solid';
-import { useExtendablePopUpStore } from '@/stores/formManagers/extendablePopUp';
-import InstructorMoreInfo from '@/components/customPopUps/InstructorMoreInfo.vue';
+import { setRoute } from '@/utils/routeHelpers';
 
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
 const confirmationForm = useConfirmationFormsStore()
-const extendablePopUpStore = useExtendablePopUpStore()
 
 let instructorData: Instructor[] = []
 const instructorDataForTable: Ref<any[]> = ref([])
@@ -205,8 +203,7 @@ async function delInstructor(ids: number[]) {
 }
 
 function showMoreInfo(id: number) {
-    let instructor = instructorData.find(s => s.id === id)
-    extendablePopUpStore.showComponent(InstructorMoreInfo, { instructor: instructor, uploadImageFunc: uploadInstructorImage })
+    setRoute(`/instructors/${id}/view`)
 }
 </script>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { downloadStudentImage, getStudentById, getStudents } from '@/apiConnections/students';
+import { downloadStudentImage, getStudentById } from '@/apiConnections/students';
 import { useAlertsStore } from '@/stores/alerts';
 import { getRouterParam } from '@/utils/routeHelpers';
 import { ref, type Ref } from 'vue';
