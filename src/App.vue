@@ -3,7 +3,7 @@ import { RouterView } from 'vue-router'
 import PageHeader from './components/PageHeader.vue';
 import SideMenu from './components/SideMenu.vue';
 import { useAuthStore } from './stores/authorization';
-import { onMounted, ref } from 'vue';
+import { ref } from 'vue';
 import router from './router';
 import { useSystemInfoStore } from './stores/systemInfo';
 import SideAlerts from './components/SideAlerts.vue';
