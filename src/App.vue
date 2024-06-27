@@ -29,7 +29,7 @@ async function checkAppUpdates() {
 }
 checkAppUpdates()
 
-onMounted(async () => {
+async function checkLogged() {
   await authStore.checkLoggedIn()
   if (authStore.LoggedIn) {
     if (router.currentRoute.value['path'] === '/login')
@@ -38,14 +38,16 @@ onMounted(async () => {
     router.push('/login')
   }
   loading.value = false
-})
+}
+
+checkLogged()
 
 </script>
 
 <template>
   <LoadingScreen v-if="loading" />
 
-  <div>
+  <div v-else>
     <div v-if="authStore.LoggedIn" class="h-dvh flex flex-col">
       <header class="TextNotCopy">
         <PageHeader />
