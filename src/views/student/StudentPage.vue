@@ -11,8 +11,8 @@ import { ref, type Ref } from "vue"
 import { MagnifyingGlassIcon, PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { BookOpenIcon } from '@heroicons/vue/24/outline';
 import { useExtendablePopUpStore } from '@/stores/formManagers/extendablePopUp';
-import StudentMoreInfo from '@/components/customPopUps/StudentMoreInfo.vue';
 import StudentCourses from '@/components/customPopUps/StudentCourses.vue';
+import { setRoute } from '@/utils/routeHelpers';
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
@@ -263,8 +263,7 @@ async function delStudent(ids: number[]) {
 }
 
 function showMoreInfo(id: number) {
-    let student = studentData.find(s => s.id === id)!
-    extendablePopUpStore.showComponent(StudentMoreInfo, { 'student': student, 'uploadImageFunc': uploadStudentImage })
+    setRoute(`/students/${id}/view`)
 }
 
 function showStudentCourses(id: number) {

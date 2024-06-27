@@ -26,6 +26,10 @@ export function getStudents(
   return sendGetRequest("/students", params);
 }
 
+export function getStudentById(id: number) {
+  return sendGetRequest(`/students/${id}`);
+}
+
 export function createStudent(
   custom_id: string,
   name: string,
