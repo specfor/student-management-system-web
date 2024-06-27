@@ -4,6 +4,7 @@ import { ArrowPathIcon, Cog6ToothIcon } from "@heroicons/vue/24/solid";
 import { ArrowLongDownIcon, ArrowLongUpIcon } from "@heroicons/vue/24/outline";
 import PaginateComponent from "./PaginateComponent.vue";
 import TableColoredTag from "./primary/TableColoredTag.vue";
+import { setRoute } from "@/utils/routeHelpers";
 
 const selectedIds = ref([])
 const isDisabled = ref(true)
@@ -70,6 +71,10 @@ export type tableRowItem = string | number | {
   type: "colorTag"
   text: string
   css?: string
+} | {
+  type: 'textWithLink'
+  text: string
+  url: string
 }
 
 type Inputs = {
@@ -184,6 +189,9 @@ type Inputs = {
                 <span v-if="data['type'] === 'html'" v-html="data['html']"></span>
                 <TableColoredTag v-else-if="data['type'] === 'colorTag'" :text="data['text']"
                   :css="data['css'] ?? ''" />
+                <span v-else-if="data['type'] === 'textWithLink'" @click="() => { setRoute(data['url']) }"
+                  class="text-blue-500 cursor-pointer">{{ data['text']
+                  }}</span>
               </span>
               <span v-else>{{ data }}</span>
             </td>
