@@ -36,7 +36,7 @@ let {
   refreshFunc
 } = defineProps<{
   tableColumns: TableColumns[]
-  tableRows: any[][]
+  tableRows: tableRowItem[][]
   actions: TableActionType[]
   search?: any
   paginateTotal: number
@@ -59,6 +59,18 @@ export type TableActionType =
   }) & Inputs
 
 export type TableColumns = { label: string, sortable?: boolean }
+
+export type tableRowItem = string | number | {
+  type: "group"
+  value: string | number | boolean
+} | {
+  type: "html"
+  html: string
+} | {
+  type: "colorTag"
+  text: string
+  css?: string
+}
 
 type Inputs = {
   type: "icon"
@@ -85,7 +97,7 @@ type Inputs = {
         <button
           class="flex hover:cursor-pointer px-4 py-2 rounded-tr-lg items-center border mr-3 disabled:cursor-not-allowed disabled:text-slate-400"
           :disabled="isDisabled"
-          :class="{ 'bg-red-400 text-white hover:bg-red-700': isActive, 'text-slate-400  ': !isActive }" @click="() => {
+          :class="{ 'bg-red-600 text-white hover:bg-red-700': isActive, 'text-slate-400  ': !isActive }" @click="() => {
             $emit('deleteEmit', selectedIds); isDisabled = true; isActive = false; selectedIds = []; if (selectedIds) { isDisabled = true };
             selectedIds = [];
           }">Delete
@@ -152,14 +164,16 @@ type Inputs = {
         <tr v-if="tableRows.length === 0">
           <td colspan="100%" class="text-center pt-2 text-slate-700">No Data To Display.</td>
         </tr>
-        <tr v-for="row in tableRows" :key="row[0]" class="border-y border-slate-300 bg-neutral-50 hover:bg-neutral-200">
+        <tr v-for="row in tableRows" :key="row[0] as string"
+          class="border-y border-slate-300 bg-neutral-50 hover:bg-neutral-200">
           <td class="pt-1 px-5"
             v-if="!row.some(value => { return typeof value == 'object' && value !== null && value.type === 'group' })">
             <input type="checkbox" class="h-5 w-5" :value="row[0]" v-model="selectedIds" v-on:change="isChecked">
           </td>
           <td colspan="100%" class="py-1 font-semibold bg-white pl-6"
             v-if="row.find(value => { return typeof value == 'object' && value !== null && value.type === 'group' })">
-            {{ row.find(value => { return typeof value == 'object' && value !== null && value.type === 'group' }).value
+            {{ (row.find(value => { return typeof value == 'object' && value !== null && value.type === 'group' })! as
+              any).value
             }}
           </td>
           <template
@@ -168,7 +182,8 @@ type Inputs = {
               <span v-if="data === null || data === ''" class="">None</span>
               <span v-else-if="typeof data === 'object'">
                 <span v-if="data['type'] === 'html'" v-html="data['html']"></span>
-                <TableColoredTag v-else-if="data['type'] === 'colorTag'" :text="data['text']" :css="data['css']" />
+                <TableColoredTag v-else-if="data['type'] === 'colorTag'" :text="data['text']"
+                  :css="data['css'] ?? ''" />
               </span>
               <span v-else>{{ data }}</span>
             </td>
