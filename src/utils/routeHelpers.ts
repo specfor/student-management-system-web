@@ -3,7 +3,6 @@ import router from "@/router";
 
 export function getRouteQuery(key: string): string | null {
   const route = useRoute();
-  console.log(route.query);
 
   if (key in route.query) {
     return String(route.query[key]);
