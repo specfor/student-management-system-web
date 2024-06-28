@@ -38,8 +38,8 @@ function nextPage() {
 
 <template>
 
-  <nav aria-label="Page navigation example">
-    <ul class="flex items-center -space-x-px h-8 text-sm">
+  <nav aria-label="Page navigation example" class="w-full">
+    <ul class="flex justify-center items-center -space-x-px h-8 text-sm relative">
       <li>
         <a href="#" @click="prevPage"
           class="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700">
@@ -69,6 +69,11 @@ function nextPage() {
           </svg>
         </a>
       </li>
+      <div class="absolute right-0 text-md">
+        <div class="border py-1 px-3 rounded-md text-slate-600">
+          <p>Records Count: <span class="text-blue-500 font-bold">{{ props.totalCount }}</span></p>
+        </div>
+      </div>
     </ul>
   </nav>
 
