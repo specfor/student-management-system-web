@@ -7,13 +7,34 @@ const selectedCourseData: Ref<Course | null> = ref(null)
 const courseGroupOptionFields: Ref<{ text: string, value: any }[]> = ref([])
 const selectedCourseGroup = ref('')
 const coursesOptionFields: Ref<{ text: string, value: any }[]> = ref([])
-const selectedCourseForTable = ref(0)
+const selectedCourseId = ref(0)
 
 let courses: Course[] = [];
+
+let courseID = defineModel<number>('courseId')
 
 const emit = defineEmits<{
     course: [course: Course]
 }>()
+
+watch(courseID, async (id) => {
+    if (id === undefined)
+        return
+
+    await waitForCourseData()
+    let cName = courses.find(c => c.id === id)!.name
+    selectedCourseGroup.value = cName
+
+    await new Promise((resolve) => {
+        let id = setInterval(() => {
+            if (coursesOptionFields.value.length > 0) {
+                clearInterval(id)
+                resolve(true)
+            }
+        }, 100)
+    })
+    selectedCourseId.value = id
+})
 
 async function laodCourses() {
     let resp = await getCourses()
@@ -36,20 +57,38 @@ watch(selectedCourseGroup, async (gName) => {
     coursesOptionFields.value = []
     let groups = courses.filter(c => c.name == gName)
     if (groups.length === 1) {
-        selectedCourseForTable.value = groups[0].id
+        selectedCourseId.value = groups[0].id
     } else {
-        selectedCourseForTable.value = 0
+        selectedCourseId.value = 0
         groups.forEach(group => {
             coursesOptionFields.value.push({ value: group.id, text: group.group_name ? group.group_name : 'No Name' })
         })
     }
 })
 
-watch(selectedCourseForTable, async (courseId) => {
-    if (courseId === 0) return;
-    selectedCourseData.value = courses.find(c => c.id == courseId)!
-    emit('course', selectedCourseData.value)
+watch(selectedCourseId, async (cID) => {
+    if (cID === 0) return;
+    courseID.value = cID
+    if (courses.length === 0)
+        await waitForCourseData()
+
+    let fuoundCourse = courses.find(c => c.id == cID)
+    if (!fuoundCourse)
+        return
+    selectedCourseData.value = fuoundCourse
+    emit('course', fuoundCourse)
 })
+
+function waitForCourseData() {
+    return new Promise((resolve) => {
+        let id = setInterval(() => {
+            if (courses.length > 0) {
+                clearInterval(id)
+                resolve(true)
+            }
+        }, 100)
+    })
+}
 </script>
 
 <template>
@@ -62,8 +101,7 @@ watch(selectedCourseForTable, async (courseId) => {
             <h4 class="mr-5 font-semibold ml-10" v-show="coursesOptionFields.length !== 0">Select a Group
             </h4>
             <SelectionBox v-show="coursesOptionFields.length !== 0" :options="coursesOptionFields"
-                :value="selectedCourseForTable" @input="(val) => { selectedCourseForTable = val }"
-                class="w-[300px] mr-5" />
+                :value="selectedCourseId" @input="(val) => { selectedCourseId = val }" class="w-[300px] mr-5" />
         </div>
     </div>
     <div class="grid grid-cols-3 gap-x-10 border rounded-xl py-3 px-10 mt-4 text-slate-600">
