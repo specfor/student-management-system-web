@@ -44,7 +44,7 @@ loadImage(Number(instructorId))
                         </div>
                     </div>
                     <div v-else class="w-[300px] h-[300px] ml-3 flex items-center">
-                        <img :src="imageUrl" alt="instructor image" class="object-contain">
+                        <img :src="imageUrl" alt="instructor image" class="h-full w-full object-contain">
                     </div>
                     <!-- <button @click="() => { $emit('closeEmit'); args.uploadImageFunc(args.instructor.id) }"
                         class="border py-2 px-5 rounded-lg font-semibold mt-5">Update
