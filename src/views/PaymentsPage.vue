@@ -5,9 +5,10 @@ import TableComponent, { type TableActionType, type TableColumns } from '@/compo
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
-import { ref, type Ref } from 'vue';
+import { onMounted, ref, watch, type Ref } from 'vue';
 import CourseSelector from '@/components/dataSelectors/CourseSelector.vue';
 import StudentSelector from '@/components/dataSelectors/StudentSelector.vue';
+import { getRouteQuery, setRouteQuery } from '@/utils/routeHelpers';
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
@@ -26,6 +27,32 @@ const tableColumns: TableColumns[] = [
 const limitLoadPayments = 30
 const countTotPaymentsForByCourse = ref(0)
 const countTotPaymentsForByStudent = ref(0)
+
+const selectedStudentId = ref(0)
+const selectedCourseId = ref(0)
+
+watch(selectedStudentId, (id) => {
+    setRouteQuery('s_id', selectedStudentId.value)
+    loadPaymentByStudent(0, id)
+})
+watch(selectedCourseId, (id) => {
+    setRouteQuery('c_id', selectedCourseId.value)
+    loadPaymentByCourse(0, id)
+})
+
+// can call selectTab method on tabSelectMode before mounting. that is why this code is not in init
+onMounted(() => {
+    let routeStudentId = getRouteQuery('s_id')
+    if (routeStudentId !== null) {
+        tabSelectMode.value.selectTab('#by-student')
+        selectedStudentId.value = Number(routeStudentId)
+    }
+    let routeCourseId = getRouteQuery('c_id')
+    if (routeCourseId !== null) {
+        tabSelectMode.value.selectTab('#by-course')
+        selectedCourseId.value = Number(routeCourseId)
+    }
+})
 
 let lastLoadSettingsStudents = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc', studentId: 0 }
 let lastLoadSettingsCourses = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc', courseId: 0 }
@@ -51,32 +78,23 @@ function setSorting(column: string, direction: 'asc' | 'desc') {
     }
 }
 
-async function loadPayment(startIndex = 0, courseId = 0, studentId = 0) {
-    if (courseId !== 0)
-        lastLoadSettingsCourses.courseId = courseId
+function loadPayment() {
+    loadPaymentByCourse()
+    loadPaymentByStudent()
+}
+
+async function loadPaymentByStudent(startIndex = 0, studentId = 0) {
     if (studentId !== 0)
         lastLoadSettingsStudents.studentId = studentId
 
     if (startIndex === undefined)
-        if (tabSelectMode.value.activeTabHash == '#by-student')
-            startIndex = lastLoadSettingsStudents.lastUsedIndex
-        else
-            startIndex = lastLoadSettingsCourses.lastUsedIndex
+        startIndex = lastLoadSettingsStudents.lastUsedIndex
     else
-        if (tabSelectMode.value.activeTabHash == '#by-student')
-            lastLoadSettingsStudents.lastUsedIndex = startIndex
-        else
-            lastLoadSettingsCourses.lastUsedIndex = startIndex
+        lastLoadSettingsStudents.lastUsedIndex = startIndex
 
     let opt: any = {}
-    if (tabSelectMode.value.activeTabHash == '#by-student') {
-        opt.sort = { by: lastLoadSettingsStudents.orderBy, direction: lastLoadSettingsStudents.orderDirec }
-        opt.filters = { student_id: lastLoadSettingsStudents.studentId }
-    }
-    else {
-        opt.sort = { by: lastLoadSettingsCourses.orderBy, direction: lastLoadSettingsCourses.orderDirec }
-        opt.filters = { course_id: lastLoadSettingsCourses.courseId }
-    }
+    opt.sort = { by: lastLoadSettingsStudents.orderBy, direction: lastLoadSettingsStudents.orderDirec }
+    opt.filters = { student_id: lastLoadSettingsStudents.studentId }
 
     let resp = await getPayments(startIndex, limitLoadPayments, opt)
     if (resp.status === 'error') {
@@ -84,25 +102,43 @@ async function loadPayment(startIndex = 0, courseId = 0, studentId = 0) {
         return
     }
 
-    if (tabSelectMode.value.activeTabHash == '#by-student') {
-        countTotPaymentsForByStudent.value = resp.data.tot_count
-        paymentDatByStudentTable.value = []
-        let payments: Payment[] = resp.data.payments
-        payments.forEach(payment => {
-            paymentDatByStudentTable.value.push([payment.id, payment.payment_for, payment.amount,
-            payment.enrollment.student ? payment.enrollment.student.name : 'Deleted Student', payment.enrollment.course ? payment.enrollment.course.name : 'Deleted Course',
-            payment.payment_method, payment.refunded ? 'Yes' : 'No'])
-        });
-    } else {
-        countTotPaymentsForByCourse.value = resp.data.tot_count
-        paymentDatByCourseTable.value = []
-        let payments: Payment[] = resp.data.payments
-        payments.forEach(payment => {
-            paymentDatByCourseTable.value.push([payment.id, payment.payment_for, payment.amount,
-            payment.enrollment.student ? payment.enrollment.student.name : 'Deleted Student', payment.enrollment.course ? payment.enrollment.course.name : 'Deleted Course',
-            payment.payment_method, payment.refunded ? 'Yes' : 'No'])
-        });
+    countTotPaymentsForByStudent.value = resp.data.tot_count
+    paymentDatByStudentTable.value = []
+    let payments: Payment[] = resp.data.payments
+    payments.forEach(payment => {
+        paymentDatByStudentTable.value.push([payment.id, payment.payment_for, payment.amount,
+        payment.enrollment.student ? payment.enrollment.student.name : 'Deleted Student', payment.enrollment.course ? payment.enrollment.course.name : 'Deleted Course',
+        payment.payment_method, payment.refunded ? 'Yes' : 'No'])
+    });
+}
+
+
+async function loadPaymentByCourse(startIndex = 0, courseId = 0) {
+    if (courseId !== 0)
+        lastLoadSettingsCourses.courseId = courseId
+
+    if (startIndex === undefined)
+        startIndex = lastLoadSettingsCourses.lastUsedIndex
+    else
+        lastLoadSettingsCourses.lastUsedIndex = startIndex
+
+    let opt: any = {}
+    opt.sort = { by: lastLoadSettingsCourses.orderBy, direction: lastLoadSettingsCourses.orderDirec }
+    opt.filters = { course_id: lastLoadSettingsCourses.courseId }
+
+    let resp = await getPayments(startIndex, limitLoadPayments, opt)
+    if (resp.status === 'error') {
+        alertStore.insertAlert('An error occured.', resp.message, 'error')
+        return
     }
+    countTotPaymentsForByCourse.value = resp.data.tot_count
+    paymentDatByCourseTable.value = []
+    let payments: Payment[] = resp.data.payments
+    payments.forEach(payment => {
+        paymentDatByCourseTable.value.push([payment.id, payment.payment_for, payment.amount,
+        payment.enrollment.student ? payment.enrollment.student.name : 'Deleted Student', payment.enrollment.course ? payment.enrollment.course.name : 'Deleted Course',
+        payment.payment_method, payment.refunded ? 'Yes' : 'No'])
+    });
 }
 
 async function editPayment(id: number) {
@@ -142,12 +178,6 @@ async function delGrade() {
     alertStore.insertAlert('Can not Delete.', 'Payments can not be deleted.', 'error')
 }
 
-function setCourse(course: Course) {
-    loadPayment(0, course.id!)
-}
-function setStudent(student: Student) {
-    loadPayment(0, 0, student.id!)
-}
 </script>
 
 <template>
@@ -157,34 +187,36 @@ function setStudent(student: Student) {
         </div>
 
         <tabs nav-class="flex border-b-2 pb-[6px] justify-center" nav-item-link-class="border px-10 py-2 font-semibold"
-            nav-item-link-active-class="bg-slate-200" panels-wrapper-class="pt-10" ref="tabSelectMode">
+            nav-item-link-active-class="bg-slate-200" panels-wrapper-class="pt-10" ref="tabSelectMode"
+            :options="{ useUrlFragment: false }">
             <tab name="by Student">
                 <div class="mb-5">
-                    <StudentSelector @student="setStudent" />
+                    <StudentSelector v-model:student-id="selectedStudentId" />
                 </div>
                 <div class="mb-10">
                     <TableComponent :table-columns="tableColumns" :table-rows="paymentDatByStudentTable"
                         @edit-emit="editPayment" :actions="tableActions"
-                        :refresh-func="async () => { await loadPayment(); return true }" @delete-emit="delGrade"
-                        @load-page-emit="loadPayment" :paginate-page-size="limitLoadPayments"
-                        :paginate-total="countTotPaymentsForByStudent" :current-sorting="{ column: 'ID', direc: 'asc' }"
-                        @sort-by="(col, dir) => {
-                            setSorting(col, dir); loadPayment();
+                        :refresh-func="async () => { await loadPaymentByStudent(); return true }"
+                        @delete-emit="delGrade" @load-page-emit="loadPaymentByStudent"
+                        :paginate-page-size="limitLoadPayments" :paginate-total="countTotPaymentsForByStudent"
+                        :current-sorting="{ column: 'ID', direc: 'asc' }" @sort-by="(col, dir) => {
+                            setSorting(col, dir); loadPaymentByStudent();
                         }" />
                 </div>
             </tab>
 
             <tab name="by Course">
                 <div class="mb-5">
-                    <CourseSelector @course="setCourse" />
+                    <CourseSelector v-model:course-id="selectedCourseId" />
                 </div>
                 <div class="mb-10">
                     <TableComponent :table-columns="tableColumns" :table-rows="paymentDatByCourseTable"
                         @edit-emit="editPayment" :actions="tableActions"
-                        :refresh-func="async () => { await loadPayment(); return true }" @delete-emit="delGrade"
+                        :refresh-func="async () => { await loadPaymentByCourse(); return true }" @delete-emit="delGrade"
                         :paginate-page-size="limitLoadPayments" :paginate-total="countTotPaymentsForByCourse"
-                        @load-page-emit="loadPayment" :current-sorting="{ column: 'ID', direc: 'asc' }" @sort-by="(col, dir) => {
-                            setSorting(col, dir); loadPayment();
+                        @load-page-emit="loadPaymentByCourse" :current-sorting="{ column: 'ID', direc: 'asc' }"
+                        @sort-by="(col, dir) => {
+                            setSorting(col, dir); loadPaymentByCourse();
                         }" />
                 </div>
             </tab>
