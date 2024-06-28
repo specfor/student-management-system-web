@@ -3,15 +3,16 @@
 import { getCourses } from '@/apiConnections/courses';
 import { deleteEnrollment, enrollCourse, getEnrollmentsOfCourse, getStudentEnrollments, updateEnrollment } from '@/apiConnections/enrollments';
 import { getStudents } from '@/apiConnections/students';
-import TableComponent, { type TableActionType, type TableColumns } from '@/components/TableComponent.vue';
+import TableComponent, { type TableActionType, type TableColumns, type tableRowItem } from '@/components/TableComponent.vue';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
-import { ref, watch, type Ref } from 'vue';
+import { onMounted, ref, watch, type Ref } from 'vue';
 import StudentSelector from '@/components/dataSelectors/StudentSelector.vue';
 import CourseSelector from '@/components/dataSelectors/CourseSelector.vue';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
+import { getRouteQuery, setRouteQuery } from '@/utils/routeHelpers';
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
@@ -42,30 +43,16 @@ const limitLoadEnrollments = 30
 const countTotEnrollmentsTabCourse = ref(0)
 const countTotEnrollmentsTabStudent = ref(0)
 
-async function loadEnrollments(startIndex = 0) {
-    let resp = null
-
-    if (tabSelectMode.value!.activeTabHash == '#by-student') {
-        resp = await getStudentEnrollments(selectedStudentId.value, startIndex, limitLoadEnrollments)
-        if (resp.status === 'error') {
-            alertStore.insertAlert('An error occured.', resp.message, 'error')
-            return
-        }
-
-        enrollmentsDataTabStudent = resp.data.enrollments
-        countTotEnrollmentsTabStudent.value = resp.data.tot_count
-        enrollmentsDataForByStudentTab.value = []
-    } else {
-        resp = await getEnrollmentsOfCourse(selectedCourseId.value, startIndex, limitLoadEnrollments)
-        if (resp.status === 'error') {
-            alertStore.insertAlert('An error occured.', resp.message, 'error')
-            return
-        }
-
-        enrollmentsDataTabCourse = resp.data.enrollments
-        countTotEnrollmentsTabCourse.value = resp.data.tot_count
-        enrollmentsDataForByCourseTab.value = []
+async function loadEnrollmentsByStudent(startIndex = 0) {
+    let resp = await getStudentEnrollments(selectedStudentId.value, startIndex, limitLoadEnrollments)
+    if (resp.status === 'error') {
+        alertStore.insertAlert('An error occured.', resp.message, 'error')
+        return
     }
+
+    enrollmentsDataTabStudent = resp.data.enrollments
+    countTotEnrollmentsTabStudent.value = resp.data.tot_count
+    enrollmentsDataForByStudentTab.value = []
 
 
     resp.data.enrollments.forEach((enrollment: Enrollment) => {
@@ -85,28 +72,89 @@ async function loadEnrollments(startIndex = 0) {
         else if (lastStatus.type === 'completed')
             status = { type: 'colorTag', text: lastStatus.type, css: 'bg-blue-200 text-blue-800' }
 
-        if (tabSelectMode.value.activeTabHash == '#by-student') {
-            let course = "Deleted"
-            if (enrollment.course) {
-                course = enrollment.course.name
-                if (enrollment.course.group_name)
-                    course += " - " + enrollment.course.group_name
-            }
-            enrollmentsDataForByStudentTab.value.push([enrollment.id, course, enrollment.suspended, priceOffer, status])
+        let course: tableRowItem = "Deleted"
+        if (enrollment.course) {
+            course = enrollment.course.name
+            if (enrollment.course.group_name)
+                course += " - " + enrollment.course.group_name
+            // course = { type: 'textWithLink', text: course, url: `/courses/${enrollment.course.id}/view` }
         }
-        else
-            enrollmentsDataForByCourseTab.value.push([enrollment.id, enrollment.student ? enrollment.student.name : 'Deleted Student', enrollment.suspended, priceOffer, status])
+        enrollmentsDataForByStudentTab.value.push([enrollment.id, course, enrollment.suspended, priceOffer, status])
     });
 }
 
-watch(selectedStudentId, () => { loadEnrollments() })
+async function loadEnrollmentsByCourse(startIndex = 0) {
+    let resp = await getEnrollmentsOfCourse(selectedCourseId.value, startIndex, limitLoadEnrollments)
+    if (resp.status === 'error') {
+        alertStore.insertAlert('An error occured.', resp.message, 'error')
+        return
+    }
 
-watch(selectedCourseId, () => { loadEnrollments() })
+    enrollmentsDataTabCourse = resp.data.enrollments
+    countTotEnrollmentsTabCourse.value = resp.data.tot_count
+    enrollmentsDataForByCourseTab.value = []
+
+    resp.data.enrollments.forEach((enrollment: Enrollment) => {
+        let priceOffer = 'NOT GIVEN'
+        if (enrollment.price_adjustments !== null) {
+            if (enrollment.price_adjustments.type === 'fixed')
+                priceOffer = enrollment.price_adjustments.amount + ' fixed reduction'
+            else
+                priceOffer = enrollment.price_adjustments.percentage + '% reduction'
+        }
+        let lastStatus = enrollment.status[enrollment.status.length - 1];
+        let status = { type: 'colorTag', text: lastStatus.type, css: 'bg-green-200 text-green-800' }
+        if (lastStatus.type === 'discontinued')
+            status = { type: 'colorTag', text: lastStatus.type, css: 'bg-red-200 text-red-800' }
+        else if (lastStatus.type === 'pending')
+            status = { type: 'colorTag', text: lastStatus.type, css: 'bg-yellow-200 text-yellow-800' }
+        else if (lastStatus.type === 'completed')
+            status = { type: 'colorTag', text: lastStatus.type, css: 'bg-blue-200 text-blue-800' }
+
+        let student: tableRowItem = "Deleted"
+        if (enrollment.student)
+            student = { type: 'textWithLink', text: enrollment.student.name, url: `/students/${enrollment.student.id}/view` }
+
+        enrollmentsDataForByCourseTab.value.push([enrollment.id, student, enrollment.suspended, priceOffer, status])
+    });
+}
+
+
+watch(selectedStudentId, () => {
+    setRouteQuery('s_id', selectedStudentId.value)
+    loadEnrollmentsByStudent();
+})
+
+watch(selectedCourseId, () => {
+    setRouteQuery('c_id', selectedCourseId.value)
+    loadEnrollmentsByCourse()
+})
 
 let studentOptionFields: Ref<{ text: string, value: any }[]> = ref([])
 
 let courses: Course[] = []
 let students: Student[] = []
+
+// can call selectTab method on tabSelectMode before mounting. that is why this code is not in init
+onMounted(() => {
+    let routeStudentId = getRouteQuery('s_id')
+    if (routeStudentId !== null) {
+        tabSelectMode.value.selectTab('#by-student')
+        selectedStudentId.value = Number(routeStudentId)
+    }
+    let routeCourseId = getRouteQuery('c_id')
+    if (routeCourseId !== null) {
+        tabSelectMode.value.selectTab('#by-course')
+        selectedCourseId.value = Number(routeCourseId)
+    }
+})
+
+function loadEnrollments() {
+    if (tabSelectMode.value.activeTabHash == '#by-student')
+        loadEnrollmentsByStudent()
+    else if (tabSelectMode.value.activeTabHash == '#by-course')
+        loadEnrollmentsByCourse()
+}
 
 async function init() {
     let resp = await getCourses()
@@ -278,20 +326,21 @@ async function delEnrollment(ids: number[]) {
         </div>
 
         <tabs nav-class="flex border-b-2 pb-[6px] justify-center" nav-item-link-class="border px-10 py-2 font-semibold"
-            nav-item-link-active-class="bg-slate-200" panels-wrapper-class="pt-10" ref="tabSelectMode">
+            nav-item-link-active-class="bg-slate-200" panels-wrapper-class="pt-10" ref="tabSelectMode"
+            :options="{ useUrlFragment: false }">
             <tab name="by Student">
                 <div class="flex justify-end mb-3">
                     <NewItemButton text="Enroll a Student" :on-click="addNewEnrollment"
                         :disabled="selectedStudentId === 0" />
                 </div>
                 <div class="mb-5">
-                    <StudentSelector @student="(s) => { selectedStudentId = s.id }" />
+                    <StudentSelector v-model:student-id="selectedStudentId" />
                 </div>
                 <div class="mb-10">
                     <TableComponent :table-columns="tableColumnsbyStudent" :table-rows="enrollmentsDataForByStudentTab"
                         @edit-emit="editEnrollment" :actions="tableActions"
-                        :refresh-func="async () => { await loadEnrollments(); return true }"
-                        @delete-emit="delEnrollment" @load-page-emit="loadEnrollments"
+                        :refresh-func="async () => { await loadEnrollmentsByStudent(); return true }"
+                        @delete-emit="delEnrollment" @load-page-emit="loadEnrollmentsByStudent"
                         :paginate-page-size="limitLoadEnrollments" :paginate-total="countTotEnrollmentsTabStudent" />
                 </div>
             </tab>
@@ -302,13 +351,13 @@ async function delEnrollment(ids: number[]) {
                         :disabled="selectedCourseId === 0" />
                 </div>
                 <div class="mb-5">
-                    <CourseSelector @course="(c) => { selectedCourseId = c.id }" />
+                    <CourseSelector v-model:course-id="selectedCourseId" />
                 </div>
                 <div class="mb-10">
                     <TableComponent :table-columns="tableColumnsByCourse" :table-rows="enrollmentsDataForByCourseTab"
                         @edit-emit="editEnrollment" :actions="tableActions"
-                        :refresh-func="async () => { await loadEnrollments(); return true }"
-                        @delete-emit="delEnrollment" @load-page-emit="loadEnrollments"
+                        :refresh-func="async () => { await loadEnrollmentsByCourse(); return true }"
+                        @delete-emit="delEnrollment" @load-page-emit="loadEnrollmentsByCourse"
                         :paginate-page-size="limitLoadEnrollments" :paginate-total="countTotEnrollmentsTabCourse" />
                 </div>
             </tab>
