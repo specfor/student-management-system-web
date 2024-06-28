@@ -10,14 +10,11 @@ import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { ref, type Ref } from "vue"
 import { MagnifyingGlassIcon, PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { BookOpenIcon } from '@heroicons/vue/24/outline';
-import { useExtendablePopUpStore } from '@/stores/formManagers/extendablePopUp';
-import StudentCourses from '@/components/customPopUps/StudentCourses.vue';
 import { setRoute } from '@/utils/routeHelpers';
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
 const confirmationForm = useConfirmationFormsStore()
-const extendablePopUpStore = useExtendablePopUpStore()
 
 let studentData: Student[] = []
 const studentDataForTable: Ref<any[]> = ref([])
@@ -267,9 +264,7 @@ function showMoreInfo(id: number) {
 }
 
 function showStudentCourses(id: number) {
-    let student = studentData.find(s => s.id === id)
-    extendablePopUpStore.showComponent(StudentCourses, { 'student': student, })
-
+    setRoute(`/enrollments?s_id=${id}`)
 }
 </script>
 
