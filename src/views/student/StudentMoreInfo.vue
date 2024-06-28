@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { downloadStudentImage, getStudentById } from '@/apiConnections/students';
+import { downloadStudentImage, getStudentById, updateStudentImage } from '@/apiConnections/students';
 import { useAlertsStore } from '@/stores/alerts';
-import { getRouterParam } from '@/utils/routeHelpers';
+import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
+import { getRouterParam, setRoute } from '@/utils/routeHelpers';
 import { ref, type Ref } from 'vue';
 
 const alertStore = useAlertsStore()
+const dataEntryForm = useDataEntryFormsStore()
 
 const imageUrl: Ref<null | string> = ref(null)
 
@@ -33,11 +35,41 @@ async function loadImage(studentId: number) {
 
     imageUrl.value = URL.createObjectURL(resp.data.file)
 }
+
+async function uploadStudentImage(studentId: number) {
+    dataEntryForm.newDataEntryForm('Student\'s Image', 'Upload', [
+        { name: 'profile', text: 'Select Image', type: 'file', accept: '.jpg,.jpeg,.png', preview: true, required: true }
+    ])
+    let results = await dataEntryForm.waitForSubmittedData()
+    if (!results.submitted)
+        return
+
+    let img: any = results.data.profile
+    let res = await updateStudentImage(studentId, img[0]);
+    if (res.status === 'error') {
+        if (res.data.type === 'user_error')
+            Object.entries(res.data.messages).forEach(msg => {
+                let err = ""
+                if (Array.isArray(msg[1]) && !msg[1] === null)
+                    err = msg[1].join(', ')
+                else
+                    err = msg[1] as string
+                dataEntryForm.insertErrorMessage(msg[0], err)
+            })
+        else
+            alertStore.insertAlert('An error occurred.', res.message, 'error')
+        dataEntryForm.finishSubmission()
+        return
+    }
+    dataEntryForm.finishSubmission()
+    loadImage(studentId)
+    alertStore.insertAlert('Action completed.', 'Student photo updated successfully.')
+}
 </script>
 
 <template>
     <div class="bg-slate-200 w-full">
-        <div class="container">
+        <div class="container flex gap-x-10">
             <div class="grid grid-cols-3 gap-4 p-5 rounded-xl w-fit bg-white">
                 <div class="flex flex-col items-center">
                     <div v-if="imageUrl === null" class="flex items-center justify-center ml-3">
@@ -47,11 +79,11 @@ async function loadImage(studentId: number) {
                         </div>
                     </div>
                     <div v-else class="w-[300px] h-[300px] ml-3 flex items-center">
-                        <img :src="imageUrl" alt="student image" class="object-contain">
+                        <img :src="imageUrl" alt="student image" class="h-full w-full object-contain">
                     </div>
-                    <!-- <button @click="() => { $emit('closeEmit'); args.uploadImageFunc(args.student.id); }"
-                class="border py-2 px-5 rounded-lg font-semibold mt-5">Update
-                Image</button> -->
+                    <button @click="() => { uploadStudentImage(student!.id); }"
+                        class="border py-2 px-5 rounded-lg font-semibold mt-5">Update
+                        Image</button>
                 </div>
                 <div v-if="student === null" class="flex items-center justify-center">
                     <p>Loading</p>
@@ -110,6 +142,15 @@ async function loadImage(studentId: number) {
                         <p class="col-span-2 border-b border-slate-300">{{ student.parent_phone_number ?? 'None' }}</p>
                     </div>
                 </div>
+            </div>
+
+            <div class="bg-white rounded-xl w-full max-w-[300px] p-5 flex flex-col items-center">
+                <h2 class="text-xl font-semibold mb-10">Actions</h2>
+
+                <button class="border bg-blue-500 py-2 px-5 rounded-md mb-3"
+                    @click="() => { setRoute(`/enrollments?s_id=${student?.id}`) }">Enrolled Courses</button>
+                <button class="border bg-blue-500 py-2 px-5 rounded-md mb-3"
+                    @click="() => { setRoute(`/payments?s_id=${student?.id}`) }">Payments</button>
             </div>
         </div>
     </div>
