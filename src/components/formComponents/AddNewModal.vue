@@ -141,7 +141,7 @@ function validateInput(name: string) {
                     <div class="col-span-2 flex">
                       <FileInput @select="(val) => {
                         fieldValues[field['name']] = val; validateInput(field['name'])
-                      }" :accept="field['accept']" :multiple="field['multiple']" />
+                      }" :accept="field['accept']" :multiple="field['multiple']" :preview="field['preview']" />
                     </div>
                     <div class="mb-2 mt-1 px-2 flex items-center justify-between col-span-3 bg-red-300 text-red-900"
                       v-if="errorMessages[field['name']]">
