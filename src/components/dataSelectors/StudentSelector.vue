@@ -10,15 +10,36 @@ const studentOptionFields: Ref<{ text: string, value: any }[]> = ref([])
 
 let students: Student[] = []
 
+let studentID = defineModel<number>('studentId')
+
 const emit = defineEmits<{
     student: [student: Student]
 }>()
 
-watch(selectedStudent, async (studentID) => {
-    selectedStudentData.value = students.find(s => s.id == studentID)!
+watch(studentID, (id) => {
+    if (id)
+        selectedStudent.value = id
+})
+
+watch(selectedStudent, async (sID) => {
+    studentID.value = sID
+    if (students.length === 0)
+        await new Promise((resolve) => {
+            let id = setInterval(() => {
+                if (students.length > 0) {
+                    clearInterval(id)
+                    resolve(true)
+                }
+            }, 100)
+        })
+
+    let fuoundStudent = students.find(s => s.id == sID)
+    if (!fuoundStudent)
+        return
+    selectedStudentData.value = fuoundStudent
     emit('student', selectedStudentData.value)
     if (selectedStudentData.value.image) {
-        let resp = await downloadStudentImage(studentID)
+        let resp = await downloadStudentImage(sID)
         if (resp.status === 'success')
             selectedStudentImageUrl.value = URL.createObjectURL(resp.data.file)
     }
