@@ -1,7 +1,7 @@
 <!-- eslint-disable no-constant-condition -->
 <script setup lang="ts">
 import { getPayments, refundPayment } from '@/apiConnections/payments';
-import TableComponent, { type TableActionType, type TableColumns } from '@/components/TableComponent.vue';
+import TableComponent, { type TableActionType, type TableColumns, type tableRowItem } from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
@@ -16,7 +16,7 @@ const alertStore = useAlertsStore()
 const tabSelectMode: Ref<any> = ref(null)
 
 const paymentDatByCourseTable: Ref<any[]> = ref([])
-const paymentDatByStudentTable: Ref<any[]> = ref([])
+const paymentDataByStudentTable: Ref<any[]> = ref([])
 const tableActions: TableActionType[] = [
     { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
@@ -103,12 +103,19 @@ async function loadPaymentByStudent(startIndex?: number, studentId = 0) {
     }
 
     countTotPaymentsForByStudent.value = resp.data.tot_count
-    paymentDatByStudentTable.value = []
+    paymentDataByStudentTable.value = []
     let payments: Payment[] = resp.data.payments
     payments.forEach(payment => {
-        paymentDatByStudentTable.value.push([payment.id, payment.payment_for, payment.amount,
-        payment.enrollment.student ? payment.enrollment.student.name : 'Deleted Student', payment.enrollment.course ? payment.enrollment.course.name : 'Deleted Course',
-        payment.payment_method, payment.refunded ? 'Yes' : 'No'])
+        let student: tableRowItem = "Deleted"
+        if (payment.enrollment.student)
+            student = { type: 'textWithLink', text: payment.enrollment.student.name, url: `/students/${payment.enrollment.student.id}/view` }
+        let course: tableRowItem = "Deleted"
+        if (payment.enrollment.course)
+            // course = { type: 'textWithLink', text: payment.enrollment.course.name, url: `/courses/${payment.enrollment.course.id}/view` }
+            course = payment.enrollment.course.name
+
+        paymentDataByStudentTable.value.push([payment.id, payment.payment_for, payment.amount,
+            student, course, payment.payment_method, payment.refunded ? 'Yes' : 'No'])
     });
 }
 
@@ -135,9 +142,16 @@ async function loadPaymentByCourse(startIndex?: number, courseId = 0) {
     paymentDatByCourseTable.value = []
     let payments: Payment[] = resp.data.payments
     payments.forEach(payment => {
+        let student: tableRowItem = "Deleted"
+        if (payment.enrollment.student)
+            student = { type: 'textWithLink', text: payment.enrollment.student.name, url: `/students/${payment.enrollment.student.id}/view` }
+        let course: tableRowItem = "Deleted"
+        if (payment.enrollment.course)
+            // course = { type: 'textWithLink', text: payment.enrollment.course.name, url: `/courses/${payment.enrollment.course.id}/view` }
+            course = payment.enrollment.course.name
+
         paymentDatByCourseTable.value.push([payment.id, payment.payment_for, payment.amount,
-        payment.enrollment.student ? payment.enrollment.student.name : 'Deleted Student', payment.enrollment.course ? payment.enrollment.course.name : 'Deleted Course',
-        payment.payment_method, payment.refunded ? 'Yes' : 'No'])
+            student, course, payment.payment_method, payment.refunded ? 'Yes' : 'No'])
     });
 }
 
@@ -194,7 +208,7 @@ async function delGrade() {
                     <StudentSelector v-model:student-id="selectedStudentId" />
                 </div>
                 <div class="mb-10">
-                    <TableComponent :table-columns="tableColumns" :table-rows="paymentDatByStudentTable"
+                    <TableComponent :table-columns="tableColumns" :table-rows="paymentDataByStudentTable"
                         @edit-emit="editPayment" :actions="tableActions"
                         :refresh-func="async () => { await loadPaymentByStudent(); return true }"
                         @delete-emit="delGrade" @load-page-emit="loadPaymentByStudent"
