@@ -83,7 +83,7 @@ function loadPayment() {
     loadPaymentByStudent()
 }
 
-async function loadPaymentByStudent(startIndex = 0, studentId = 0) {
+async function loadPaymentByStudent(startIndex?: number, studentId = 0) {
     if (studentId !== 0)
         lastLoadSettingsStudents.studentId = studentId
 
@@ -113,7 +113,7 @@ async function loadPaymentByStudent(startIndex = 0, studentId = 0) {
 }
 
 
-async function loadPaymentByCourse(startIndex = 0, courseId = 0) {
+async function loadPaymentByCourse(startIndex?: number, courseId = 0) {
     if (courseId !== 0)
         lastLoadSettingsCourses.courseId = courseId
 
