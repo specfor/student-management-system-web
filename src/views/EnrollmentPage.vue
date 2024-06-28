@@ -43,7 +43,15 @@ const limitLoadEnrollments = 30
 const countTotEnrollmentsTabCourse = ref(0)
 const countTotEnrollmentsTabStudent = ref(0)
 
-async function loadEnrollmentsByStudent(startIndex = 0) {
+let lastLoadSettingsStudents = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc' }
+let lastLoadSettingsCourses = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc' }
+
+async function loadEnrollmentsByStudent(startIndex?: number) {
+    if (startIndex === undefined)
+        startIndex = lastLoadSettingsStudents.lastUsedIndex
+    else
+        lastLoadSettingsStudents.lastUsedIndex = startIndex
+
     let resp = await getStudentEnrollments(selectedStudentId.value, startIndex, limitLoadEnrollments)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
@@ -83,7 +91,12 @@ async function loadEnrollmentsByStudent(startIndex = 0) {
     });
 }
 
-async function loadEnrollmentsByCourse(startIndex = 0) {
+async function loadEnrollmentsByCourse(startIndex?: number) {
+    if (startIndex === undefined)
+        startIndex = lastLoadSettingsCourses.lastUsedIndex
+    else
+        lastLoadSettingsCourses.lastUsedIndex = startIndex
+
     let resp = await getEnrollmentsOfCourse(selectedCourseId.value, startIndex, limitLoadEnrollments)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
