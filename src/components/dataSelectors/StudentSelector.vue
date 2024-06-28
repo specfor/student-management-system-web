@@ -70,7 +70,7 @@ loadStudents()
     </div>
     <div class="grid grid-cols-3 gap-x-10 border rounded-xl py-3 px-10 mt-4 text-slate-600">
         <div class="justify-self-center">
-            <img :src="selectedStudentImageUrl" alt="student photo" class="object-cover w-[100px]">
+            <img :src="selectedStudentImageUrl" alt="student photo" class="object-contain w-[100px] h-[100px]">
         </div>
         <div class="col-span-2">
             <h1 class="font-semibold text-lg">Student Info</h1>
