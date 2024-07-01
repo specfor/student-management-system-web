@@ -5,6 +5,7 @@ import { ArrowLongDownIcon, ArrowLongUpIcon } from "@heroicons/vue/24/outline";
 import PaginateComponent from "./PaginateComponent.vue";
 import TableColoredTag from "./primary/TableColoredTag.vue";
 import { setRoute } from "@/utils/routeHelpers";
+import type { CheckboxFields, SelectionBoxFields } from "@/types/inputBoxTypes";
 
 const selectedIds = ref([])
 const isDisabled = ref(true)
@@ -14,6 +15,8 @@ const isHidden = ref(true)
 const filterBgColor = ref('bg-white');
 const refreshingData = ref(false)
 const showTableOptions = ref(false)
+const showResetBtn = ref(false)
+
 let activeSorting: Ref<{ column: string, direc: 'asc' | 'desc' }> = ref({ column: '', direc: 'asc' })
 
 function isChecked() {
@@ -30,7 +33,7 @@ let {
   tableColumns,
   tableRows,
   actions,
-  search,
+  filters,
   paginatePageSize,
   paginateTotal,
   currentSorting,
@@ -39,12 +42,24 @@ let {
   tableColumns: TableColumns[]
   tableRows: tableRowItem[][]
   actions: TableActionType[]
-  search?: any
+  filters?: Filter[]
   paginateTotal: number
   paginatePageSize: number
   refreshFunc?: () => Promise<boolean>
   currentSorting?: { column: string, direc: 'asc' | 'desc' }
 }>()
+
+for (const filter of filters ?? []) {
+  searchInput.value[filter.name] = filter.value
+}
+
+function resetFilters() {
+  showResetBtn.value = false
+  searchInput.value = {}
+  for (const filter of filters ?? []) {
+    searchInput.value[filter.name] = filter.value
+  }
+}
 
 if (currentSorting)
   activeSorting.value = currentSorting
@@ -90,6 +105,25 @@ type Inputs = {
   css?: string
 }
 
+export type Filter = {
+  label: string
+  name: string
+  value?: any
+} & ({
+  type: 'select'
+  options: SelectionBoxFields['options']
+} | {
+  type: 'checkbox'
+  options: CheckboxFields
+} | {
+  type: "textarea"
+  | "text"
+  | "password"
+  | "date"
+  | "month"
+  | "time"
+  | "number"
+})
 </script>
 
 <template>
@@ -119,10 +153,14 @@ type Inputs = {
           <ArrowPathIcon class="h-6 mr-3" :class="{ 'animate-spin': refreshingData }" />
           <h4 class="font-semibold">Refresh Data</h4>
         </button>
+        <div v-show="showResetBtn">
+          <button @click="() => {
+            resetFilters(); $emit('filterValues', searchInput)
+          }" class="py-2 px-3 border rounded-tl-lg items-center bg-yellow-600 font-semibold">Reset Filters</button>
+        </div>
         <div
-          @click="isHidden = !isHidden; filterBgColor === 'bg-white' ? filterBgColor = 'bg-slate-400' : filterBgColor = 'bg-white'"
-          class="flex hover:cursor-pointer p-2 rounded-t-lg items-center hover:bg-slate-100 border"
-          :class="filterBgColor">
+          @click="isHidden = !isHidden; filterBgColor === 'bg-white' ? filterBgColor = 'bg-slate-200' : filterBgColor = 'bg-white'"
+          class="flex hover:cursor-pointer p-2  hover:bg-slate-100 border" :class="filterBgColor">
           <h4 class="font-semibold mr-2">Filters</h4>
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
             stroke="currentColor" class="w-6 h-6">
@@ -132,13 +170,12 @@ type Inputs = {
       </div>
     </div>
 
-    <div class="relative">
-      <div class="block mb-2 bg-slate-400 rounded-l-lg rounded-b-lg w-1/2 py-3 px-3 absolute top-0 right-0 z-[1030]"
-        :class="{ 'hidden': isHidden }">
-        <div v-for="(item, i) in search" :key="i" class="grid grid-cols-3 ml-5">
-          <h5 v-text="item['searchParameter']" class="flex items-center"></h5>
+    <div class="w-full bg-slate-200" :class="{ 'hidden': isHidden }">
+      <div class="grid grid-cols-3 gap-x-5 rounded-tl-lg py-3 px-3">
+        <div v-for="(item, i) in filters" :key="i" class="grid grid-cols-3 ml-5">
+          <h5 v-text="item['label']" class="flex items-center justify-self-end mr-3"></h5>
           <input :type="item.type" class="rounded-md border-2 border-stone-600 bg-stone-200 px-3 h-8 mt-1 col-span-2"
-            v-model="searchInput[item.paramNumber]" @input="$emit(item['searchParamType'], searchInput)">
+            v-model="searchInput[item.name]" @input="$emit('filterValues', searchInput); showResetBtn = true">
         </div>
       </div>
     </div>
