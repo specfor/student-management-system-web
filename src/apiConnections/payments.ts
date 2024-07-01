@@ -4,7 +4,12 @@ export function getPayments(
   startIndex = 0,
   limit: null | number = null,
   options?: {
-    filters?: { course_id?: number; student_id?: number };
+    filters?: {
+      course_id?: number;
+      student_id?: number;
+      date_from?: string;
+      date_to?: string;
+    };
     sort?: {
       by: "enrollment_id" | "created_at" | "id" | "amount";
       direction: "acs" | "desc";
@@ -21,6 +26,9 @@ export function getPayments(
     params.sort = options.sort.by;
     params.sort_dir = options.sort.direction;
   }
+  if (options?.filters?.date_from) params.date_from = options.filters.date_from;
+  if (options?.filters?.date_to) params.date_to = options.filters.date_to;
+
   return sendGetRequest("/payments", params);
 }
 

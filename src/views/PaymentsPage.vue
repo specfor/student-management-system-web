@@ -1,7 +1,7 @@
 <!-- eslint-disable no-constant-condition -->
 <script setup lang="ts">
 import { getPayments, refundPayment } from '@/apiConnections/payments';
-import TableComponent, { type TableActionType, type TableColumns, type tableRowItem } from '@/components/TableComponent.vue';
+import TableComponent, { type Filter, type TableActionType, type TableColumns, type tableRowItem } from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
@@ -23,6 +23,10 @@ const tableActions: TableActionType[] = [
 const tableColumns: TableColumns[] = [
     { label: 'ID', sortable: true }, { label: 'Payment For' }, { label: 'Amount', sortable: true },
     { label: 'Student' }, { label: 'Course' }, { label: 'Method' }, { label: 'Refunded' }]
+
+const thisMonth = (new Date()).getFullYear() + '-' + ('0' + (new Date()).getMonth()).slice(-2)
+
+const tableFilters: Filter[] = [{ label: 'From 1st of', name: 'date_from', type: 'month', value: thisMonth }, { label: 'Until 1st of', name: 'date_to', type: 'month' }]
 
 const limitLoadPayments = 30
 const countTotPaymentsForByCourse = ref(0)
@@ -54,8 +58,10 @@ onMounted(() => {
     }
 })
 
-let lastLoadSettingsStudents = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc', studentId: 0 }
-let lastLoadSettingsCourses = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc', courseId: 0 }
+let lastLoadSettingsStudents: { lastUsedIndex: number, orderBy: string, orderDirec: 'asc' | 'desc', filters: { student_id: number, date_from?: string, date_to?: string } }
+    = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc', filters: { student_id: 0, date_from: thisMonth, date_to: "" } }
+let lastLoadSettingsCourses: { lastUsedIndex: number, orderBy: string, orderDirec: 'asc' | 'desc', filters: { course_id: number, date_from?: string, date_to?: string } }
+    = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc', filters: { course_id: 0, date_from: thisMonth, date_to: "" } }
 
 function setSorting(column: string, direction: 'asc' | 'desc') {
     let orderBy = ''
@@ -83,18 +89,27 @@ function loadPayment() {
     loadPaymentByStudent()
 }
 
-async function loadPaymentByStudent(startIndex?: number, studentId = 0) {
+async function loadPaymentByStudent(startIndex?: number, studentId = 0, filters?: { [key: string]: any }) {
     if (studentId !== 0)
-        lastLoadSettingsStudents.studentId = studentId
+        lastLoadSettingsStudents.filters.student_id = studentId
 
     if (startIndex === undefined)
         startIndex = lastLoadSettingsStudents.lastUsedIndex
     else
         lastLoadSettingsStudents.lastUsedIndex = startIndex
 
+    if (filters?.date_from)
+        lastLoadSettingsStudents.filters.date_from = filters.date_from
+    else
+        lastLoadSettingsStudents.filters.date_from = thisMonth
+    if (filters?.date_to)
+        lastLoadSettingsStudents.filters.date_to = filters.date_to
+    else
+        lastLoadSettingsStudents.filters.date_to = undefined
+
     let opt: any = {}
     opt.sort = { by: lastLoadSettingsStudents.orderBy, direction: lastLoadSettingsStudents.orderDirec }
-    opt.filters = { student_id: lastLoadSettingsStudents.studentId }
+    opt.filters = lastLoadSettingsStudents.filters
 
     let resp = await getPayments(startIndex, limitLoadPayments, opt)
     if (resp.status === 'error') {
@@ -120,18 +135,27 @@ async function loadPaymentByStudent(startIndex?: number, studentId = 0) {
 }
 
 
-async function loadPaymentByCourse(startIndex?: number, courseId = 0) {
+async function loadPaymentByCourse(startIndex?: number, courseId = 0, filters?: { [key: string]: any }) {
     if (courseId !== 0)
-        lastLoadSettingsCourses.courseId = courseId
+        lastLoadSettingsCourses.filters.course_id = courseId
 
     if (startIndex === undefined)
         startIndex = lastLoadSettingsCourses.lastUsedIndex
     else
         lastLoadSettingsCourses.lastUsedIndex = startIndex
 
+    if (filters?.date_from)
+        lastLoadSettingsCourses.filters.date_from = filters.date_from
+    else
+        lastLoadSettingsCourses.filters.date_from = thisMonth
+    if (filters?.date_to)
+        lastLoadSettingsCourses.filters.date_to = filters.date_to
+    else
+        lastLoadSettingsCourses.filters.date_to = undefined
+
     let opt: any = {}
     opt.sort = { by: lastLoadSettingsCourses.orderBy, direction: lastLoadSettingsCourses.orderDirec }
-    opt.filters = { course_id: lastLoadSettingsCourses.courseId }
+    opt.filters = lastLoadSettingsCourses.filters
 
     let resp = await getPayments(startIndex, limitLoadPayments, opt)
     if (resp.status === 'error') {
@@ -215,6 +239,8 @@ async function delGrade() {
                         :paginate-page-size="limitLoadPayments" :paginate-total="countTotPaymentsForByStudent"
                         :current-sorting="{ column: 'ID', direc: 'asc' }" @sort-by="(col, dir) => {
                             setSorting(col, dir); loadPaymentByStudent();
+                        }" :filters="tableFilters" @filter-values="(val) => {
+                            loadPaymentByStudent(undefined, undefined, val)
                         }" />
                 </div>
             </tab>
@@ -231,6 +257,8 @@ async function delGrade() {
                         @load-page-emit="loadPaymentByCourse" :current-sorting="{ column: 'ID', direc: 'asc' }"
                         @sort-by="(col, dir) => {
                             setSorting(col, dir); loadPaymentByCourse();
+                        }" :filters="tableFilters" @filter-values="(val) => {
+                            loadPaymentByCourse(undefined, undefined, val)
                         }" />
                 </div>
             </tab>
