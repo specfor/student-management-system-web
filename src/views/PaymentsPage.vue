@@ -24,7 +24,7 @@ const tableColumns: TableColumns[] = [
     { label: 'ID', sortable: true }, { label: 'Payment For' }, { label: 'Amount', sortable: true },
     { label: 'Student' }, { label: 'Course' }, { label: 'Method' }, { label: 'Refunded' }]
 
-const thisMonth = (new Date()).getFullYear() + '-' + ('0' + (new Date()).getMonth()).slice(-2)
+const thisMonth = (new Date()).getFullYear() + '-' + ('0' + ((new Date()).getMonth() + 1)).slice(-2)
 
 const tableFilters: Filter[] = [{ label: 'From 1st of', name: 'date_from', type: 'month', value: thisMonth }, { label: 'Until 1st of', name: 'date_to', type: 'month' }]
 
