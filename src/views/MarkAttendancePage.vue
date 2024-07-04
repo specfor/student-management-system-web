@@ -109,7 +109,7 @@ function checkEnrolled() {
     loadStudentEnrollmentOfCourse()
 }
 
-const enrollmentData: Ref<{ enrolled: boolean, enrollment: Enrollment | null } | null> = ref(null)
+const enrollmentData: Ref<{ enrolled: boolean, enrollment: Enrollment | null, paid: boolean } | null> = ref(null)
 const enrollmentLoading = ref(false)
 
 async function loadStudentsOfCourse(courseId: number) {
@@ -177,6 +177,7 @@ async function markPayment() {
         alertStore.insertAlert('Action completed.', resp.message)
     }
     enrollActionsEnabled.value = true
+    checkEnrolled()
 }
 
 async function markAttendance() {
@@ -260,7 +261,7 @@ init()
                 <div class="grid grid-cols-2 ml-5">
                     <h4>Instructor</h4>
                     <h4>{{ selectedCourseData ? (selectedCourseData!.instructor ? selectedCourseData!.instructor.name
-                        :'Deleted') : '' }}</h4>
+                        : 'Deleted') : '' }}</h4>
                 </div>
                 <div class="grid grid-cols-2 ml-5">
                     <h4>Enrollment Open</h4>
@@ -348,13 +349,21 @@ init()
                     :class="enrollmentLoading ? 'bg-slate-400' : (enrollActionsEnabled ? 'bg-blue-500' : 'bg-red-500')">
                     <h3 class="text-white font-bold">{{ enrollStatusText }}</h3>
                 </div>
-                <button :disabled="!enrollActionsEnabled" @click="markPayment"
-                    class="mt-10 border-2 rounded-xl w-[300px] bg-green-400 hover:bg-green-600 py-8 items-center disabled:bg-slate-200 flex flex-col shadow-lg">
-                    <h3 class="font-semibold text-2xl">Mark Payment</h3>
-                    <div class="gap-x-3 mt-3 text-lg font-bold text-white">
-                        <h5>{{ feeToPay !== -1 ? 'Rs. ' + feeToPay : '' }}</h5>
+                <div class="flex mt-10 items-center">
+                    <div v-show="enrollActionsEnabled" class="mr-5 border h-fit flex items-center rounded-xl pl-5">
+                        <p class="text-lg mr-2">Payment Status</p>
+                        <p class="text-xl font-semibold text-white rounded-r-xl py-3 px-5"
+                            :class="enrollmentData?.paid ? 'bg-green-500' : 'bg-red-500'">
+                            {{ enrollmentData?.paid ? "Paid" : "Not Paid" }}</p>
                     </div>
-                </button>
+                    <button :disabled="!enrollActionsEnabled" @click="markPayment"
+                        class="border-2 rounded-xl w-[250px] bg-green-400 hover:bg-green-600 py-4 items-center disabled:bg-slate-200 flex flex-col shadow-lg">
+                        <h3 class="font-semibold text-2xl">Mark Payment</h3>
+                        <div class="gap-x-3 mt-3 text-lg font-bold text-white">
+                            <h5>{{ feeToPay !== -1 ? 'Rs. ' + feeToPay : '' }}</h5>
+                        </div>
+                    </button>
+                </div>
                 <button :disabled="!enrollActionsEnabled" @click="markAttendance"
                     class="mt-10 border-2 rounded-xl w-[300px] bg-amber-400 hover:bg-amber-600 py-8 text-center disabled:bg-slate-200 shadow-lg">
                     <h3 class="font-semibold text-2xl">Mark Attendance</h3>
