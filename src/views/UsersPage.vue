@@ -17,9 +17,7 @@ const confirmForm = useConfirmationFormsStore()
 let userData: User[] = []
 let userDataForTable: Ref<any[][]> = ref([])
 const tableActions: TableActionType[] = [{ renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }]
-const tableColumns: TableColumns[] = [{ label: 'ID', sortable: true }, { label: 'Name', sortable: true }, { label: 'Email', sortable: true }, { label: 'Role' },
-{ label: 'Last Active' }
-]
+const tableColumns: TableColumns[] = [{ label: 'ID', sortable: true }, { label: 'Name', sortable: true }, { label: 'Email', sortable: true }, { label: 'Role' }]
 
 const limitLoadUsers = 30
 const countTotUsers = ref(0)
@@ -65,7 +63,7 @@ async function loadUsers(startIndex?: number) {
         userData = data.data.users
         countTotUsers.value = data.data.tot_count
         userData.forEach(user => {
-            userDataForTable.value.push([user.id, user.name, user.email, user.role.role_name, (new Date(user.updated_at)).toLocaleString()])
+            userDataForTable.value.push([user.id, user.name, user.email, user.role.role_name])
         });
     }
 }
