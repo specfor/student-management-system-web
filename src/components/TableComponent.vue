@@ -37,16 +37,18 @@ let {
   paginatePageSize,
   paginateTotal,
   currentSorting,
-  refreshFunc
+  refreshFunc,
+  options
 } = defineProps<{
   tableColumns: TableColumns[]
   tableRows: tableRowItem[][]
-  actions: TableActionType[]
+  actions?: TableActionType[]
   filters?: Filter[]
   paginateTotal: number
   paginatePageSize: number
   refreshFunc?: () => Promise<boolean>
   currentSorting?: { column: string, direc: 'asc' | 'desc' }
+  options?: { hideActionBar?: boolean }
 }>()
 
 for (const filter of filters ?? []) {
@@ -127,8 +129,8 @@ export type Filter = {
 </script>
 
 <template>
-  <div class="w-full overflow-x-auto">
-    <div class="flex justify-between w-full">
+  <div class="w-full h-full overflow-x-auto">
+    <div class="flex justify-between w-full" v-if="options?.hideActionBar !== true">
       <div class="flex">
         <div class="flex px-4 py-2 rounded-tl-lg items-center border text-slate-700 text-sm">
           Group Actions
@@ -183,7 +185,7 @@ export type Filter = {
 
       <thead>
         <tr class="border-0 border-y-2 border-t-0 border-slate-500 bg-neutral-200">
-          <th class="text-left px-3 pt-4 pb-2 font-bold">
+          <th class="text-left px-3 pt-4 pb-2 font-bold" v-if="options?.hideActionBar !== true">
           </th>
           <th class="text-left px-1 pt-4 pb-2 font-bold" v-for="(column, i) in tableColumns" :key="i">
             <div class="flex">
@@ -198,18 +200,18 @@ export type Filter = {
                 v-if="column.sortable" />
             </div>
           </th>
-          <th v-if="actions.length > 0" class="text-center px-3 pt-4 pb-2 font-bold">Actions</th>
+          <th v-if="actions ? (actions.length > 0) : false" class="text-center px-3 pt-4 pb-2 font-bold">Actions</th>
         </tr>
       </thead>
 
-      <tbody>
+      <tbody class="overflow-y-scroll">
         <tr v-if="tableRows.length === 0">
           <td colspan="100%" class="text-center pt-2 text-slate-700">No Data To Display.</td>
         </tr>
         <tr v-for="row in tableRows" :key="row[0] as string"
           class="border-y border-slate-300 bg-neutral-50 hover:bg-neutral-200">
           <td class="pt-1 px-5"
-            v-if="!row.some(value => { return typeof value == 'object' && value !== null && value.type === 'group' })">
+            v-if="options?.hideActionBar !== true && !row.some(value => { return typeof value == 'object' && value !== null && value.type === 'group' })">
             <input type="checkbox" class="h-5 w-5" :value="row[0]" v-model="selectedIds" v-on:change="isChecked">
           </td>
           <td colspan="100%" class="py-1 font-semibold bg-white pl-6"
@@ -259,12 +261,13 @@ export type Filter = {
         </tr>
       </tbody>
     </table>
+
+    <div class="flex justify-center mt-4">
+      <PaginateComponent :total-count="paginateTotal" :page-size="paginatePageSize"
+        @load-page-emit="$emit('loadPageEmit', $event)" />
+    </div>
   </div>
 
-  <div class="flex justify-center mt-4">
-    <PaginateComponent :total-count="paginateTotal" :page-size="paginatePageSize"
-      @load-page-emit="$emit('loadPageEmit', $event)" />
-  </div>
 </template>
 
 <style scoped></style>
