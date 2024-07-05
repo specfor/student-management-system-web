@@ -7,12 +7,13 @@ import GradesPage from "@/views/GradesPage.vue";
 import StudentPage from "@/views/student/StudentPage.vue";
 import InstructorsPage from "@/views/instructors/InstructorsPage.vue";
 import CoursesPage from "@/views/CoursesPage.vue";
-import EnrollmentPage from "@/views/EnrollmentPage.vue";
+import EnrollmentPage from "@/views/enrollments/EnrollmentPage.vue";
 import PaymentsPage from "@/views/PaymentsPage.vue";
 import MarkAttendancePage from "@/views/MarkAttendancePage.vue";
 import AttendancePage from "@/views/AttendancePage.vue";
 import StudentMoreInfo from "@/views/student/StudentMoreInfo.vue";
 import InstructorMoreInfo from "@/views/instructors/InstructorMoreInfo.vue";
+import EnrollmentMoreInfoPage from "@/views/enrollments/EnrollmentMoreInfo.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -71,6 +72,11 @@ const router = createRouter({
       path: "/enrollments",
       name: "enrollments",
       component: EnrollmentPage,
+    },
+    {
+      path: "/enrollments/:id/view",
+      name: "enrollments-view",
+      component: EnrollmentMoreInfoPage,
     },
     {
       path: "/payments",

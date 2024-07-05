@@ -7,12 +7,12 @@ import TableComponent, { type TableActionType, type TableColumns, type tableRowI
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
-import { PencilSquareIcon } from '@heroicons/vue/24/solid';
+import { PencilSquareIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/solid';
 import { onMounted, ref, watch, type Ref } from 'vue';
 import StudentSelector from '@/components/dataSelectors/StudentSelector.vue';
 import CourseSelector from '@/components/dataSelectors/CourseSelector.vue';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
-import { getRouteQuery, setRouteQuery } from '@/utils/routeHelpers';
+import { getRouteQuery, setRoute, setRouteQuery } from '@/utils/routeHelpers';
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
@@ -30,13 +30,14 @@ let enrollmentsDataTabCourse: any[] = []
 let enrollmentsDataTabStudent: any[] = []
 
 const tableActions: TableActionType[] = [
-    { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
+    { renderAsRouterLink: false, type: 'icon', emit: 'ShowMore', icon: MagnifyingGlassIcon, css: 'fill-blue-600 w-5' },
+    { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' },
 ]
 const tableColumnsByCourse: TableColumns[] = [
-    { label: 'ID', sortable: false }, { label: 'Student Name' }, { label: 'Suspended' },
+    { label: 'ID', sortable: false }, { label: 'Student Name' },
     { label: 'Price Concession' }, { label: 'Status' }]
 const tableColumnsbyStudent: TableColumns[] = [
-    { label: 'ID', sortable: false }, { label: 'Course Name' }, { label: 'Suspended' },
+    { label: 'ID', sortable: false }, { label: 'Course Name' },
     { label: 'Price Concession' }, { label: 'Status' }]
 
 const limitLoadEnrollments = 30
@@ -87,7 +88,7 @@ async function loadEnrollmentsByStudent(startIndex?: number) {
                 course += " - " + enrollment.course.group_name
             // course = { type: 'textWithLink', text: course, url: `/courses/${enrollment.course.id}/view` }
         }
-        enrollmentsDataForByStudentTab.value.push([enrollment.id, course, enrollment.suspended, priceOffer, status])
+        enrollmentsDataForByStudentTab.value.push([enrollment.id, course, priceOffer, status])
     });
 }
 
@@ -128,7 +129,7 @@ async function loadEnrollmentsByCourse(startIndex?: number) {
         if (enrollment.student)
             student = { type: 'textWithLink', text: enrollment.student.name, url: `/students/${enrollment.student.id}/view` }
 
-        enrollmentsDataForByCourseTab.value.push([enrollment.id, student, enrollment.suspended, priceOffer, status])
+        enrollmentsDataForByCourseTab.value.push([enrollment.id, student, priceOffer, status])
     });
 }
 
@@ -330,6 +331,10 @@ async function delEnrollment(ids: number[]) {
     });
     loadEnrollments()
 }
+
+function showMoreInfo(id: number) {
+    setRoute(`enrollments/${id}/view`)
+}
 </script>
 
 <template>
@@ -354,7 +359,8 @@ async function delEnrollment(ids: number[]) {
                         @edit-emit="editEnrollment" :actions="tableActions"
                         :refresh-func="async () => { await loadEnrollmentsByStudent(); return true }"
                         @delete-emit="delEnrollment" @load-page-emit="loadEnrollmentsByStudent"
-                        :paginate-page-size="limitLoadEnrollments" :paginate-total="countTotEnrollmentsTabStudent" />
+                        :paginate-page-size="limitLoadEnrollments" :paginate-total="countTotEnrollmentsTabStudent"
+                        @show-more="showMoreInfo" />
                 </div>
             </tab>
 
@@ -371,7 +377,8 @@ async function delEnrollment(ids: number[]) {
                         @edit-emit="editEnrollment" :actions="tableActions"
                         :refresh-func="async () => { await loadEnrollmentsByCourse(); return true }"
                         @delete-emit="delEnrollment" @load-page-emit="loadEnrollmentsByCourse"
-                        :paginate-page-size="limitLoadEnrollments" :paginate-total="countTotEnrollmentsTabCourse" />
+                        :paginate-page-size="limitLoadEnrollments" :paginate-total="countTotEnrollmentsTabCourse"
+                        @show-more="showMoreInfo" />
                 </div>
             </tab>
         </tabs>

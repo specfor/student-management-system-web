@@ -23,12 +23,12 @@ export function getEnrollmentsOfCourse(
     params.sort_dir = options.sort.direction;
   }
 
-  return sendGetRequest("/enroll/" + courseId, params);
+  return sendGetRequest("/enroll/course/" + courseId, params);
 }
 
-// export function getEnrollmentOfStudent(studentId) {
-//   return sendGetRequest('/enroll?student=' + studentId)
-// }
+export function getEnrollmentById(enrollmentId: number) {
+  return sendGetRequest("/enroll/enrollment/" + enrollmentId);
+}
 
 export function getStudentEnrollmentOfCourse(
   courseId: number,
