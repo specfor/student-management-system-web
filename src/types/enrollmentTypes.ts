@@ -13,6 +13,7 @@ type Enrollment = {
 type EnrollmentStatus = {
   type: "active" | "completed" | "pending" | "discontinued";
   reason: string | null;
+  timestamp?: number;
 };
 
 type EnrollmentPriceAdjustment = {
