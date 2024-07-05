@@ -31,7 +31,7 @@ const tableColumns: TableColumns[] = [
 const limitLoadStudents = 30
 const countTotStudents = ref(0)
 
-let lastLoadSettings = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc' }
+let lastLoadSettings = { lastUsedIndex: 0, orderBy: 'custom_id', orderDirec: 'desc' }
 
 function setSorting(column: string, direction: 'asc' | 'desc') {
     switch (column) {
@@ -281,7 +281,7 @@ function showStudentCourses(id: number) {
                 @courses-emit="showStudentCourses" @load-page-emit="loadStudents"
                 :paginate-page-size="limitLoadStudents" :paginate-total="countTotStudents" @sort-by="(col, dir) => {
                     setSorting(col, dir); loadStudents();
-                }" :current-sorting="{ column: 'ID', direc: 'asc' }" />
+                }" :current-sorting="{ column: 'Custom ID', direc: 'desc' }" />
         </div>
     </div>
 </template>
