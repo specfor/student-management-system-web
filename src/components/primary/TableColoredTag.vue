@@ -7,7 +7,7 @@ let { text, css } = defineProps<{
 </script>
 
 <template>
-    <div class="rounded-xl w-fit px-2 text-md" :class="css">
+    <div class="rounded-xl w-fit px-2 text-md cursor-default" :class="css">
         <p>{{ text }}</p>
     </div>
 </template>
