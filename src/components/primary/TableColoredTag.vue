@@ -8,6 +8,6 @@ let { text, css } = defineProps<{
 
 <template>
     <div class="rounded-xl w-fit px-2 text-md cursor-default" :class="css">
-        <p>{{ text }}</p>
+        <p class="uppercase">{{ text }}</p>
     </div>
 </template>
