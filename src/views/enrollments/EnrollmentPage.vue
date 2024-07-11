@@ -13,6 +13,7 @@ import StudentSelector from '@/components/dataSelectors/StudentSelector.vue';
 import CourseSelector from '@/components/dataSelectors/CourseSelector.vue';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { getRouteQuery, setRoute, setRouteQuery } from '@/utils/routeHelpers';
+import { getPayments } from '@/apiConnections/payments';
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
@@ -35,14 +36,35 @@ const tableActions: TableActionType[] = [
 ]
 const tableColumnsByCourse: TableColumns[] = [
     { label: 'ID', sortable: false }, { label: 'Student Name' },
-    { label: 'Price Concession' }, { label: 'Status' }]
+    { label: 'Price Concession' }, { label: 'Status' }, { label: 'This Month Payment' },] // { label: 'This Month Attendance' }
 const tableColumnsbyStudent: TableColumns[] = [
     { label: 'ID', sortable: false }, { label: 'Course Name' },
-    { label: 'Price Concession' }, { label: 'Status' }]
+    { label: 'Price Concession' }, { label: 'Status' }, { label: 'This Month Payment' },] //{ label: 'This Month Attendance' }
 
 const limitLoadEnrollments = 30
 const countTotEnrollmentsTabCourse = ref(0)
 const countTotEnrollmentsTabStudent = ref(0)
+
+let studentOptionFields: Ref<{ text: string, value: any }[]> = ref([])
+
+let courses: Course[] = []
+let students: Student[] = []
+let payments: Payment[] = []
+let attendance: Attendance[] = []
+
+
+function checkRequiredDataAvailability() {
+    return new Promise((resolve) => {
+        let id = setInterval(() => {
+            if (payments.length !== 0) { //&& attendance.length !== 0
+                clearInterval(id)
+                resolve(true)
+            }
+        }, 100)
+    })
+}
+
+
 
 let lastLoadSettingsStudents = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc' }
 let lastLoadSettingsCourses = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc' }
@@ -63,8 +85,14 @@ async function loadEnrollmentsByStudent(startIndex?: number) {
     countTotEnrollmentsTabStudent.value = resp.data.tot_count
     enrollmentsDataForByStudentTab.value = []
 
+    await checkRequiredDataAvailability()
 
     resp.data.enrollments.forEach((enrollment: Enrollment) => {
+        let paid = { type: 'colorTag', text: 'Not Paid', css: 'bg-red-200 text-red-800' }
+        let payment = payments.find(p => p.enrollment.id == enrollment.id)
+        if (payment)
+            paid = { type: 'colorTag', text: 'Paid', css: 'bg-green-200 text-green-800' }
+
         let priceOffer = 'NOT GIVEN'
         if (enrollment.price_adjustments !== null) {
             if (enrollment.price_adjustments.type === 'fixed')
@@ -88,7 +116,7 @@ async function loadEnrollmentsByStudent(startIndex?: number) {
                 course += " - " + enrollment.course.group_name
             // course = { type: 'textWithLink', text: course, url: `/courses/${enrollment.course.id}/view` }
         }
-        enrollmentsDataForByStudentTab.value.push([enrollment.id, course, priceOffer, status])
+        enrollmentsDataForByStudentTab.value.push([enrollment.id, course, priceOffer, status, paid])
     });
 }
 
@@ -108,7 +136,14 @@ async function loadEnrollmentsByCourse(startIndex?: number) {
     countTotEnrollmentsTabCourse.value = resp.data.tot_count
     enrollmentsDataForByCourseTab.value = []
 
+    await checkRequiredDataAvailability()
+
     resp.data.enrollments.forEach((enrollment: Enrollment) => {
+        let paid = { type: 'colorTag', text: 'Not Paid', css: 'bg-red-200 text-red-800' }
+        let payment = payments.find(p => p.enrollment.id == enrollment.id)
+        if (payment)
+            paid = { type: 'colorTag', text: 'Paid', css: 'bg-green-200 text-green-800' }
+
         let priceOffer = 'NOT GIVEN'
         if (enrollment.price_adjustments !== null) {
             if (enrollment.price_adjustments.type === 'fixed')
@@ -129,7 +164,7 @@ async function loadEnrollmentsByCourse(startIndex?: number) {
         if (enrollment.student)
             student = { type: 'textWithLink', text: enrollment.student.name, url: `/students/${enrollment.student.id}/view` }
 
-        enrollmentsDataForByCourseTab.value.push([enrollment.id, student, priceOffer, status])
+        enrollmentsDataForByCourseTab.value.push([enrollment.id, student, priceOffer, status, paid])
     });
 }
 
@@ -143,11 +178,6 @@ watch(selectedCourseId, () => {
     setRouteQuery('c_id', selectedCourseId.value)
     loadEnrollmentsByCourse()
 })
-
-let studentOptionFields: Ref<{ text: string, value: any }[]> = ref([])
-
-let courses: Course[] = []
-let students: Student[] = []
 
 // can call selectTab method on tabSelectMode before mounting. that is why this code is not in init
 onMounted(() => {
@@ -170,7 +200,7 @@ function loadEnrollments() {
         loadEnrollmentsByCourse()
 }
 
-async function init() {
+async function initLoadCourses() {
     let resp = await getCourses()
     if (resp.status === 'error') {
         return
@@ -180,8 +210,9 @@ async function init() {
             courses.push(course)
         })
     })
-
-    resp = await getStudents()
+}
+async function initLoadStudents() {
+    let resp = await getStudents()
     if (resp.status === 'error')
         return
 
@@ -190,8 +221,28 @@ async function init() {
         studentOptionFields.value.push({ text: student.name, value: student.id })
     })
 }
+async function initLoadPayments() {
+    let resp = await getPayments(undefined, undefined, { filters: { date_from: (new Date()).getFullYear() + '-' + ('0' + ((new Date()).getMonth() + 1)).slice(-2) } })
+    if (resp.status === 'error')
+        return
 
-init()
+    payments = resp.data.payments
+}
+async function initLoadAttendance() {
+    // let resp = await getAttendance()
+    // if (resp.status === 'error')
+    //     return
+
+    // students = resp.data.students
+    // students.forEach(student => {
+    //     studentOptionFields.value.push({ text: student.name, value: student.id })
+    // })
+}
+
+initLoadCourses()
+initLoadStudents()
+initLoadAttendance()
+initLoadPayments()
 
 async function addNewEnrollment() {
     let courseOptions: { text: string, value: any }[] = []
