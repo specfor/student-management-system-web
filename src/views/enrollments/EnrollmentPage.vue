@@ -14,6 +14,7 @@ import CourseSelector from '@/components/dataSelectors/CourseSelector.vue';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { getRouteQuery, setRoute, setRouteQuery } from '@/utils/routeHelpers';
 import { getPayments } from '@/apiConnections/payments';
+import { getAttendace } from '@/apiConnections/attendance';
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
@@ -36,10 +37,10 @@ const tableActions: TableActionType[] = [
 ]
 const tableColumnsByCourse: TableColumns[] = [
     { label: 'ID', sortable: false }, { label: 'Student Name' },
-    { label: 'Price Concession' }, { label: 'Status' }, { label: 'This Month Payment' },] // { label: 'This Month Attendance' }
+    { label: 'Price Concession' }, { label: 'Status' }, { label: 'This Month Payment' }, { label: 'This Month Attendance' }]
 const tableColumnsbyStudent: TableColumns[] = [
     { label: 'ID', sortable: false }, { label: 'Course Name' },
-    { label: 'Price Concession' }, { label: 'Status' }, { label: 'This Month Payment' },] //{ label: 'This Month Attendance' }
+    { label: 'Price Concession' }, { label: 'Status' }, { label: 'This Month Payment' }, { label: 'This Month Attendance' }]
 
 const limitLoadEnrollments = 30
 const countTotEnrollmentsTabCourse = ref(0)
@@ -93,6 +94,10 @@ async function loadEnrollmentsByStudent(startIndex?: number) {
         if (payment)
             paid = { type: 'colorTag', text: 'Paid', css: 'bg-green-200 text-green-800' }
 
+        let dayCount = attendance.filter(a => a.course_id == enrollment.course?.id && a.student_id == enrollment.student?.id).length
+        let attend = `${dayCount} day`
+        if (dayCount !== 1) attend += 's'
+
         let priceOffer = 'NOT GIVEN'
         if (enrollment.price_adjustments !== null) {
             if (enrollment.price_adjustments.type === 'fixed')
@@ -116,7 +121,7 @@ async function loadEnrollmentsByStudent(startIndex?: number) {
                 course += " - " + enrollment.course.group_name
             // course = { type: 'textWithLink', text: course, url: `/courses/${enrollment.course.id}/view` }
         }
-        enrollmentsDataForByStudentTab.value.push([enrollment.id, course, priceOffer, status, paid])
+        enrollmentsDataForByStudentTab.value.push([enrollment.id, course, priceOffer, status, paid, attend])
     });
 }
 
@@ -144,6 +149,10 @@ async function loadEnrollmentsByCourse(startIndex?: number) {
         if (payment)
             paid = { type: 'colorTag', text: 'Paid', css: 'bg-green-200 text-green-800' }
 
+        let dayCount = attendance.filter(a => a.course_id == enrollment.course?.id && a.student_id == enrollment.student?.id).length
+        let attend = `${dayCount} day`
+        if (dayCount !== 1) attend += 's'
+
         let priceOffer = 'NOT GIVEN'
         if (enrollment.price_adjustments !== null) {
             if (enrollment.price_adjustments.type === 'fixed')
@@ -164,7 +173,7 @@ async function loadEnrollmentsByCourse(startIndex?: number) {
         if (enrollment.student)
             student = { type: 'textWithLink', text: enrollment.student.name, url: `/students/${enrollment.student.id}/view` }
 
-        enrollmentsDataForByCourseTab.value.push([enrollment.id, student, priceOffer, status, paid])
+        enrollmentsDataForByCourseTab.value.push([enrollment.id, student, priceOffer, status, paid, attend])
     });
 }
 
@@ -229,14 +238,11 @@ async function initLoadPayments() {
     payments = resp.data.payments
 }
 async function initLoadAttendance() {
-    // let resp = await getAttendance()
-    // if (resp.status === 'error')
-    //     return
+    let resp = await getAttendace(undefined, undefined, { filters: { date_from: (new Date()).getFullYear() + '-' + ('0' + ((new Date()).getMonth() + 1)).slice(-2) + '-01' } })
+    if (resp.status === 'error')
+        return
 
-    // students = resp.data.students
-    // students.forEach(student => {
-    //     studentOptionFields.value.push({ text: student.name, value: student.id })
-    // })
+    attendance = resp.data.records
 }
 
 initLoadCourses()
