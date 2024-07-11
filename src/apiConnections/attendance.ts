@@ -4,14 +4,19 @@ import {
   sendGetRequest,
 } from "@/utils/requests";
 
-export function getAttendaceOfCourse(
-  courseId: number,
+export function getAttendace(
   startIndex: number = 0,
   limit: boolean | null = null,
   options?: {
     sort?: {
       by: "student_id" | "date" | "id";
       direction: "acs" | "desc";
+    };
+    filters?: {
+      courseId?: number;
+      studentId?: number;
+      date_from?: string;
+      date_to?: string;
     };
   }
 ) {
@@ -21,7 +26,13 @@ export function getAttendaceOfCourse(
     params.sort = options.sort.by;
     params.sort_dir = options.sort.direction;
   }
-  return sendGetRequest(`/attendance/course/${courseId}`, params);
+  if (options?.filters?.courseId) params.course_id = options.filters.courseId;
+  if (options?.filters?.studentId)
+    params.student_id = options.filters.studentId;
+  if (options?.filters?.date_from) params.date_from = options.filters.date_from;
+  if (options?.filters?.date_to) params.date_to = options.filters.date_to;
+
+  return sendGetRequest(`/attendance`, params);
 }
 
 export function getAttendaceOfCourseByEnrollmentId(
