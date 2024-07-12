@@ -1,7 +1,7 @@
 <!-- eslint-disable no-constant-condition -->
 <script setup lang="ts">
 import { getCourses } from '@/apiConnections/courses';
-import { deleteEnrollment, enrollCourse, getEnrollmentsOfCourse, getStudentEnrollments, updateEnrollment } from '@/apiConnections/enrollments';
+import { deleteEnrollment, enrollCourse, getEnrollments, updateEnrollment } from '@/apiConnections/enrollments';
 import { getStudents } from '@/apiConnections/students';
 import TableComponent, { type TableActionType, type TableColumns, type tableRowItem } from '@/components/TableComponent.vue';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
@@ -15,6 +15,8 @@ import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationFor
 import { getRouteQuery, setRoute, setRouteQuery } from '@/utils/routeHelpers';
 import { getPayments } from '@/apiConnections/payments';
 import { getAttendace } from '@/apiConnections/attendance';
+import SelectionBox from '@/components/primary/SelectionBox.vue';
+import { getInstructors } from '@/apiConnections/instructors';
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
@@ -24,12 +26,16 @@ const tabSelectMode: Ref<any> = ref(null)
 
 const selectedCourseId = ref(0)
 const selectedStudentId = ref(0)
+const selectedInstructorId = ref(0)
 
 
 const enrollmentsDataForByCourseTab: Ref<any[]> = ref([])
 const enrollmentsDataForByStudentTab: Ref<any[]> = ref([])
+const enrollmentsDataForByInstructorTab: Ref<any[]> = ref([])
+
 let enrollmentsDataTabCourse: any[] = []
 let enrollmentsDataTabStudent: any[] = []
+let enrollmentsDataTabInstructor: any[] = []
 
 const tableActions: TableActionType[] = [
     { renderAsRouterLink: false, type: 'icon', emit: 'ShowMore', icon: MagnifyingGlassIcon, css: 'fill-blue-600 w-5' },
@@ -41,10 +47,14 @@ const tableColumnsByCourse: TableColumns[] = [
 const tableColumnsbyStudent: TableColumns[] = [
     { label: 'ID', sortable: false }, { label: 'Course Name' },
     { label: 'Price Concession' }, { label: 'Status' }, { label: 'This Month Payment' }, { label: 'This Month Attendance' }]
+const tableColumnsbyTeacher: TableColumns[] = [
+    { label: 'ID', sortable: false }, { label: 'Course Name' }, { label: 'Student Name' },
+    { label: 'Price Concession' }, { label: 'Status' }, { label: 'This Month Payment' }, { label: 'This Month Attendance' }]
 
 const limitLoadEnrollments = 30
 const countTotEnrollmentsTabCourse = ref(0)
 const countTotEnrollmentsTabStudent = ref(0)
+const countTotEnrollmentsTabInstructor = ref(0)
 
 let studentOptionFields: Ref<{ text: string, value: any }[]> = ref([])
 
@@ -65,10 +75,31 @@ function checkRequiredDataAvailability() {
     })
 }
 
+let instructorOptions: { text: string, value: any }[] = []
+
+async function loadInstructors() {
+    let resp = await getInstructors();
+    if (resp.status === 'error')
+        return
+
+    resp.data.instructors.forEach((instructor: Instructor) => {
+        instructorOptions.push({ value: instructor.id, text: instructor.name })
+    });
+
+}
+
+loadInstructors()
+
+watch(selectedInstructorId, () => {
+    setRouteQuery('i_id', selectedInstructorId.value)
+    lastLoadSettingsInstructors.lastUsedIndex = 0
+    loadEnrollmentsByTeacher()
+})
 
 
 let lastLoadSettingsStudents = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc' }
 let lastLoadSettingsCourses = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc' }
+let lastLoadSettingsInstructors = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc' }
 
 async function loadEnrollmentsByStudent(startIndex?: number) {
     if (startIndex === undefined)
@@ -76,7 +107,7 @@ async function loadEnrollmentsByStudent(startIndex?: number) {
     else
         lastLoadSettingsStudents.lastUsedIndex = startIndex
 
-    let resp = await getStudentEnrollments(selectedStudentId.value, startIndex, limitLoadEnrollments)
+    let resp = await getEnrollments(startIndex, limitLoadEnrollments, { filters: { student_id: selectedStudentId.value } })
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
         return
@@ -125,13 +156,72 @@ async function loadEnrollmentsByStudent(startIndex?: number) {
     });
 }
 
+async function loadEnrollmentsByTeacher(startIndex?: number) {
+    if (startIndex === undefined)
+        startIndex = lastLoadSettingsInstructors.lastUsedIndex
+    else
+        lastLoadSettingsInstructors.lastUsedIndex = startIndex
+
+    let resp = await getEnrollments(startIndex, limitLoadEnrollments, { filters: { instructor_id: selectedInstructorId.value } })
+    if (resp.status === 'error') {
+        alertStore.insertAlert('An error occured.', resp.message, 'error')
+        return
+    }
+
+    enrollmentsDataTabInstructor = resp.data.enrollments
+    countTotEnrollmentsTabInstructor.value = resp.data.tot_count
+    enrollmentsDataForByInstructorTab.value = []
+
+    await checkRequiredDataAvailability()
+
+    resp.data.enrollments.forEach((enrollment: Enrollment) => {
+        let paid = { type: 'colorTag', text: 'Not Paid', css: 'bg-red-200 text-red-800' }
+        let payment = payments.find(p => p.enrollment.id == enrollment.id)
+        if (payment)
+            paid = { type: 'colorTag', text: 'Paid', css: 'bg-green-200 text-green-800' }
+
+        let dayCount = attendance.filter(a => a.course_id == enrollment.course?.id && a.student_id == enrollment.student?.id).length
+        let attend = `${dayCount} day`
+        if (dayCount !== 1) attend += 's'
+
+        let priceOffer = 'NOT GIVEN'
+        if (enrollment.price_adjustments !== null) {
+            if (enrollment.price_adjustments.type === 'fixed')
+                priceOffer = enrollment.price_adjustments.amount + ' fixed reduction'
+            else
+                priceOffer = enrollment.price_adjustments.percentage + '% reduction'
+        }
+        let lastStatus = enrollment.status[enrollment.status.length - 1];
+        let status = { type: 'colorTag', text: lastStatus.type, css: 'bg-green-200 text-green-800' }
+        if (lastStatus.type === 'discontinued')
+            status = { type: 'colorTag', text: lastStatus.type, css: 'bg-red-200 text-red-800' }
+        else if (lastStatus.type === 'pending')
+            status = { type: 'colorTag', text: lastStatus.type, css: 'bg-yellow-200 text-yellow-800' }
+        else if (lastStatus.type === 'completed')
+            status = { type: 'colorTag', text: lastStatus.type, css: 'bg-blue-200 text-blue-800' }
+
+        let student: tableRowItem = "Deleted"
+        if (enrollment.student)
+            student = { type: 'textWithLink', text: enrollment.student.name, url: `/students/${enrollment.student.id}/view` }
+
+        let course: tableRowItem = "Deleted"
+        if (enrollment.course) {
+            course = enrollment.course.name
+            if (enrollment.course.group_name)
+                course += " - " + enrollment.course.group_name
+            // course = { type: 'textWithLink', text: course, url: `/courses/${enrollment.course.id}/view` }
+        }
+        enrollmentsDataForByInstructorTab.value.push([enrollment.id, course, student, priceOffer, status, paid, attend])
+    });
+}
+
 async function loadEnrollmentsByCourse(startIndex?: number) {
     if (startIndex === undefined)
         startIndex = lastLoadSettingsCourses.lastUsedIndex
     else
         lastLoadSettingsCourses.lastUsedIndex = startIndex
 
-    let resp = await getEnrollmentsOfCourse(selectedCourseId.value, startIndex, limitLoadEnrollments)
+    let resp = await getEnrollments(startIndex, limitLoadEnrollments, { filters: { course_id: selectedCourseId.value } })
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
         return
@@ -180,11 +270,13 @@ async function loadEnrollmentsByCourse(startIndex?: number) {
 
 watch(selectedStudentId, () => {
     setRouteQuery('s_id', selectedStudentId.value)
+    lastLoadSettingsStudents.lastUsedIndex = 0
     loadEnrollmentsByStudent();
 })
 
 watch(selectedCourseId, () => {
     setRouteQuery('c_id', selectedCourseId.value)
+    lastLoadSettingsCourses.lastUsedIndex = 0
     loadEnrollmentsByCourse()
 })
 
@@ -199,6 +291,11 @@ onMounted(() => {
     if (routeCourseId !== null) {
         tabSelectMode.value.selectTab('#by-course')
         selectedCourseId.value = Number(routeCourseId)
+    }
+    let routeInstructorId = getRouteQuery('i_id')
+    if (routeInstructorId !== null) {
+        tabSelectMode.value.selectTab('#by-teacher')
+        selectedInstructorId.value = Number(routeInstructorId)
     }
 })
 
@@ -313,6 +410,8 @@ async function editEnrollment(id: number) {
 
     if (tabSelectMode.value.activeTabHash == '#by-student')
         enrollment = enrollmentsDataTabStudent.find(g => g.id === id) as Enrollment
+    else if (tabSelectMode.value.activeTabHash == '#by-teacher')
+        enrollment = enrollmentsDataTabInstructor.find(g => g.id === id) as Enrollment
     else
         enrollment = enrollmentsDataTabCourse.find(g => g.id === id) as Enrollment
 
@@ -435,6 +534,28 @@ function showMoreInfo(id: number) {
                         :refresh-func="async () => { await loadEnrollmentsByCourse(); return true }"
                         @delete-emit="delEnrollment" @load-page-emit="loadEnrollmentsByCourse"
                         :paginate-page-size="limitLoadEnrollments" :paginate-total="countTotEnrollmentsTabCourse"
+                        @show-more="showMoreInfo" />
+                </div>
+            </tab>
+
+            <tab name="by Teacher">
+                <div class="flex justify-end mb-3">
+                    <NewItemButton text="Enroll a Student" :on-click="addNewEnrollment"
+                        :disabled="selectedCourseId === 0" />
+                </div>
+                <div class="mb-5 flex items-center">
+                    <p class="font-semibold mr-10">Select the Instructor</p>
+                    <SelectionBox :options="instructorOptions" :value="selectedInstructorId"
+                        @input="(val) => { selectedInstructorId = val }" class="w-[300px] mr-5" />
+                    <!-- <CourseSelector v-model:course-id="selectedCourseId" /> -->
+                </div>
+                <div class="mb-10">
+                    <TableComponent :table-columns="tableColumnsbyTeacher"
+                        :table-rows="enrollmentsDataForByInstructorTab" @edit-emit="editEnrollment"
+                        :actions="tableActions"
+                        :refresh-func="async () => { await loadEnrollmentsByTeacher(); return true }"
+                        @delete-emit="delEnrollment" @load-page-emit="loadEnrollmentsByTeacher"
+                        :paginate-page-size="limitLoadEnrollments" :paginate-total="countTotEnrollmentsTabInstructor"
                         @show-more="showMoreInfo" />
                 </div>
             </tab>

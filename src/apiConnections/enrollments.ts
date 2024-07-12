@@ -5,14 +5,18 @@ import {
   sendDeleteRequest,
 } from "@/utils/requests";
 
-export function getEnrollmentsOfCourse(
-  courseId: number,
+export function getEnrollments(
   startIndex = 0,
   limit: null | number = null,
   options?: {
     sort?: {
       by: "student_id" | "created_at" | "id";
       direction: "acs" | "desc";
+    };
+    filters?: {
+      course_id?: number;
+      student_id?: number;
+      instructor_id?: number;
     };
   }
 ) {
@@ -22,8 +26,13 @@ export function getEnrollmentsOfCourse(
     params.sort = options.sort.by;
     params.sort_dir = options.sort.direction;
   }
+  if (options?.filters?.course_id) params.course_id = options.filters.course_id;
+  if (options?.filters?.student_id)
+    params.student_id = options.filters.student_id;
+  if (options?.filters?.instructor_id)
+    params.instructor_id = options.filters.instructor_id;
 
-  return sendGetRequest("/enroll/course/" + courseId, params);
+  return sendGetRequest("/enroll", params);
 }
 
 export function getEnrollmentById(enrollmentId: number) {
