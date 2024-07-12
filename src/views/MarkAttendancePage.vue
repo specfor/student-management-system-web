@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { sendMarkAttendance } from '@/apiConnections/attendance';
 import { getCourses } from '@/apiConnections/courses';
-import { getEnrollmentsOfCourse, getStudentEnrollmentOfCourse } from '@/apiConnections/enrollments';
+import { getEnrollments, getStudentEnrollmentOfCourse } from '@/apiConnections/enrollments';
 import { createPayment } from '@/apiConnections/payments';
 import { downloadStudentImage, getStudents } from '@/apiConnections/students';
 import { useAlertsStore } from '@/stores/alerts';
@@ -113,7 +113,7 @@ const enrollmentData: Ref<{ enrolled: boolean, enrollment: Enrollment | null, pa
 const enrollmentLoading = ref(false)
 
 async function loadStudentsOfCourse(courseId: number) {
-    let resp = await getEnrollmentsOfCourse(courseId)
+    let resp = await getEnrollments(0, undefined, { filters: { course_id: courseId } })
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
         return
