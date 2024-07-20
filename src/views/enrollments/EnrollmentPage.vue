@@ -15,8 +15,7 @@ import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationFor
 import { getRouteQuery, setRoute, setRouteQuery } from '@/utils/routeHelpers';
 import { getPayments } from '@/apiConnections/payments';
 import { getAttendace } from '@/apiConnections/attendance';
-import SelectionBox from '@/components/primary/SelectionBox.vue';
-import { getInstructors } from '@/apiConnections/instructors';
+import InstructorSelector from '@/components/dataSelectors/InstructorSelector.vue';
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
@@ -74,21 +73,6 @@ function checkRequiredDataAvailability() {
         }, 100)
     })
 }
-
-let instructorOptions: { text: string, value: any }[] = []
-
-async function loadInstructors() {
-    let resp = await getInstructors();
-    if (resp.status === 'error')
-        return
-
-    resp.data.instructors.forEach((instructor: Instructor) => {
-        instructorOptions.push({ value: instructor.id, text: instructor.name })
-    });
-
-}
-
-loadInstructors()
 
 watch(selectedInstructorId, () => {
     setRouteQuery('i_id', selectedInstructorId.value)
@@ -543,11 +527,8 @@ function showMoreInfo(id: number) {
                     <NewItemButton text="Enroll a Student" :on-click="addNewEnrollment"
                         :disabled="selectedCourseId === 0" />
                 </div>
-                <div class="mb-5 flex items-center">
-                    <p class="font-semibold mr-10">Select the Instructor</p>
-                    <SelectionBox :options="instructorOptions" :value="selectedInstructorId"
-                        @input="(val) => { selectedInstructorId = val }" class="w-[300px] mr-5" />
-                    <!-- <CourseSelector v-model:course-id="selectedCourseId" /> -->
+                <div class="mb-5">
+                    <InstructorSelector v-model:insturctor-id="selectedInstructorId" />
                 </div>
                 <div class="mb-10">
                     <TableComponent :table-columns="tableColumnsbyTeacher"
