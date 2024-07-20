@@ -127,7 +127,18 @@ async function addNewCourse() {
                 { text: 'One Time', value: 'onetime' },
             ]
         },
-        { name: 'amount', type: 'number', text: 'Course Fee', required: true },
+        {
+            name: 'amount', type: 'number', text: 'Course Fee', required: true, min: 0, validate: (val) => {
+                if (val < 0) return "Course fee must be equal or greater than 0"
+                return null
+            }
+        },
+        {
+            name: 'instructor_percent', type: 'number', text: 'Instructor Fee Percentage', required: true, min: 0, max: 100, validate: (val) => {
+                if (val < 0 || val > 100) return "Percentage must be within 0 - 100"
+                return null
+            }
+        },
         { type: 'heading', text: 'Limit to a Grade (Optional)' },
         { name: 'grade_id', type: 'select', text: 'Grade', options: gradeOptionFields },
     ])
@@ -138,7 +149,7 @@ async function addNewCourse() {
 
         let resp = await createCourse(results.data.name as string, results.data.group_name as string, results.data.instructor_id as number,
             results.data.day as CourseSchedule['day'], results.data.s_time as string, results.data.e_time as string, results.data.venue as string,
-            results.data.fee_type as CourseFee['type'], results.data.amount as number, results.data.grade_id as number)
+            results.data.fee_type as CourseFee['type'], results.data.amount as number, results.data.instructor_percent as number, results.data.grade_id as number)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
@@ -192,7 +203,19 @@ async function editCourse(id: number) {
                 { text: 'One Time', value: 'onetime' },
             ]
         },
-        { name: 'amount', type: 'number', text: 'Course Fee', required: true, value: course.fee.amount },
+        {
+            name: 'amount', type: 'number', text: 'Course Fee', required: true, value: course.fee.amount, min: 0, validate: (val) => {
+                if (val < 0) return "Course fee must be equal or greater than 0"
+                return null
+            }
+        },
+        {
+            name: 'instructor_percent', type: 'number', text: 'Instructor Fee Percentage', required: true, value: course.instructor_fee_percent,
+            min: 0, max: 100, validate: (val) => {
+                if (val < 0 || val > 100) return "Percentage must be within 0 - 100"
+                return null
+            }
+        },
         { type: 'heading', text: 'Limit to a Grade (Optional)' },
         { name: 'grade_id', type: 'select', text: 'Grade', options: gradeOptionFields, value: course.grade_id },
     ])
@@ -204,7 +227,7 @@ async function editCourse(id: number) {
 
         let resp = await updateCourse(id, results.data.name as string, results.data.group_name as string, results.data.instructor_id as number,
             results.data.day as CourseSchedule['day'], results.data.s_time as string, results.data.e_time as string, results.data.venue as string,
-            results.data.fee_type as CourseFee['type'], results.data.amount as number, results.data.grade_id as number)
+            results.data.fee_type as CourseFee['type'], results.data.amount as number, results.data.instructor_percent as number, results.data.grade_id as number)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {

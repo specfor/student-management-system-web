@@ -28,4 +28,5 @@ type Course = {
   group_name: string | null;
   instructor: Instructor | null;
   grade: null | Grade;
+  instructor_fee_percent: number;
 };
