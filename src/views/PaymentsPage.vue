@@ -9,6 +9,7 @@ import { onMounted, ref, watch, type Ref } from 'vue';
 import CourseSelector from '@/components/dataSelectors/CourseSelector.vue';
 import StudentSelector from '@/components/dataSelectors/StudentSelector.vue';
 import { getRouteQuery, setRouteQuery } from '@/utils/routeHelpers';
+import InstructorSelector from '@/components/dataSelectors/InstructorSelector.vue';
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
@@ -17,6 +18,8 @@ const tabSelectMode: Ref<any> = ref(null)
 
 const paymentDatByCourseTable: Ref<any[]> = ref([])
 const paymentDataByStudentTable: Ref<any[]> = ref([])
+const paymentDataByInstructorTable: Ref<any[]> = ref([])
+
 const tableActions: TableActionType[] = [
     { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
@@ -31,9 +34,11 @@ const tableFilters: Filter[] = [{ label: 'From 1st of', name: 'date_from', type:
 const limitLoadPayments = 30
 const countTotPaymentsForByCourse = ref(0)
 const countTotPaymentsForByStudent = ref(0)
+const countTotPaymentsForByInstructor = ref(0)
 
 const selectedStudentId = ref(0)
 const selectedCourseId = ref(0)
+const selectedInstructorId = ref(0)
 
 watch(selectedStudentId, (id) => {
     setRouteQuery('s_id', selectedStudentId.value)
@@ -42,6 +47,10 @@ watch(selectedStudentId, (id) => {
 watch(selectedCourseId, (id) => {
     setRouteQuery('c_id', selectedCourseId.value)
     loadPaymentByCourse(0, id)
+})
+watch(selectedInstructorId, (id) => {
+    setRouteQuery('i_id', selectedInstructorId.value)
+    loadPaymentByInstructor(0, id)
 })
 
 // can call selectTab method on tabSelectMode before mounting. that is why this code is not in init
@@ -56,12 +65,20 @@ onMounted(() => {
         tabSelectMode.value.selectTab('#by-course')
         selectedCourseId.value = Number(routeCourseId)
     }
+    let routeInstructorId = getRouteQuery('i_id')
+    if (routeInstructorId !== null) {
+        tabSelectMode.value.selectTab('#by-teacher')
+        selectedInstructorId.value = Number(routeInstructorId)
+    }
 })
 
 let lastLoadSettingsStudents: { lastUsedIndex: number, orderBy: string, orderDirec: 'asc' | 'desc', filters: { student_id: number, date_from?: string, date_to?: string } }
     = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc', filters: { student_id: 0, date_from: thisMonth, date_to: "" } }
 let lastLoadSettingsCourses: { lastUsedIndex: number, orderBy: string, orderDirec: 'asc' | 'desc', filters: { course_id: number, date_from?: string, date_to?: string } }
     = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc', filters: { course_id: 0, date_from: thisMonth, date_to: "" } }
+let lastLoadSettingsInstructor: { lastUsedIndex: number, orderBy: string, orderDirec: 'asc' | 'desc', filters: { instructor_id: number, date_from?: string, date_to?: string } }
+    = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc', filters: { instructor_id: 0, date_from: thisMonth, date_to: "" } }
+
 
 function setSorting(column: string, direction: 'asc' | 'desc') {
     let orderBy = ''
@@ -78,6 +95,9 @@ function setSorting(column: string, direction: 'asc' | 'desc') {
     if (tabSelectMode.value.activeTabHash == '#by-student') {
         lastLoadSettingsStudents.orderBy = orderBy
         lastLoadSettingsStudents.orderDirec = direction
+    } else if (tabSelectMode.value.activeTabHash == '#by-teacher') {
+        lastLoadSettingsInstructor.orderBy = orderBy
+        lastLoadSettingsInstructor.orderDirec = direction
     } else {
         lastLoadSettingsCourses.orderBy = orderBy
         lastLoadSettingsCourses.orderDirec = direction
@@ -179,6 +199,52 @@ async function loadPaymentByCourse(startIndex?: number, courseId = 0, filters?: 
     });
 }
 
+async function loadPaymentByInstructor(startIndex?: number, instructorId = 0, filters?: { [key: string]: any }) {
+    console.log('load payments by instructor');
+
+    if (instructorId !== 0)
+        lastLoadSettingsInstructor.filters.instructor_id = instructorId
+
+    if (startIndex === undefined)
+        startIndex = lastLoadSettingsInstructor.lastUsedIndex
+    else
+        lastLoadSettingsInstructor.lastUsedIndex = startIndex
+
+    if (filters?.date_from)
+        lastLoadSettingsInstructor.filters.date_from = filters.date_from
+    else
+        lastLoadSettingsInstructor.filters.date_from = thisMonth
+    if (filters?.date_to)
+        lastLoadSettingsInstructor.filters.date_to = filters.date_to
+    else
+        lastLoadSettingsInstructor.filters.date_to = undefined
+
+    let opt: any = {}
+    opt.sort = { by: lastLoadSettingsInstructor.orderBy, direction: lastLoadSettingsInstructor.orderDirec }
+    opt.filters = lastLoadSettingsInstructor.filters
+
+    let resp = await getPayments(startIndex, limitLoadPayments, opt)
+    if (resp.status === 'error') {
+        alertStore.insertAlert('An error occured.', resp.message, 'error')
+        return
+    }
+    countTotPaymentsForByInstructor.value = resp.data.tot_count
+    paymentDataByInstructorTable.value = []
+    let payments: Payment[] = resp.data.payments
+    payments.forEach(payment => {
+        let student: tableRowItem = "Deleted"
+        if (payment.enrollment.student)
+            student = { type: 'textWithLink', text: payment.enrollment.student.name, url: `/students/${payment.enrollment.student.id}/view` }
+        let course: tableRowItem = "Deleted"
+        if (payment.enrollment.course)
+            // course = { type: 'textWithLink', text: payment.enrollment.course.name, url: `/courses/${payment.enrollment.course.id}/view` }
+            course = payment.enrollment.course.name
+
+        paymentDataByInstructorTable.value.push([payment.id, payment.payment_for, payment.amount,
+            student, course, payment.payment_method, payment.refunded ? 'Yes' : 'No'])
+    });
+}
+
 async function editPayment(id: number) {
     dataEntryForm.newDataEntryForm('Refund Payment', 'Refund', [
         { name: 'reason', type: 'text', text: 'Reason', required: true }
@@ -212,7 +278,7 @@ async function editPayment(id: number) {
     }
 }
 
-async function delGrade() {
+async function delPayment() {
     alertStore.insertAlert('Can not Delete.', 'Payments can not be deleted.', 'error')
 }
 
@@ -235,7 +301,7 @@ async function delGrade() {
                     <TableComponent :table-columns="tableColumns" :table-rows="paymentDataByStudentTable"
                         @edit-emit="editPayment" :actions="tableActions"
                         :refresh-func="async () => { await loadPaymentByStudent(); return true }"
-                        @delete-emit="delGrade" @load-page-emit="loadPaymentByStudent"
+                        @delete-emit="delPayment" @load-page-emit="loadPaymentByStudent"
                         :paginate-page-size="limitLoadPayments" :paginate-total="countTotPaymentsForByStudent"
                         :current-sorting="{ column: 'ID', direc: 'asc' }" @sort-by="(col, dir) => {
                             setSorting(col, dir); loadPaymentByStudent();
@@ -252,13 +318,31 @@ async function delGrade() {
                 <div class="mb-10">
                     <TableComponent :table-columns="tableColumns" :table-rows="paymentDatByCourseTable"
                         @edit-emit="editPayment" :actions="tableActions"
-                        :refresh-func="async () => { await loadPaymentByCourse(); return true }" @delete-emit="delGrade"
-                        :paginate-page-size="limitLoadPayments" :paginate-total="countTotPaymentsForByCourse"
-                        @load-page-emit="loadPaymentByCourse" :current-sorting="{ column: 'ID', direc: 'asc' }"
-                        @sort-by="(col, dir) => {
+                        :refresh-func="async () => { await loadPaymentByCourse(); return true }"
+                        @delete-emit="delPayment" :paginate-page-size="limitLoadPayments"
+                        :paginate-total="countTotPaymentsForByCourse" @load-page-emit="loadPaymentByCourse"
+                        :current-sorting="{ column: 'ID', direc: 'asc' }" @sort-by="(col, dir) => {
                             setSorting(col, dir); loadPaymentByCourse();
                         }" :filters="tableFilters" @filter-values="(val) => {
                             loadPaymentByCourse(undefined, undefined, val)
+                        }" />
+                </div>
+            </tab>
+
+            <tab name="by Teacher">
+                <div class="mb-5">
+                    <InstructorSelector v-model:insturctor-id="selectedInstructorId" />
+                </div>
+                <div class="mb-10">
+                    <TableComponent :table-columns="tableColumns" :table-rows="paymentDataByInstructorTable"
+                        @edit-emit="editPayment" :actions="tableActions"
+                        :refresh-func="async () => { await loadPaymentByInstructor(); return true }"
+                        @delete-emit="delPayment" :paginate-page-size="limitLoadPayments"
+                        :paginate-total="countTotPaymentsForByInstructor" @load-page-emit="loadPaymentByInstructor"
+                        :current-sorting="{ column: 'ID', direc: 'asc' }" @sort-by="(col, dir) => {
+                            setSorting(col, dir); loadPaymentByInstructor();
+                        }" :filters="tableFilters" @filter-values="(val) => {
+                            loadPaymentByInstructor(undefined, undefined, val)
                         }" />
                 </div>
             </tab>

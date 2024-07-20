@@ -7,6 +7,7 @@ export function getPayments(
     filters?: {
       course_id?: number;
       student_id?: number;
+      instructor_id?: number;
       date_from?: string;
       date_to?: string;
     };
@@ -18,6 +19,9 @@ export function getPayments(
 ) {
   const params: { [key: string]: any } = { start: startIndex };
   if (limit) params["size"] = limit;
+
+  if (options?.filters?.instructor_id)
+    params["instructor_id"] = options?.filters?.instructor_id;
   if (options?.filters?.course_id)
     params["course_id"] = options?.filters?.course_id;
   if (options?.filters?.student_id)
