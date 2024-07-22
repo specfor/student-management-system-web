@@ -11,6 +11,7 @@ import { ref, type Ref } from "vue"
 import { MagnifyingGlassIcon, PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { BookOpenIcon } from '@heroicons/vue/24/outline';
 import { setRoute } from '@/utils/routeHelpers';
+import { getStudentCount } from '@/apiConnections/analytics';
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
@@ -30,6 +31,8 @@ const tableColumns: TableColumns[] = [
 
 const limitLoadStudents = 30
 const countTotStudents = ref(0)
+
+const studentCountAnalytics: Ref<{ active: number | null, inactive: number | null }> = ref({ active: null, inactive: null })
 
 let lastLoadSettings = { lastUsedIndex: 0, orderBy: 'custom_id', orderDirec: 'desc' }
 
@@ -95,6 +98,15 @@ async function init() {
     craftGradesAsOptions()
 }
 init()
+
+async function loadStudentCount() {
+    let resp = await getStudentCount()
+    if (resp.status === 'success') {
+        studentCountAnalytics.value.active = resp.data.active
+        studentCountAnalytics.value.inactive = resp.data.inactive
+    }
+}
+loadStudentCount()
 
 function craftGradesAsOptions() {
     let ret: { value: number, text: string }[] = []
@@ -270,9 +282,15 @@ function showStudentCourses(id: number) {
 
 <template>
     <div class="container">
-        <div class="flex justify-between items-center mb-16">
+        <div class="flex justify-between items-center mb-10">
             <h4 class="font-semibold text-3xl">Students</h4>
             <NewItemButton text="New Student" :on-click="addNewStudent" />
+        </div>
+        <div class="mb-16 flex border-b border-slate-300 text-lg justify-evenly">
+            <p>Total - {{ studentCountAnalytics.active ? studentCountAnalytics.active + studentCountAnalytics.inactive!
+                : ''}}</p>
+            <p>Active - {{ studentCountAnalytics.active ? studentCountAnalytics.active : '' }}</p>
+            <p>Inactive - {{ studentCountAnalytics.inactive ? studentCountAnalytics.inactive : '' }}</p>
         </div>
         <div class="mb-10">
             <TableComponent :table-columns="tableColumns" :table-rows="studentDataForTable" :actions="tableActions"
