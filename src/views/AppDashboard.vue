@@ -57,7 +57,7 @@ async function loadStudentCount() {
 loadStudentCount()
 
 async function loadMonthlyIncomeSummary() {
-    let resp = await getMonthlyIncomeSummary(new Date().getFullYear(), new Date().getMonth())
+    let resp = await getMonthlyIncomeSummary(new Date().getFullYear(), (new Date().getMonth() + 1))
     if (resp.status === 'success') {
         incomeData.value = resp.data
         incomeDataForGraph.value.datasets[0].data = [resp.data.this_month_class_payments.amount, resp.data.out_standing_class_payments.amount]
@@ -69,7 +69,8 @@ function formatMoney(amount: string) {
     let m = amount.split('.')
     let final = ""
 
-    final += m[0].substring(0, m[0].length % 3) + ','
+    if (m[0].substring(0, m[0].length % 3) !== '')
+        final += m[0].substring(0, m[0].length % 3) + ','
 
     for (let i = m[0].length % 3; i < m[0].length; i += 3) {
         final += m[0].substring(i, i + 3)
