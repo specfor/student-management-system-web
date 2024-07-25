@@ -288,7 +288,7 @@ function showStudentCourses(id: number) {
         </div>
         <div class="mb-16 flex border-b border-slate-300 text-lg justify-evenly">
             <p>Total - {{ studentCountAnalytics.active ? studentCountAnalytics.active + studentCountAnalytics.inactive!
-                : ''}}</p>
+                : '' }}</p>
             <p>Active - {{ studentCountAnalytics.active ? studentCountAnalytics.active : '' }}</p>
             <p>Inactive - {{ studentCountAnalytics.inactive ? studentCountAnalytics.inactive : '' }}</p>
         </div>

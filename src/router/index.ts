@@ -8,7 +8,7 @@ import StudentPage from "@/views/student/StudentPage.vue";
 import InstructorsPage from "@/views/instructors/InstructorsPage.vue";
 import CoursesPage from "@/views/CoursesPage.vue";
 import EnrollmentPage from "@/views/enrollments/EnrollmentPage.vue";
-import PaymentsPage from "@/views/PaymentsPage.vue";
+import StudentPaymentsPage from "@/views/payments/StudentPaymentsPage.vue";
 import MarkAttendancePage from "@/views/MarkAttendancePage.vue";
 import AttendancePage from "@/views/AttendancePage.vue";
 import StudentMoreInfo from "@/views/student/StudentMoreInfo.vue";
@@ -79,9 +79,9 @@ const router = createRouter({
       component: EnrollmentMoreInfoPage,
     },
     {
-      path: "/payments",
+      path: "/payments/students",
       name: "payments",
-      component: PaymentsPage,
+      component: StudentPaymentsPage,
     },
     {
       path: "/mark-attendance",

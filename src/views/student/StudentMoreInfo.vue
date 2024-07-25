@@ -150,7 +150,7 @@ async function uploadStudentImage(studentId: number) {
                 <button class="border bg-blue-500 py-2 px-5 rounded-md mb-3"
                     @click="() => { setRoute(`/enrollments?s_id=${student?.id}`) }">Enrolled Courses</button>
                 <button class="border bg-blue-500 py-2 px-5 rounded-md mb-3"
-                    @click="() => { setRoute(`/payments?s_id=${student?.id}`) }">Payments</button>
+                    @click="() => { setRoute(`/payments/students?s_id=${student?.id}`) }">Payments</button>
             </div>
         </div>
     </div>
