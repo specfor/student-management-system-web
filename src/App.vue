@@ -52,9 +52,9 @@ checkLogged()
       <header class="TextNotCopy">
         <PageHeader />
       </header>
-      <div class="flex flex-1 mt-14">
-        <div class="relative w-[200px] h-full">
-          <SideMenu class="fixed TextNotCopy" />
+      <div class="flex-1 flex mt-14">
+        <div class="w-[200px] h-full">
+          <SideMenu class="TextNotCopy" />
         </div>
         <RouterView class="pt-8" />
       </div>

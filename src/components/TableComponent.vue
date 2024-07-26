@@ -44,11 +44,11 @@ let {
   tableRows: tableRowItem[][]
   actions?: TableActionType[]
   filters?: Filter[]
-  paginateTotal: number
-  paginatePageSize: number
+  paginateTotal?: number
+  paginatePageSize?: number
   refreshFunc?: () => Promise<boolean>
   currentSorting?: { column: string, direc: 'asc' | 'desc' }
-  options?: { hideActionBar?: boolean }
+  options?: { hideActionBar?: boolean, hidePaginateBar?: boolean }
 }>()
 
 for (const filter of filters ?? []) {
@@ -262,7 +262,7 @@ export type Filter = {
       </tbody>
     </table>
 
-    <div class="flex justify-center mt-4">
+    <div class="flex justify-center mt-4" v-if="options?.hidePaginateBar ? !options.hidePaginateBar : true">
       <PaginateComponent :total-count="paginateTotal" :page-size="paginatePageSize"
         @load-page-emit="$emit('loadPageEmit', $event)" />
     </div>
