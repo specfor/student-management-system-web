@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { getMonthlyIncomeSummary, getStudentCount } from '@/apiConnections/analytics';
 import CollapseCard from '@/components/minorUiComponents/CollapseCard.vue';
+import { formatMoney } from '@/utils/money';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import { ref, type Ref } from 'vue';
 import { Doughnut } from 'vue-chartjs'
@@ -65,20 +66,6 @@ async function loadMonthlyIncomeSummary() {
 }
 loadMonthlyIncomeSummary()
 
-function formatMoney(amount: string) {
-    let m = amount.split('.')
-    let final = ""
-
-    if (m[0].substring(0, m[0].length % 3) !== '')
-        final += m[0].substring(0, m[0].length % 3) + ','
-
-    for (let i = m[0].length % 3; i < m[0].length; i += 3) {
-        final += m[0].substring(i, i + 3)
-        if (i !== m[0].length - 3)
-            final += ','
-    }
-    return final
-}
 </script>
 
 <template>
