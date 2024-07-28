@@ -98,13 +98,13 @@ async function loadCalculations() {
     <div class="container">
         <h1 class="font-semibold text-3xl mb-16">Instructor Monthly Payment Calculation</h1>
 
-        <div class="flex">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
             <InstructorSelector v-model:insturctor-id="selectedInstructorId" />
-            <div class="ml-10 flex items-center">
+            <div class="flex items-center">
                 <p class="font-semibold mr-10">Select Month</p>
                 <input type="month" class="border px-4 py-1 rounded-md border-slate-400" v-model="selectedMonth" />
             </div>
-            <div class="ml-10 flex items-center">
+            <div class="flex items-center">
                 <p class="font-semibold mr-10">Limit Payments By</p>
                 <SelectionBox class="w-[300px]"
                     :options="[{ text: 'Payment Marked Month', value: 'marked_month' }, { text: 'Payment Paid Month', value: 'paid_month' }]"
@@ -127,6 +127,11 @@ async function loadCalculations() {
                 </div>
                 <div class="px-10">
                     <div class="grid grid-cols-2 gap-10">
+                        <p>Total Revenue</p>
+                        <p class="justify-self-end">{{ summary.payments.total.currency }} {{
+                            formatMoney(summary.payments.total.amount) }}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-10">
                         <p>Instructor's Share</p>
                         <p class="justify-self-end">{{ summary.payments.instructor_share.currency }} {{
                             formatMoney(summary.payments.instructor_share.amount) }}</p>
@@ -135,12 +140,6 @@ async function loadCalculations() {
                         <p>Class Share</p>
                         <p class="justify-self-end">{{ summary.payments.class_share.currency }} {{
                             formatMoney(summary.payments.class_share.amount) }}</p>
-                    </div>
-                    <div class="h-1 bg-black w-full"></div>
-                    <div class="grid grid-cols-2 gap-10">
-                        <p>Payment Total</p>
-                        <p class="justify-self-end">{{ summary.payments.total.currency }} {{
-                            formatMoney(summary.payments.total.amount) }}</p>
                     </div>
                 </div>
             </div>
@@ -173,6 +172,11 @@ async function loadCalculations() {
             <div class="flex flex-col items-end py-5">
                 <div class="w-fit flex flex-col items-end mr-10">
                     <div class="grid grid-cols-2 gap-10 w-full">
+                        <p class="justify-self-start">Total Revenue</p>
+                        <p class="justify-self-end">{{ paymentCollection.tot_payments.currency }} {{
+                            formatMoney(paymentCollection.tot_payments.amount) }}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-10 w-full">
                         <p class="justify-self-start">Instructor's Share</p>
                         <p class="justify-self-end">{{ paymentCollection.instructor_share.currency }} {{
                             formatMoney(paymentCollection.instructor_share.amount) }}</p>
@@ -181,12 +185,6 @@ async function loadCalculations() {
                         <p class="justify-self-start">Class Share</p>
                         <p class="justify-self-end">{{ paymentCollection.class_share.currency }} {{
                             formatMoney(paymentCollection.class_share.amount) }}</p>
-                    </div>
-                    <div class="h-1 bg-black w-full"></div>
-                    <div class="grid grid-cols-2 gap-10 w-full">
-                        <p class="justify-self-start">Payment Total</p>
-                        <p class="justify-self-end">{{ paymentCollection.tot_payments.currency }} {{
-                            formatMoney(paymentCollection.tot_payments.amount) }}</p>
                     </div>
                 </div>
             </div>
@@ -228,6 +226,11 @@ async function loadCalculations() {
                 <div class="flex flex-col items-end py-5">
                     <div class="w-fit flex flex-col items-end mr-10">
                         <div class="grid grid-cols-2 gap-10 w-full">
+                            <p class="justify-self-start">Total Revenue</p>
+                            <p class="justify-self-end">{{ paymentCollection.tot_payments.currency }} {{
+                                formatMoney(paymentCollection.tot_payments.amount) }}</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-10 w-full">
                             <p class="justify-self-start">Instructor's Share</p>
                             <p class="justify-self-end">{{ paymentCollection.instructor_share.currency }} {{
                                 formatMoney(paymentCollection.instructor_share.amount) }}</p>
@@ -236,12 +239,6 @@ async function loadCalculations() {
                             <p class="justify-self-start">Class Share</p>
                             <p class="justify-self-end">{{ paymentCollection.class_share.currency }} {{
                                 formatMoney(paymentCollection.class_share.amount) }}</p>
-                        </div>
-                        <div class="h-1 bg-black w-full"></div>
-                        <div class="grid grid-cols-2 gap-10 w-full">
-                            <p class="justify-self-start">Payment Total</p>
-                            <p class="justify-self-end">{{ paymentCollection.tot_payments.currency }} {{
-                                formatMoney(paymentCollection.tot_payments.amount) }}</p>
                         </div>
                     </div>
                 </div>

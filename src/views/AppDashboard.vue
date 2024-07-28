@@ -33,7 +33,7 @@ const incomeDataForGraph: Ref<{
         data: number[]
     }[]
 }> = ref({
-    labels: ['As This Month Class Fees', 'For Out-Standing Class Payments'],
+    labels: ['As This Month Class Fees', 'As Pending Payments'],
     datasets: [
         {
             backgroundColor: ['#45E713', '#AF19FF'],
