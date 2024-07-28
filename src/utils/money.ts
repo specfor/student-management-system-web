@@ -2,6 +2,8 @@ export function formatMoney(amount: string) {
   const m = amount.split(".");
   let final = "";
 
+  if (m[0].length === 1) return m[0];
+
   if (m[0].substring(0, m[0].length % 3) !== "")
     final += m[0].substring(0, m[0].length % 3) + ",";
 

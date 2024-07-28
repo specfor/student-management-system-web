@@ -14,10 +14,12 @@ export function getMonthlyIncomeSummary(year: number, month: number) {
 export function getInstructorMonthyPaymentCalculations(
   instructorId: number,
   year: number,
-  month: number
+  month: number,
+  paymentsBy: "marked_month" | "paid_month"
 ) {
   return sendGetRequest("/analytics/payments/instructor/" + instructorId, {
     year,
     month,
+    payments_by: paymentsBy,
   });
 }
