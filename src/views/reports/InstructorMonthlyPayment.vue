@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { getInstructorMonthyPaymentCalculations } from '@/apiConnections/analytics';
 import InstructorSelector from '@/components/dataSelectors/InstructorSelector.vue';
+import SelectionBox from '@/components/primary/SelectionBox.vue';
 import type { TableColumns, tableRowItem } from '@/components/TableComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
@@ -19,6 +20,7 @@ const tableColumnsForOtherMonthPayments: TableColumns[] = [
 
 let selectedInstructorId = ref(0)
 let selectedMonth = ref('')
+let selectedPaymentsBy = ref('paid_month')
 
 watch(selectedInstructorId, () => {
     loadCalculations()
@@ -28,6 +30,9 @@ watch(selectedMonth, () => {
     loadCalculations()
 })
 
+watch(selectedPaymentsBy, () => {
+    loadCalculations()
+})
 
 let summary: Ref<AnalyticsInstructorMonthlyPaymentCalculation['overall'] | null> = ref(null)
 let forSelectedMonthPayments: Ref<AnalyticsPaymentRecord[] | null> = ref(null)
@@ -38,11 +43,12 @@ let selectedMonthTableRows: Ref<{ courseId: number, rows: tableRowItem[][] }[]> 
 let otherMonthsTableRows: Ref<{ courseId: number, rows: tableRowItem[][] }[]> = ref([])
 
 async function loadCalculations() {
-    if (selectedMonth.value === '' || selectedInstructorId.value === 0)
+    if (selectedMonth.value === '' || selectedInstructorId.value === 0 || selectedPaymentsBy.value === '')
         return
 
     let date = selectedMonth.value.split('-')
-    let resp = await getInstructorMonthyPaymentCalculations(selectedInstructorId.value, Number(date[0]), Number(date[1]))
+    let resp = await getInstructorMonthyPaymentCalculations(selectedInstructorId.value, Number(date[0]), Number(date[1]),
+        selectedPaymentsBy.value as 'paid_month' | 'marked_month')
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured while loading data.', resp.message, 'error')
         return
@@ -54,6 +60,9 @@ async function loadCalculations() {
     forSelectedMonthPayments.value = data.for_selected_month
     otherMonthPayments.value = data.for_other_months
     relationData.value = data.relation_data
+
+    selectedMonthTableRows.value = []
+    otherMonthsTableRows.value = []
 
     data.for_selected_month.forEach(coursePayments => {
         let rows: tableRowItem[][] = []
@@ -94,6 +103,12 @@ async function loadCalculations() {
             <div class="ml-10 flex items-center">
                 <p class="font-semibold mr-10">Select Month</p>
                 <input type="month" class="border px-4 py-1 rounded-md border-slate-400" v-model="selectedMonth" />
+            </div>
+            <div class="ml-10 flex items-center">
+                <p class="font-semibold mr-10">Limit Payments By</p>
+                <SelectionBox class="w-[300px]"
+                    :options="[{ text: 'Payment Marked Month', value: 'marked_month' }, { text: 'Payment Paid Month', value: 'paid_month' }]"
+                    :value="selectedPaymentsBy" @input="(val) => { selectedPaymentsBy = val }" />
             </div>
         </div>
 
@@ -177,56 +192,61 @@ async function loadCalculations() {
             </div>
         </div>
 
-        <div v-if="summary !== null" class="flex items-center text-red-600 mt-20 mb-12">
+        <div v-if="otherMonthPayments?.find(p => p.records.length > 0)"
+            class="flex items-center text-red-600 mt-20 mb-12">
             <StarIcon class="w-10 h10 mr-10" />
             <h5 class="text-xl font-semibold">Payments made in the selected month but
                 for another month.</h5>
         </div>
 
-        <div v-for="(paymentCollection, index) of otherMonthPayments" :key="index" class="border my-16">
-            <div class="py-5 px-5 bg-yellow-100">
-                <h4 class="font-semibold text-lg">Course :- {{ paymentCollection.course_name }}</h4>
-                <div class="grid grid-cols-3">
-                    <div class="grid grid-cols-2 justify-self-center gap-10">
-                        <p>Course Fee</p>
-                        <p>LKR {{ paymentCollection['course_fee']['amount'] }}
-                            {{ paymentCollection['course_fee']['type'] }}</p>
-                    </div>
-                    <div class="grid grid-cols-2 justify-self-center gap-10">
-                        <p>Instructor Fee Percentage</p>
-                        <p>{{ paymentCollection['instructor_fee_percentage'] }}%</p>
-                    </div>
-                    <div class="grid grid-cols-2 justify-self-center gap-10">
-                        <p>Enrolled Active Student Count</p>
-                        <p>{{ paymentCollection['enrollment_count'] }}</p>
+
+        <div v-for="(paymentCollection, index) of otherMonthPayments" :key="index">
+            <div v-if="paymentCollection.records.length > 0" class="border my-16">
+                <div class="py-5 px-5 bg-yellow-100">
+                    <h4 class="font-semibold text-lg">Course :- {{ paymentCollection.course_name }}</h4>
+                    <div class="grid grid-cols-3">
+                        <div class="grid grid-cols-2 justify-self-center gap-10">
+                            <p>Course Fee</p>
+                            <p>LKR {{ paymentCollection['course_fee']['amount'] }}
+                                {{ paymentCollection['course_fee']['type'] }}</p>
+                        </div>
+                        <div class="grid grid-cols-2 justify-self-center gap-10">
+                            <p>Instructor Fee Percentage</p>
+                            <p>{{ paymentCollection['instructor_fee_percentage'] }}%</p>
+                        </div>
+                        <div class="grid grid-cols-2 justify-self-center gap-10">
+                            <p>Enrolled Active Student Count</p>
+                            <p>{{ paymentCollection['enrollment_count'] }}</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="">
-                <TableComponent :table-columns="tableColumnsForOtherMonthPayments"
-                    :table-rows="otherMonthsTableRows.find(row => row.courseId == paymentCollection.course_id)!['rows']"
-                    :options="{ hideActionBar: true, hidePaginateBar: true }" />
-            </div>
-            <div class="flex flex-col items-end py-5">
-                <div class="w-fit flex flex-col items-end mr-10">
-                    <div class="grid grid-cols-2 gap-10 w-full">
-                        <p class="justify-self-start">Instructor's Share</p>
-                        <p class="justify-self-end">{{ paymentCollection.instructor_share.currency }} {{
-                            formatMoney(paymentCollection.instructor_share.amount) }}</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-10 w-full">
-                        <p class="justify-self-start">Class Share</p>
-                        <p class="justify-self-end">{{ paymentCollection.class_share.currency }} {{
-                            formatMoney(paymentCollection.class_share.amount) }}</p>
-                    </div>
-                    <div class="h-1 bg-black w-full"></div>
-                    <div class="grid grid-cols-2 gap-10 w-full">
-                        <p class="justify-self-start">Payment Total</p>
-                        <p class="justify-self-end">{{ paymentCollection.tot_payments.currency }} {{
-                            formatMoney(paymentCollection.tot_payments.amount) }}</p>
+                <div class="">
+                    <TableComponent :table-columns="tableColumnsForOtherMonthPayments"
+                        :table-rows="otherMonthsTableRows.find(row => row.courseId == paymentCollection.course_id)!['rows']"
+                        :options="{ hideActionBar: true, hidePaginateBar: true }" />
+                </div>
+                <div class="flex flex-col items-end py-5">
+                    <div class="w-fit flex flex-col items-end mr-10">
+                        <div class="grid grid-cols-2 gap-10 w-full">
+                            <p class="justify-self-start">Instructor's Share</p>
+                            <p class="justify-self-end">{{ paymentCollection.instructor_share.currency }} {{
+                                formatMoney(paymentCollection.instructor_share.amount) }}</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-10 w-full">
+                            <p class="justify-self-start">Class Share</p>
+                            <p class="justify-self-end">{{ paymentCollection.class_share.currency }} {{
+                                formatMoney(paymentCollection.class_share.amount) }}</p>
+                        </div>
+                        <div class="h-1 bg-black w-full"></div>
+                        <div class="grid grid-cols-2 gap-10 w-full">
+                            <p class="justify-self-start">Payment Total</p>
+                            <p class="justify-self-end">{{ paymentCollection.tot_payments.currency }} {{
+                                formatMoney(paymentCollection.tot_payments.amount) }}</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
 </template>
