@@ -51,6 +51,9 @@ let {
   options?: { hideActionBar?: boolean, hidePaginateBar?: boolean }
 }>()
 
+if (filters)
+  showResetBtn.value = true
+
 for (const filter of filters ?? []) {
   searchInput.value[filter.name] = filter.value
 }
