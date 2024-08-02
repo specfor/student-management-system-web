@@ -1,6 +1,6 @@
 import { sendJsonPostRequest, sendGetRequest } from "@/utils/requests";
 
-export function getPayments(
+export function getStudentPayments(
   startIndex = 0,
   limit: null | number = null,
   options?: {
@@ -36,7 +36,7 @@ export function getPayments(
   return sendGetRequest("/payments", params);
 }
 
-export function createPayment(
+export function createStudentPayment(
   enrollmentId: number,
   amount: number,
   paymentTime: string = ""
@@ -48,7 +48,7 @@ export function createPayment(
   });
 }
 
-export function refundPayment(paymentId: number, reason: string) {
+export function refundStudentPayment(paymentId: number, reason: string) {
   return sendJsonPostRequest(`/payments/refund/${paymentId}`, {
     reason: reason,
   });

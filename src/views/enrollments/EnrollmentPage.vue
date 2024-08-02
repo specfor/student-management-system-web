@@ -13,7 +13,7 @@ import StudentSelector from '@/components/dataSelectors/StudentSelector.vue';
 import CourseSelector from '@/components/dataSelectors/CourseSelector.vue';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { getRouteQuery, setRoute, setRouteQuery } from '@/utils/routeHelpers';
-import { getPayments } from '@/apiConnections/payments';
+import { getStudentPayments } from '@/apiConnections/payments';
 import { getAttendace } from '@/apiConnections/attendance';
 import InstructorSelector from '@/components/dataSelectors/InstructorSelector.vue';
 
@@ -312,7 +312,7 @@ async function initLoadStudents() {
     })
 }
 async function initLoadPayments() {
-    let resp = await getPayments(undefined, undefined, { filters: { date_from: (new Date()).getFullYear() + '-' + ('0' + ((new Date()).getMonth() + 1)).slice(-2) } })
+    let resp = await getStudentPayments(undefined, undefined, { filters: { date_from: (new Date()).getFullYear() + '-' + ('0' + ((new Date()).getMonth() + 1)).slice(-2) } })
     if (resp.status === 'error')
         return
 
