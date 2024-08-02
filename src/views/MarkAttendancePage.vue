@@ -150,7 +150,7 @@ async function markPayment() {
 
     let timeP: InputField | MessageField = { name: 'time', type: 'month', text: 'Month', value: new Date().toJSON().slice(0, 7) }
     if (selectedCourseData.value!['fee']['type'] === 'daily')
-        timeP = { name: 'time', type: 'date', text: 'Day', value: new Date().toJSON().slice(0, 10) }
+        timeP = { name: 'time', type: 'date', text: 'Day', value: new Date().toLocaleDateString() }
     else if (selectedCourseData.value!['fee']['type'] === 'onetime')
         timeP = { type: 'message', text: 'Course fee is a one time fee.' }
 
