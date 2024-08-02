@@ -3,7 +3,7 @@
 import { sendMarkAttendance } from '@/apiConnections/attendance';
 import { getCourses } from '@/apiConnections/courses';
 import { getEnrollments, getStudentEnrollmentOfCourse } from '@/apiConnections/enrollments';
-import { createPayment } from '@/apiConnections/payments';
+import { createStudentPayment } from '@/apiConnections/payments';
 import { downloadStudentImage, getStudents } from '@/apiConnections/students';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
@@ -170,7 +170,7 @@ async function markPayment() {
         return
     }
 
-    let resp = await createPayment((enrollmentData.value!.enrollment as Enrollment).id, feeToPay.value, confirmed.data.time as string)
+    let resp = await createStudentPayment((enrollmentData.value!.enrollment as Enrollment).id, feeToPay.value, confirmed.data.time as string)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
     } else {

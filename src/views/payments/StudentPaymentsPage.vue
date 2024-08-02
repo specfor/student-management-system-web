@@ -1,6 +1,6 @@
 <!-- eslint-disable no-constant-condition -->
 <script setup lang="ts">
-import { getPayments, refundPayment } from '@/apiConnections/payments';
+import { getStudentPayments, refundStudentPayment } from '@/apiConnections/payments';
 import TableComponent, { type Filter, type TableActionType, type TableColumns, type tableRowItem } from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
@@ -131,7 +131,7 @@ async function loadPaymentByStudent(startIndex?: number, studentId = 0, filters?
     opt.sort = { by: lastLoadSettingsStudents.orderBy, direction: lastLoadSettingsStudents.orderDirec }
     opt.filters = lastLoadSettingsStudents.filters
 
-    let resp = await getPayments(startIndex, limitLoadPayments, opt)
+    let resp = await getStudentPayments(startIndex, limitLoadPayments, opt)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
         return
@@ -177,7 +177,7 @@ async function loadPaymentByCourse(startIndex?: number, courseId = 0, filters?: 
     opt.sort = { by: lastLoadSettingsCourses.orderBy, direction: lastLoadSettingsCourses.orderDirec }
     opt.filters = lastLoadSettingsCourses.filters
 
-    let resp = await getPayments(startIndex, limitLoadPayments, opt)
+    let resp = await getStudentPayments(startIndex, limitLoadPayments, opt)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
         return
@@ -223,7 +223,7 @@ async function loadPaymentByInstructor(startIndex?: number, instructorId = 0, fi
     opt.sort = { by: lastLoadSettingsInstructor.orderBy, direction: lastLoadSettingsInstructor.orderDirec }
     opt.filters = lastLoadSettingsInstructor.filters
 
-    let resp = await getPayments(startIndex, limitLoadPayments, opt)
+    let resp = await getStudentPayments(startIndex, limitLoadPayments, opt)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
         return
@@ -255,7 +255,7 @@ async function editPayment(id: number) {
         if (!results.submitted)
             return
 
-        let resp = await refundPayment(id, results.data.reason as string)
+        let resp = await refundStudentPayment(id, results.data.reason as string)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
@@ -287,7 +287,7 @@ async function delPayment() {
 <template>
     <div class="container">
         <div class="flex justify-between items-center mb-10">
-            <h4 class="font-semibold text-3xl">Payments</h4>
+            <h4 class="font-semibold text-3xl">Student Payments</h4>
         </div>
 
         <tabs nav-class="flex border-b-2 pb-[6px] justify-center" nav-item-link-class="border px-10 py-2 font-semibold"
