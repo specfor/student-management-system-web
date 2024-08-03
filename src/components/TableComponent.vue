@@ -6,6 +6,7 @@ import PaginateComponent from "./PaginateComponent.vue";
 import TableColoredTag from "./primary/TableColoredTag.vue";
 import { setRoute } from "@/utils/routeHelpers";
 import type { CheckboxFields, SelectionBoxFields } from "@/types/inputBoxTypes";
+import SelectionBox from "./primary/SelectionBox.vue";
 
 const selectedIds = ref([])
 const isDisabled = ref(true)
@@ -48,11 +49,8 @@ let {
   paginatePageSize?: number
   refreshFunc?: () => Promise<boolean>
   currentSorting?: { column: string, direc: 'asc' | 'desc' }
-  options?: { hideActionBar?: boolean, hidePaginateBar?: boolean }
+  options?: { hideActionBar?: boolean, hidePaginateBar?: boolean, showRowCheckBox?: boolean }
 }>()
-
-if (filters)
-  showResetBtn.value = true
 
 for (const filter of filters ?? []) {
   searchInput.value[filter.name] = filter.value
@@ -177,10 +175,16 @@ export type Filter = {
 
     <div class="w-full bg-slate-200" :class="{ 'hidden': isHidden }">
       <div class="grid grid-cols-3 gap-x-5 rounded-tl-lg py-3 px-3">
-        <div v-for="(item, i) in filters" :key="i" class="grid grid-cols-3 ml-5">
+        <div v-for="(item, i) in filters" :key="i" class="grid grid-cols-3 ml-5 items-center">
           <h5 v-text="item['label']" class="flex items-center justify-self-end mr-3"></h5>
-          <input :type="item.type" class="rounded-md border-2 border-stone-600 bg-stone-200 px-3 h-8 mt-1 col-span-2"
-            v-model="searchInput[item.name]" @input="$emit('filterValues', searchInput); showResetBtn = true">
+          <template v-if="item.type == 'select'">
+            <SelectionBox :value="searchInput[item.name]" :options="item.options" class="col-span-2"
+              @input="(val) => { searchInput[item.name] = val; console.log(val); $emit('filterValues', searchInput); showResetBtn = true }" />
+          </template>
+          <template v-else>
+            <input :type="item.type" class="rounded-md border border-stone-600 px-3 h-8 mt-1 col-span-2"
+              v-model="searchInput[item.name]" @input="$emit('filterValues', searchInput); showResetBtn = true">
+          </template>
         </div>
       </div>
     </div>
@@ -188,8 +192,12 @@ export type Filter = {
 
       <thead>
         <tr class="border-0 border-y-2 border-t-0 border-slate-500 bg-neutral-200">
-          <th class="text-left px-3 pt-4 pb-2 font-bold" v-if="options?.hideActionBar !== true">
+          <th class="text-left px-3 pt-4 pb-2 font-bold"
+            v-if="options?.hideActionBar !== true || options?.showRowCheckBox">
+            <!-- <Cog6ToothIcon class="w-8 h-8 cursor-pointer hover:rotate-180 duration-700 transition-all"
+              @click="showTableOptions = !showTableOptions" /> -->
           </th>
+          <!-- <th class="text-2xl text-left pr-4 pt-4 pb-2 font-bold">#</th> -->
           <th class="text-left px-1 pt-4 pb-2 font-bold" v-for="(column, i) in tableColumns" :key="i">
             <div class="flex">
               {{ column.label }}
@@ -214,8 +222,9 @@ export type Filter = {
         <tr v-for="row in tableRows" :key="row[0] as string"
           class="border-y border-slate-300 bg-neutral-50 hover:bg-neutral-200">
           <td class="pt-1 px-5"
-            v-if="options?.hideActionBar !== true && !row.some(value => { return typeof value == 'object' && value !== null && value.type === 'group' })">
-            <input type="checkbox" class="h-5 w-5" :value="row[0]" v-model="selectedIds" v-on:change="isChecked">
+            v-if="(options?.hideActionBar !== true || options?.showRowCheckBox === true) && !row.some(value => { return typeof value == 'object' && value !== null && value.type === 'group' })">
+            <input type="checkbox" class="h-5 w-5" :value="row[0]" v-model="selectedIds"
+              v-on:change="() => { isChecked(); $emit('selected-rows', selectedIds) }">
           </td>
           <td colspan="100%" class="py-1 font-semibold bg-white pl-6"
             v-if="row.find(value => { return typeof value == 'object' && value !== null && value.type === 'group' })">
