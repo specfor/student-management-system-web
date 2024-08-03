@@ -1,4 +1,4 @@
-type Payment = {
+type StudentPayment = {
   id: number;
   payment_method: "cash" | "card";
   amount: number;

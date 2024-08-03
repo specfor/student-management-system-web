@@ -139,7 +139,7 @@ async function loadPaymentByStudent(startIndex?: number, studentId = 0, filters?
 
     countTotPaymentsForByStudent.value = resp.data.tot_count
     paymentDataByStudentTable.value = []
-    let payments: Payment[] = resp.data.payments
+    let payments: StudentPayment[] = resp.data.payments
     payments.forEach(payment => {
         let student: tableRowItem = "Deleted"
         if (payment.enrollment.student)
@@ -184,7 +184,7 @@ async function loadPaymentByCourse(startIndex?: number, courseId = 0, filters?: 
     }
     countTotPaymentsForByCourse.value = resp.data.tot_count
     paymentDatByCourseTable.value = []
-    let payments: Payment[] = resp.data.payments
+    let payments: StudentPayment[] = resp.data.payments
     payments.forEach(payment => {
         let student: tableRowItem = "Deleted"
         if (payment.enrollment.student)
@@ -230,7 +230,7 @@ async function loadPaymentByInstructor(startIndex?: number, instructorId = 0, fi
     }
     countTotPaymentsForByInstructor.value = resp.data.tot_count
     paymentDataByInstructorTable.value = []
-    let payments: Payment[] = resp.data.payments
+    let payments: StudentPayment[] = resp.data.payments
     payments.forEach(payment => {
         let student: tableRowItem = "Deleted"
         if (payment.enrollment.student)

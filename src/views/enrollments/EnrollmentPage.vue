@@ -59,7 +59,7 @@ let studentOptionFields: Ref<{ text: string, value: any }[]> = ref([])
 
 let courses: Course[] = []
 let students: Student[] = []
-let payments: Payment[] = []
+let payments: StudentPayment[] = []
 let attendance: Attendance[] = []
 
 
