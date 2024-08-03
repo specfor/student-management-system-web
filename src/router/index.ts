@@ -15,6 +15,8 @@ import StudentMoreInfo from "@/views/student/StudentMoreInfo.vue";
 import InstructorMoreInfo from "@/views/instructors/InstructorMoreInfo.vue";
 import EnrollmentMoreInfoPage from "@/views/enrollments/EnrollmentMoreInfo.vue";
 import InstructorMonthlyPayment from "@/views/reports/InstructorMonthlyPayment.vue";
+import InstructorsPaymentsPage from "@/views/payments/InstructorsPaymentsPage.vue";
+import InstructorPaymentCalculator from "@/views/payments/InstructorPaymentCalculator.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -81,8 +83,18 @@ const router = createRouter({
     },
     {
       path: "/payments/students",
-      name: "payments",
+      name: "student-payments",
       component: StudentPaymentsPage,
+    },
+    {
+      path: "/payments/instructors",
+      name: "instructor-payments",
+      component: InstructorsPaymentsPage,
+    },
+    {
+      path: "/payments/instructors/calculate",
+      name: "instructor-payments-calculator",
+      component: InstructorPaymentCalculator,
     },
     {
       path: "/mark-attendance",

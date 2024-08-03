@@ -55,11 +55,22 @@ let { userPermissions } = storeToRefs(authStore)
                 </RouterLink>
             </MenuBarCollapse>
             <div class="h-1 bg-blue-500 mx-2 rounded-xl my-5"></div>
-            <RouterLink v-if="userPermissions.all || userPermissions.payments" to="/payments/students"
-                class="flex items-center py-2 px-4 w-full text-white hover:bg-blue-700" active-class="bg-blue-600">
-                <BanknotesIcon class="h-6 w-6 mr-3" />
-                Payments
-            </RouterLink>
+            <MenuBarCollapse v-if="userPermissions.all || userPermissions.payments">
+                <template v-slot:header>
+                    <div class="py-2 px-4 w-full text-white hover:bg-blue-700 flex">
+                        <BanknotesIcon class="h-6 w-6 mr-3" />
+                        Payments
+                    </div>
+                </template>
+                <RouterLink to="/payments/students" class="flex py-2 px-4 w-full text-white hover:bg-blue-700"
+                    active-class="bg-blue-600">
+                    <p>Student Payments</p>
+                </RouterLink>
+                <RouterLink to="/payments/instructors" class="flex py-2 px-4 w-full text-white hover:bg-blue-700"
+                    active-class="bg-blue-600">
+                    <p>Instructor Payments</p>
+                </RouterLink>
+            </MenuBarCollapse>
             <RouterLink v-if="userPermissions.all || userPermissions.courses" to="/courses"
                 class="flex items-center py-2 px-4 w-full text-white hover:bg-blue-700" active-class="bg-blue-600">
                 <BookOpenIcon class="h-6 w-6 mr-3" />
