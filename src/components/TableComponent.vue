@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, ref, type FunctionalComponent, type Ref } from "vue";
+import { defineProps, ref, watch, type FunctionalComponent, type Ref } from "vue";
 import { ArrowPathIcon, Cog6ToothIcon } from "@heroicons/vue/24/solid";
 import { ArrowLongDownIcon, ArrowLongUpIcon } from "@heroicons/vue/24/outline";
 import PaginateComponent from "./PaginateComponent.vue";
@@ -8,7 +8,8 @@ import { setRoute } from "@/utils/routeHelpers";
 import type { CheckboxFields, SelectionBoxFields } from "@/types/inputBoxTypes";
 import SelectionBox from "./primary/SelectionBox.vue";
 
-const selectedIds = ref([])
+const selectAll = ref(false)
+const selectedIds: Ref<any[]> = ref([])
 const isDisabled = ref(true)
 const isActive = ref(false)
 const searchInput: Ref<any> = ref({})
@@ -51,6 +52,17 @@ let {
   currentSorting?: { column: string, direc: 'asc' | 'desc' }
   options?: { hideActionBar?: boolean, hidePaginateBar?: boolean, showRowCheckBox?: boolean }
 }>()
+
+
+watch(selectAll, (isTrue) => {
+  if (isTrue) {
+    selectedIds.value = tableRows.map((row) => row[0])
+    isDisabled.value = false
+  } else {
+    selectedIds.value = []
+    isDisabled.value = true
+  }
+})
 
 for (const filter of filters ?? []) {
   searchInput.value[filter.name] = filter.value
@@ -188,12 +200,18 @@ export type Filter = {
         </div>
       </div>
     </div>
-    <table class="table-auto border-collapse border w-full">
+    <div class="border" v-show="showTableOptions">
+      <h4>agaoegh</h4>
+    </div>
 
+
+    <table class="table-auto border-collapse border w-full">
       <thead>
         <tr class="border-0 border-y-2 border-t-0 border-slate-500 bg-neutral-200">
           <th class="text-left px-3 pt-4 pb-2 font-bold"
             v-if="options?.hideActionBar !== true || options?.showRowCheckBox">
+            <input type="checkbox" class="w-5 h-5 mx-2" v-model="selectAll" @click="selectAll = !selectAll"
+              v-on:change="() => { isChecked(); $emit('selected-rows', selectedIds) }" />
             <!-- <Cog6ToothIcon class="w-8 h-8 cursor-pointer hover:rotate-180 duration-700 transition-all"
               @click="showTableOptions = !showTableOptions" /> -->
           </th>
