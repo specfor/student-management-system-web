@@ -4,7 +4,7 @@ import { getInstructorPayments, refundStudentPayment } from '@/apiConnections/pa
 import TableComponent, { type Filter, type TableActionType, type TableColumns, type tableRowItem } from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
-import { PencilSquareIcon } from '@heroicons/vue/24/solid';
+import { MagnifyingGlassIcon } from '@heroicons/vue/24/solid';
 import { onMounted, ref, watch, type Ref } from 'vue';
 import { getRouteQuery, setRoute, setRouteQuery } from '@/utils/routeHelpers';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
@@ -13,10 +13,11 @@ import { getInstructors } from '@/apiConnections/instructors';
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
 
+let payments: InstructorPayment[]
 const paymentData: Ref<any[]> = ref([])
 
 const tableActions: TableActionType[] = [
-    { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
+    { renderAsRouterLink: false, type: 'icon', emit: 'moreInfoEmit', icon: MagnifyingGlassIcon, css: 'fill-blue-600' }
 ]
 const tableColumns: TableColumns[] = [
     { label: 'ID', sortable: true }, { label: 'Payment For', sortable: true }, { label: 'Instructor' }, { label: 'Total Amount' }, { label: 'Pending Payments' },
@@ -114,7 +115,7 @@ async function loadPayments(startIndex?: number, filters?: { [key: string]: any 
 
     countTotPaymentsFor.value = resp.data.tot_count
     paymentData.value = []
-    let payments: InstructorPayment[] = resp.data.payments
+    payments = resp.data.payments
     payments.forEach(payment => {
         let instructor: tableRowItem = "Deleted"
         if (payment.instructor)
@@ -163,6 +164,12 @@ async function editPayment(id: number) {
     }
 }
 
+function moreInfo(id: number) {
+    console.log(id);
+    let p = payments.find(payment => payment.id === id)!
+    setRoute('/payments/instructors/calculate?i_id=' + p.instructor_id + '&m=' + p.paid_month)
+}
+
 async function delPayment() {
     alertStore.insertAlert('Can not Delete.', 'Payments can not be deleted.', 'error')
 }
@@ -183,7 +190,7 @@ function newPayment() {
         </div>
 
         <div class="mb-10">
-            <TableComponent :table-columns="tableColumns" :table-rows="paymentData" @edit-emit="editPayment"
+            <TableComponent :table-columns="tableColumns" :table-rows="paymentData" @more-info-emit="moreInfo"
                 :actions="tableActions" :refresh-func="async () => { await loadPayments(); return true }"
                 @delete-emit="delPayment" @load-page-emit="loadPayments" :paginate-page-size="limitLoadPayments"
                 :paginate-total="countTotPaymentsFor" :current-sorting="{ column: 'ID', direc: 'desc' }" @sort-by="(col, dir) => {

@@ -6,9 +6,9 @@ import TableComponent from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { formatMoney } from '@/utils/money';
-import { setRoute } from '@/utils/routeHelpers';
+import { getRouteQuery, setRoute, setRouteQuery } from '@/utils/routeHelpers';
 import { CalculatorIcon, StarIcon } from '@heroicons/vue/24/outline';
-import { ref, watch, type Ref } from 'vue';
+import { onMounted, ref, watch, type Ref } from 'vue';
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
@@ -22,17 +22,24 @@ const tableColumnsForOtherMonthPayments: TableColumns[] = [
 
 let selectedInstructorId = ref(0)
 let selectedMonth = ref('')
-let selectedPaymentsBy = ref('paid_month')
 
 watch(selectedInstructorId, () => {
+    setRouteQuery('i_id', selectedInstructorId.value)
     loadCalculations()
 })
 
 watch(selectedMonth, () => {
+    setRouteQuery('m', selectedMonth.value)
     loadCalculations()
 })
 
-watch(selectedPaymentsBy, () => {
+onMounted(() => {
+    let instructorId = getRouteQuery('i_id')
+    if (instructorId !== null)
+        selectedInstructorId.value = Number(instructorId)
+    let month = getRouteQuery('m')
+    if (month !== null)
+        selectedMonth.value = month
     loadCalculations()
 })
 
