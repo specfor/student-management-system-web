@@ -112,7 +112,9 @@ async function init() {
     if (resp.status === 'success') {
         gradeData = resp.data.grades
     }
-    craftGradesAsOptions()
+    gradeData.forEach(grade => {
+        gradeOptions.push({ value: grade.id, text: grade.name })
+    });
 }
 init()
 
@@ -125,13 +127,6 @@ async function loadStudentCount() {
 }
 loadStudentCount()
 
-function craftGradesAsOptions() {
-    let ret: { value: number, text: string }[] = []
-    gradeData.forEach(grade => {
-        ret.push({ value: grade.id, text: grade.name })
-    });
-    gradeOptions = ret
-}
 
 async function addNewStudent() {
     dataEntryForm.newDataEntryForm('New Student', 'Create', [
