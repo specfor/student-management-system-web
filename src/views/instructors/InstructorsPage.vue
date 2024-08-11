@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { createInstructor, deleteInstructor, getInstructors, updateInstructor, updateInstructorImage } from '@/apiConnections/instructors';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
-import TableComponent, { type TableActionType, type TableColumns } from '@/components/TableComponent.vue';
+import TableComponent, { type Filter, type TableActionType, type TableColumns } from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
@@ -24,12 +24,14 @@ const tableActions: TableActionType[] = [
 const tableColumns: TableColumns[] = [
     { label: 'ID', sortable: true }, { label: 'Name', sortable: true }, { label: 'Email', sortable: true },
     { label: 'Phone Number' }, { label: 'Work Place' }]
-
+const tableFilters: Filter[] = [{ name: 'name', label: 'Name', type: 'text' }, { name: 'email', label: 'Email', type: 'text' },
+{ name: 'phone_number', label: 'Phone Number', type: 'text' }]
 
 const limitLoadInstructors = 30
 const countTotInstructors = ref(0)
 
-let lastLoadSettings = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc' }
+let lastLoadSettings: { lastUsedIndex: number, orderBy: string, orderDirec: 'asc' | 'desc', filters?: { name?: string, email?: string, phone_number?: string } }
+    = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc' }
 
 function setSorting(column: string, direction: 'asc' | 'desc') {
     switch (column) {
@@ -45,14 +47,18 @@ function setSorting(column: string, direction: 'asc' | 'desc') {
     lastLoadSettings.orderDirec = direction
 }
 
-async function loadInstructors(startIndex?: number) {
+async function loadInstructors(startIndex?: number, filters?: any) {
     if (startIndex === undefined)
         startIndex = lastLoadSettings.lastUsedIndex
     else
         lastLoadSettings.lastUsedIndex = startIndex
 
+    if (filters)
+        lastLoadSettings.filters = filters
+
     let opt: any = {}
     opt.sort = { by: lastLoadSettings.orderBy, direction: lastLoadSettings.orderDirec }
+    opt.filters = lastLoadSettings.filters
 
     let resp = await getInstructors(startIndex, limitLoadInstructors, opt)
     if (resp.status === 'error') {
@@ -220,6 +226,8 @@ function showMoreInfo(id: number) {
                 @load-page-emit="loadInstructors" :paginate-page-size="limitLoadInstructors"
                 :paginate-total="countTotInstructors" :current-sorting="{ column: 'ID', direc: 'asc' }" @sort-by="(col, dir) => {
                     setSorting(col, dir); loadInstructors();
+                }" :filters="tableFilters" @filter-values="(val) => {
+                    loadInstructors(undefined, val)
                 }" />
         </div>
     </div>

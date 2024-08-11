@@ -11,6 +11,11 @@ export function getInstructors(
   startIndex = 0,
   limit: number | null = null,
   options?: {
+    filters?: {
+      name?: string;
+      email?: string;
+      phone_number?: string;
+    };
     sort?: {
       by: "name" | "birthday" | "id" | "email";
       direction: "acs" | "desc";
@@ -23,6 +28,11 @@ export function getInstructors(
     params.sort = options.sort.by;
     params.sort_dir = options.sort.direction;
   }
+  if (options?.filters?.name) params.name = options.filters.name;
+  if (options?.filters?.email) params.email = options.filters.email;
+  if (options?.filters?.phone_number)
+    params.phone_number = options.filters.phone_number;
+
   return sendGetRequest("/instructors", params);
 }
 
