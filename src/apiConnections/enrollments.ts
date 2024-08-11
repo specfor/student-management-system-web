@@ -15,7 +15,7 @@ export function getEnrollments(
   options?: {
     sort?: {
       by: "student_id" | "created_at" | "id";
-      direction: "acs" | "desc";
+      direction: "asc" | "desc";
     };
     filters?: {
       course_id?: number;

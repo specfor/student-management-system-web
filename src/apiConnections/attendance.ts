@@ -10,7 +10,7 @@ export function getAttendace(
   options?: {
     sort?: {
       by: "student_id" | "date" | "id";
-      direction: "acs" | "desc";
+      direction: "asc" | "desc";
     };
     filters?: {
       courseId?: number;
@@ -42,7 +42,7 @@ export function getAttendaceOfCourseByEnrollmentId(
   options?: {
     sort?: {
       by: "date" | "id";
-      direction: "acs" | "desc";
+      direction: "asc" | "desc";
     };
     filters?: {
       date_from?: string;

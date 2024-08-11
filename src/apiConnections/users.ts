@@ -11,7 +11,7 @@ export function getUsers(
   options?: {
     sort?: {
       by: "name" | "id" | "email" | "role_id" | "created_at";
-      direction: "acs" | "desc";
+      direction: "asc" | "desc";
     };
   }
 ) {

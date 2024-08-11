@@ -18,7 +18,7 @@ export function getInstructors(
     };
     sort?: {
       by: "name" | "birthday" | "id" | "email";
-      direction: "acs" | "desc";
+      direction: "asc" | "desc";
     };
   }
 ) {
