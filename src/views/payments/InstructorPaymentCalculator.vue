@@ -5,6 +5,7 @@ import type { TableColumns, tableRowItem } from '@/components/TableComponent.vue
 import TableComponent from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
+import type { StudentPaymentListingResponse } from '@/types/paymentTypes';
 import { formatMoney } from '@/utils/money';
 import { getRouteQuery, setRoute, setRouteQuery } from '@/utils/routeHelpers';
 import { CalculatorIcon, StarIcon } from '@heroicons/vue/24/outline';
@@ -78,8 +79,6 @@ async function loadCalculations() {
     data.for_selected_month.forEach(coursePayments => {
         let rows: tableRowItem[][] = []
         coursePayments.records.forEach(record => {
-            console.log(record.payment_id, record.enrollment_id);
-
             let tmp: { paymentId: undefined | number, enrollmentId: undefined | number, paid: boolean } =
                 { paymentId: undefined, enrollmentId: undefined, paid: record.paid_instructor_share }
             if (record.payment_id)

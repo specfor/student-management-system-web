@@ -12,6 +12,8 @@ import { MagnifyingGlassIcon, PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { BookOpenIcon } from '@heroicons/vue/24/outline';
 import { setRoute } from '@/utils/routeHelpers';
 import { getStudentCount } from '@/apiConnections/analytics';
+import type { Grade } from '@/types/gradeTypes';
+import type { Student } from '@/types/studentTypes';
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
@@ -206,6 +208,7 @@ async function addNewStudent() {
         return
     }
     dataEntryForm.finishSubmission()
+    loadStudents(0)
     alertStore.insertAlert('Action completed.', 'Admission fee marked successfully.')
 }
 

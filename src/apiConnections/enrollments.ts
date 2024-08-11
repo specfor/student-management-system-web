@@ -1,3 +1,7 @@
+import type {
+  EnrollmentPriceAdjustment,
+  EnrollmentStatus,
+} from "@/types/enrollmentTypes";
 import {
   sendJsonPatchRequest,
   sendJsonPostRequest,

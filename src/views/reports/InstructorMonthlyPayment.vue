@@ -5,6 +5,7 @@ import SelectionBox from '@/components/primary/SelectionBox.vue';
 import type { TableColumns, tableRowItem } from '@/components/TableComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
+import type { AnalyticsInstructorMonthlyPaymentCalculation, AnalyticsPaymentRecord } from '@/types/analytics';
 import { formatMoney } from '@/utils/money';
 import { CalculatorIcon, StarIcon } from '@heroicons/vue/24/outline';
 import { ref, watch, type Ref } from 'vue';

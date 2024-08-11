@@ -2,6 +2,7 @@
 import { defineEmits, ref, watch, type Ref } from 'vue';
 import SelectionBox from '../primary/SelectionBox.vue';
 import { getCourses } from '@/apiConnections/courses';
+import type { Course } from '@/types/courseTypes';
 
 const selectedCourseData: Ref<Course | null> = ref(null)
 const courseGroupOptionFields: Ref<{ text: string, value: any }[]> = ref([])

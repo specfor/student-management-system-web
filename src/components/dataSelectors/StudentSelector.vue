@@ -2,6 +2,7 @@
 import { ref, watch, type Ref } from 'vue';
 import SelectionBox from '../primary/SelectionBox.vue';
 import { downloadStudentImage, getStudents } from '@/apiConnections/students';
+import type { Student } from '@/types/studentTypes';
 
 const selectedStudent = ref(0)
 const selectedStudentData: Ref<Student | null> = ref(null)

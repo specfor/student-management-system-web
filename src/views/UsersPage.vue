@@ -9,6 +9,8 @@ import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationFor
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { ref, type Ref } from 'vue';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
+import type { User } from '@/types/userTypes';
+import type { UserRole } from '@/types/userRoleTypes';
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()

@@ -1,4 +1,7 @@
-type Enrollment = {
+import type { Course } from "./courseTypes";
+import type { Student } from "./studentTypes";
+
+export type Enrollment = {
   id: number;
   suspended: boolean;
   left_course: boolean;
@@ -10,13 +13,13 @@ type Enrollment = {
   status: EnrollmentStatus[];
 };
 
-type EnrollmentStatus = {
+export type EnrollmentStatus = {
   type: "active" | "completed" | "pending" | "discontinued";
   reason: string | null;
   timestamp?: number;
 };
 
-type EnrollmentPriceAdjustment = {
+export type EnrollmentPriceAdjustment = {
   type: "fixed" | "percentage" | "none";
   amount?: number;
   percentage?: number;

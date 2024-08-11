@@ -9,6 +9,7 @@ import { useCacheStore } from '@/stores/cache';
 import { createUserRole, deleteUserRole, getAllPermissions, getUserRoles, updateUserRole } from '@/apiConnections/userRoles';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
+import type { UserRole } from '@/types/userRoleTypes';
 
 const confirmForm = useConfirmationFormsStore()
 const dataEntryForm = useDataEntryFormsStore()

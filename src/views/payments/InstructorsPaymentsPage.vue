@@ -9,6 +9,8 @@ import { onMounted, ref, watch, type Ref } from 'vue';
 import { getRouteQuery, setRoute, setRouteQuery } from '@/utils/routeHelpers';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { getInstructors } from '@/apiConnections/instructors';
+import type { InstructorPayment } from '@/types/paymentTypes';
+import type { Instructor } from '@/types/InstructorTypes';
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
@@ -165,7 +167,6 @@ async function editPayment(id: number) {
 }
 
 function moreInfo(id: number) {
-    console.log(id);
     let p = payments.find(payment => payment.id === id)!
     setRoute('/payments/instructors/calculate?i_id=' + p.instructor_id + '&m=' + p.paid_month)
 }
