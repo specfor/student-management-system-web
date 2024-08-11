@@ -1,4 +1,4 @@
-type Attendance = {
+export type Attendance = {
   id: number;
   student_id: number;
   course_id: number;

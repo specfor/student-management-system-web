@@ -1,4 +1,4 @@
-type Instructor = {
+export type Instructor = {
   id: number;
   name: string;
   phone_number: string | null;

@@ -6,6 +6,7 @@ import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
+import type { Grade } from '@/types/gradeTypes';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { ref, type Ref } from 'vue';
 

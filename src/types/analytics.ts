@@ -1,4 +1,6 @@
-type AnalyticsInstructorMonthlyPaymentCalculation = {
+import type { CourseFee } from "./courseTypes";
+
+export type AnalyticsInstructorMonthlyPaymentCalculation = {
   overall: {
     payments: {
       total: APIMoney;
@@ -17,7 +19,7 @@ type AnalyticsInstructorMonthlyPaymentCalculation = {
   };
 };
 
-type AnalyticsPaymentRecord = {
+export type AnalyticsPaymentRecord = {
   course_id: number;
   course_name: string;
   course_fee: CourseFee;
@@ -36,7 +38,7 @@ type AnalyticsPaymentRecord = {
   }[];
 };
 
-type APIMoney = {
+export type APIMoney = {
   amount: string;
   currency: string;
 };

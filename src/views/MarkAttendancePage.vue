@@ -10,6 +10,9 @@ import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { ref, watch, type Ref } from 'vue';
 import SelectionBox from '@/components/primary/SelectionBox.vue';
 import type { InputField, MessageField } from '@/stores/formManagers/dataEntryForm';
+import type { Enrollment } from '@/types/enrollmentTypes';
+import type { Course } from '@/types/courseTypes';
+import type { Student } from '@/types/studentTypes';
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()

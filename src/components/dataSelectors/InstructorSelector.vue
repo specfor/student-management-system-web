@@ -2,6 +2,7 @@
 import { ref, watch, type Ref } from 'vue';
 import SelectionBox from '../primary/SelectionBox.vue';
 import { getInstructors } from '@/apiConnections/instructors';
+import type { Instructor } from '@/types/InstructorTypes';
 
 const selectedInstructor = ref(0)
 const selectedInstructorData: Ref<Instructor | null> = ref(null)

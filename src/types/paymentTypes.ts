@@ -1,4 +1,9 @@
-type StudentPayment = {
+import type { APIMoney } from "./analytics";
+import type { CourseFee } from "./courseTypes";
+import type { Enrollment } from "./enrollmentTypes";
+import type { Instructor } from "./InstructorTypes";
+
+export type StudentPayment = {
   id: number;
   payment_method: "cash" | "card";
   amount: number;
@@ -12,7 +17,7 @@ type StudentPayment = {
 
 // used in instructor payments calculation and things
 
-type InstructorPayment = {
+export type InstructorPayment = {
   id: number;
   instructor_id: number;
   paid_month: string;
@@ -26,7 +31,7 @@ type InstructorPayment = {
   instructor: Instructor;
 };
 
-type StudentPaymentListItem = {
+export type StudentPaymentListItem = {
   student_id: number;
   attended_day_count: number;
   payment_amount: APIMoney;
@@ -37,7 +42,7 @@ type StudentPaymentListItem = {
   month: string;
 };
 
-type StudentPaymentListingResponse = {
+export type StudentPaymentListingResponse = {
   for_selected_month: {
     course_id: number;
     course_name: string;

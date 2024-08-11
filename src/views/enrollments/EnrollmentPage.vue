@@ -16,6 +16,11 @@ import { getRouteQuery, setRoute, setRouteQuery } from '@/utils/routeHelpers';
 import { getStudentPayments } from '@/apiConnections/payments';
 import { getAttendace } from '@/apiConnections/attendance';
 import InstructorSelector from '@/components/dataSelectors/InstructorSelector.vue';
+import type { Course } from '@/types/courseTypes';
+import type { Student } from '@/types/studentTypes';
+import type { StudentPayment } from '@/types/paymentTypes';
+import type { Attendance } from '@/types/attendanceTypes';
+import type { Enrollment, EnrollmentPriceAdjustment, EnrollmentStatus } from '@/types/enrollmentTypes';
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()

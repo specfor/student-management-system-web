@@ -1,3 +1,4 @@
+import type { CourseFee, CourseSchedule } from "@/types/courseTypes";
 import {
   sendDeleteRequest,
   sendJsonPatchRequest,

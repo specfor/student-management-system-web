@@ -9,6 +9,7 @@ import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { ref, type Ref } from "vue"
 import { MagnifyingGlassIcon, PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { setRoute } from '@/utils/routeHelpers';
+import type { Instructor } from '@/types/InstructorTypes';
 
 
 const alertStore = useAlertsStore()

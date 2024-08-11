@@ -10,6 +10,7 @@ import CourseSelector from '@/components/dataSelectors/CourseSelector.vue';
 import StudentSelector from '@/components/dataSelectors/StudentSelector.vue';
 import { getRouteQuery, setRouteQuery } from '@/utils/routeHelpers';
 import InstructorSelector from '@/components/dataSelectors/InstructorSelector.vue';
+import type { StudentPayment } from '@/types/paymentTypes';
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
