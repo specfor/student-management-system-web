@@ -9,6 +9,11 @@ export function getCourses(
   startIndex = 0,
   limit: null | number = null,
   options?: {
+    filters?: {
+      name?: string;
+      instructor_id?: number;
+      grade_id?: number;
+    };
     sort?: {
       by: "name" | "id";
       direction: "acs" | "desc";
@@ -21,6 +26,11 @@ export function getCourses(
     params.sort = options.sort.by;
     params.sort_dir = options.sort.direction;
   }
+  if (options?.filters?.name) params.name = options.filters.name;
+  if (options?.filters?.instructor_id)
+    params.instructor_id = options.filters.instructor_id;
+  if (options?.filters?.grade_id) params.grade_id = options.filters.grade_id;
+
   return sendGetRequest("/courses", params);
 }
 

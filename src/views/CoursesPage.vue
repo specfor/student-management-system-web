@@ -3,7 +3,7 @@
 import { createCourse, deleteCourse, getCourses, updateCourse } from '@/apiConnections/courses';
 import { getGrades } from '@/apiConnections/grades';
 import { getInstructors } from '@/apiConnections/instructors';
-import TableComponent, { type TableActionType, type TableColumns } from '@/components/TableComponent.vue';
+import TableComponent, { type Filter, type TableActionType, type TableColumns } from '@/components/TableComponent.vue';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
@@ -18,17 +18,25 @@ const alertStore = useAlertsStore()
 
 const coursesDataForTable: Ref<any[]> = ref([])
 let coursesData: Course[] = []
+
+let instructorOptionFields: { text: string, value: number }[] = []
+let gradeOptionFields: { text: string, value: number }[] = []
+
+
 const tableActions: TableActionType[] = [
     { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
 const tableColumns: TableColumns[] = [
     { label: 'ID', sortable: false }, { label: 'Group', sortable: false }, { label: 'Grade' },
     { label: 'Course Day' }, { label: 'Time' }, { label: 'Fee' }, { label: 'Payment Cycle' }, { label: 'Instructor' }]
+const tableFilters: Filter[] = [{ name: 'name', label: 'Name', type: 'text' }, { name: 'instructor_id', label: 'Instructor', type: 'select', options: instructorOptionFields },
+{ name: 'grade_id', label: 'Grade', type: 'select', options: gradeOptionFields }]
 
 const limitLoadCourses = 30
 const countTotCourses = ref(0)
 
-let lastLoadSettings = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc' }
+let lastLoadSettings: { lastUsedIndex: number, orderBy: string, orderDirec: 'asc' | 'desc', filters?: { name?: string, grade_id?: number, instructor_id?: number } } =
+    { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc' }
 
 function setSorting(column: string, direction: 'asc' | 'desc') {
     switch (column) {
@@ -44,14 +52,18 @@ function setSorting(column: string, direction: 'asc' | 'desc') {
     lastLoadSettings.orderDirec = direction
 }
 
-async function loadCourses(startIndex?: number) {
+async function loadCourses(startIndex?: number, filters?: any) {
     if (startIndex === undefined)
         startIndex = lastLoadSettings.lastUsedIndex
     else
         lastLoadSettings.lastUsedIndex = startIndex
 
+    if (filters)
+        lastLoadSettings.filters = filters
+
     let opt: any = {}
     opt.sort = { by: lastLoadSettings.orderBy, direction: lastLoadSettings.orderDirec }
+    opt.filters = lastLoadSettings.filters
 
     let resp = await getCourses(startIndex, limitLoadCourses, opt)
     if (resp.status === 'error') {
@@ -73,9 +85,6 @@ async function loadCourses(startIndex?: number) {
     })
 }
 loadCourses()
-
-let instructorOptionFields: { text: string, value: number }[] = []
-let gradeOptionFields: { text: string, value: number }[] = []
 
 async function init() {
     let resp = await getInstructors()
@@ -279,6 +288,8 @@ async function delCourse(ids: number[]) {
                 @delete-emit="delCourse" @load-page-emit="loadCourses" :paginate-page-size="limitLoadCourses"
                 :paginate-total="countTotCourses" :current-sorting="{ column: 'ID', direc: 'asc' }" @sort-by="(col, dir) => {
                     setSorting(col, dir); loadCourses();
+                }" :filters="tableFilters" @filter-values="(val) => {
+                    loadCourses(undefined, val)
                 }" />
         </div>
     </div>
