@@ -1,9 +1,9 @@
 <!-- eslint-disable no-constant-condition -->
 <script setup lang="ts">
 import { getGrades } from '@/apiConnections/grades';
-import { createStudent, deleteStudent, getStudents, updateStudent, updateStudentImage } from '@/apiConnections/students';
+import { createStudent, deleteStudent, getStudents, markAdmissionFee, updateStudent, updateStudentImage } from '@/apiConnections/students';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
-import TableComponent, { type TableActionType, type TableColumns } from '@/components/TableComponent.vue';
+import TableComponent, { type Filter, type TableActionType, type TableColumns, type tableRowItem } from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
@@ -19,6 +19,9 @@ const confirmationForm = useConfirmationFormsStore()
 
 let studentData: Student[] = []
 const studentDataForTable: Ref<any[]> = ref([])
+let gradeOptions: { value: number, text: string }[] = []
+
+
 const tableActions: TableActionType[] = [
     { renderAsRouterLink: false, type: 'icon', emit: 'ShowMore', icon: MagnifyingGlassIcon, css: 'fill-blue-600 w-5' },
     { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' },
@@ -26,15 +29,23 @@ const tableActions: TableActionType[] = [
 ]
 const tableColumns: TableColumns[] = [
     { label: 'ID', sortable: true }, { label: 'Custom ID', sortable: true }, { label: 'Name', sortable: true },
-    { label: 'Grade', sortable: true }, { label: 'Email', sortable: true }, { label: 'School' }
+    { label: 'Grade', sortable: true }, { label: 'Email', sortable: true }, { label: 'School' }, { label: 'Admission Paid' }
 ]
+const tableFilters: Filter[] = [{ name: 'name', label: 'Name', type: 'text' }, { name: 'custom_id', label: 'Custom Id', type: 'text' },
+{ name: 'phone_number', type: 'text', label: 'Phone Number' }, { name: 'email', type: 'text', label: 'Email' },
+{ name: 'grade_id', label: 'Grade', type: 'select', options: gradeOptions },
+{ name: 'admission_paid', label: 'Admission Paid', type: 'select', options: [{ text: 'Paid', value: true }, { text: 'Not Paid', value: false }] }]
 
 const limitLoadStudents = 30
 const countTotStudents = ref(0)
 
 const studentCountAnalytics: Ref<{ active: number | null, inactive: number | null }> = ref({ active: null, inactive: null })
 
-let lastLoadSettings = { lastUsedIndex: 0, orderBy: 'custom_id', orderDirec: 'desc' }
+let lastLoadSettings: {
+    lastUsedIndex: number, orderBy: string, orderDirec: 'asc' | 'desc',
+    filters?: { name?: string, grade_id?: number, custom_id?: number, admission_paid?: boolean, email?: string, phone_number?: string }
+} =
+    { lastUsedIndex: 0, orderBy: 'custom_id', orderDirec: 'desc' }
 
 function setSorting(column: string, direction: 'asc' | 'desc') {
     switch (column) {
@@ -63,14 +74,18 @@ function setSorting(column: string, direction: 'asc' | 'desc') {
     lastLoadSettings.orderDirec = direction
 }
 
-async function loadStudents(startIndex?: number) {
+async function loadStudents(startIndex?: number, filters?: any) {
     if (startIndex === undefined)
         startIndex = lastLoadSettings.lastUsedIndex
     else
         lastLoadSettings.lastUsedIndex = startIndex
 
+    if (filters)
+        lastLoadSettings.filters = filters
+
     let opt: any = {}
     opt.sort = { by: lastLoadSettings.orderBy, direction: lastLoadSettings.orderDirec }
+    opt.filters = lastLoadSettings.filters
 
     let resp = await getStudents(startIndex, limitLoadStudents, opt)
     if (resp.status === 'error') {
@@ -82,12 +97,14 @@ async function loadStudents(startIndex?: number) {
     countTotStudents.value = resp.data.tot_count
     studentDataForTable.value = []
     studentData.forEach(student => {
-        studentDataForTable.value.push([student.id, student.custom_id, student.name, student.grade ? student.grade.name : 'DELETED GRADE', student.email, student.school])
+        let row: tableRowItem[] = [student.id, student.custom_id, student.name, student.grade ? student.grade.name : 'DELETED GRADE', student.email, student.school,
+        student.admission_paid ? { type: 'colorTag', text: 'Paid', css: 'text-green-800 bg-green-200' } : { type: 'colorTag', text: 'Not Paid', css: 'text-red-800 bg-red-200' }
+        ]
+        studentDataForTable.value.push(row)
     });
 }
 
 let gradeData: Grade[] = []
-let gradeOptions: { value: number, text: string }[] = []
 
 async function init() {
     loadStudents(0)
@@ -139,6 +156,8 @@ async function addNewStudent() {
         { name: 'parent_phone_number', text: 'Parent\'s Phone Number', type: 'text' },
     ])
 
+    let createdStudentId: null | number = null
+
     while (true) {
         let results = await dataEntryForm.waitForSubmittedData()
         if (!results.submitted)
@@ -162,13 +181,39 @@ async function addNewStudent() {
                 alertStore.insertAlert('An error occured.', resp.message, 'error')
             continue
         }
+        createdStudentId = resp.data.student.id
         dataEntryForm.finishSubmission()
         alertStore.insertAlert('Action completed.', 'Student added successfully.')
         loadStudents(0)
+        loadStudentCount()
         uploadStudentImage(resp.data.student.id)
         break;
     }
+
+    dataEntryForm.newDataEntryForm('Admission Fee', 'Mark', [
+        { name: 'amount', type: 'number', min: 0, required: true, text: 'Amount' },
+        {
+            name: 'paid', type: 'select', required: true, text: "Paid", value: false, options: [
+                { value: true, text: 'Yes' },
+                { value: false, text: 'No' }
+            ]
+        },
+        { type: 'message', text: 'If any discounts were applied, enter the reason here.' },
+        { name: 'reduction_reason', type: 'text', text: 'Reason for reduction' },
+    ])
+    let results = await dataEntryForm.waitForSubmittedData()
+    if (!results.submitted)
+        return
+
+    let resp = await markAdmissionFee(createdStudentId!, results.data.amount as number, results.data.paid as boolean, results.data.reduction_reason as string)
+    if (resp.status === 'error') {
+        alertStore.insertAlert('An error occured.', resp.message, 'error')
+        return
+    }
+    dataEntryForm.finishSubmission()
+    alertStore.insertAlert('Action completed.', 'Admission fee marked successfully.')
 }
+
 async function uploadStudentImage(studentId: number) {
     dataEntryForm.newDataEntryForm('Student\'s Image', 'Upload', [
         { text: "You can update the image later also. Click 'close' to continue without image.", type: 'message' },
@@ -299,7 +344,9 @@ function showStudentCourses(id: number) {
                 @courses-emit="showStudentCourses" @load-page-emit="loadStudents"
                 :paginate-page-size="limitLoadStudents" :paginate-total="countTotStudents" @sort-by="(col, dir) => {
                     setSorting(col, dir); loadStudents();
-                }" :current-sorting="{ column: 'Custom ID', direc: 'desc' }" />
+                }" :current-sorting="{ column: 'Custom ID', direc: 'desc' }" :filters="tableFilters" @filter-values="(val) => {
+                    loadStudents(undefined, val)
+                }" />
         </div>
     </div>
 </template>
