@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { downloadStudentImage, getStudentById, updateStudentImage } from '@/apiConnections/students';
+import { downloadStudentImage, getAdmissionPaymentStatus, getStudentById, markAdmissionFee, updateAdmissionFee, updateStudentImage } from '@/apiConnections/students';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
+import type { AdmissionFee, Student } from '@/types/studentTypes';
 import { getRouterParam, setRoute } from '@/utils/routeHelpers';
 import { ref, type Ref } from 'vue';
 
@@ -12,9 +13,61 @@ const imageUrl: Ref<null | string> = ref(null)
 
 const studentId = getRouterParam('id')
 let student: Ref<Student | null> = ref(null)
+const admissionPayment: Ref<AdmissionFee | null> = ref(null)
 
 loadStudent(Number(studentId))
+loadAdmissionPayment(Number(studentId))
 loadImage(Number(studentId))
+
+async function loadAdmissionPayment(studentId: number) {
+    let resp = await getAdmissionPaymentStatus(studentId)
+    if (resp.status === 'error') {
+        alertStore.insertAlert('An error occured.', resp.message, 'error')
+        return
+    }
+
+    let payments: AdmissionFee[] = resp.data.admission_fees
+    if (payments.length > 0) {
+        admissionPayment.value = payments[0]
+    }
+}
+
+async function payAdmission(update: boolean) {
+    let amount = null
+    if (admissionPayment.value)
+        amount = admissionPayment.value.amount
+    let paid = update ? admissionPayment.value?.paid : undefined
+    let reduction = update ? admissionPayment.value?.reductions : null
+
+    dataEntryForm.newDataEntryForm('Admission Fee', 'Mark', [
+        { name: 'amount', type: 'number', min: 0, required: true, text: 'Amount', value: amount },
+        {
+            name: 'paid', type: 'select', required: true, text: "Paid", value: paid, options: [
+                { value: true, text: 'Yes' },
+                { value: false, text: 'No' }
+            ]
+        },
+        { type: 'message', text: 'If any discounts were applied, enter the reason here.' },
+        { name: 'reduction_reason', type: 'text', text: 'Reason for reduction', value: reduction },
+    ])
+    let results = await dataEntryForm.waitForSubmittedData()
+    if (!results.submitted)
+        return
+
+    let resp = undefined
+    if (update)
+        resp = await updateAdmissionFee(admissionPayment.value?.id!, results.data.amount as number, results.data.paid as boolean, results.data.reduction_reason as string)
+    else
+        resp = await markAdmissionFee(student.value?.id!, results.data.amount as number, results.data.paid as boolean, results.data.reduction_reason as string)
+
+    if (resp.status === 'error') {
+        alertStore.insertAlert('An error occured.', resp.message, 'error')
+        return
+    }
+    dataEntryForm.finishSubmission()
+    alertStore.insertAlert('Success', 'Admission fee payment marked successfully.', 'success')
+    loadAdmissionPayment(student.value?.id!)
+}
 
 async function loadStudent(studentID: number) {
     let resp = await getStudentById(studentID)
@@ -74,7 +127,7 @@ async function uploadStudentImage(studentId: number) {
                 <div class="flex flex-col items-center">
                     <div v-if="imageUrl === null" class="flex items-center justify-center ml-3">
                         <div
-                            class="animate-pulse bg-gray-400 w-[300px] h-[300px] rounded-lg flex items-center justify-center">
+                            class="animate-pulse bg-gray-400 w-[200px] lg:w-[300px] h-[200px] lg:h-[300px] rounded-lg flex items-center justify-center">
                             <h4 class="text-2xl text-white">Loading</h4>
                         </div>
                     </div>
@@ -140,6 +193,16 @@ async function uploadStudentImage(studentId: number) {
                     <div class="grid grid-cols-3 mt-3 items-center">
                         <h4>Parent's Phone Number</h4>
                         <p class="col-span-2 border-b border-slate-300">{{ student.parent_phone_number ?? 'None' }}</p>
+                    </div>
+                    <div class="grid grid-cols-3 mt-3 items-center">
+                        <h4>Admission Fee</h4>
+                        <div v-if="admissionPayment?.paid" class="border bg-green-200 text-green-800 text-center">Paid
+                        </div>
+                        <div v-else class="flex items-center">
+                            <p class="border bg-red-200 text-red-800 text-center h-fit w-fit py-1 px-5">Not Paid</p>
+                            <button class="border bg-blue-500 py-2 px-5 rounded-md ml-5"
+                                @click="() => { payAdmission(admissionPayment !== null) }">Pay</button>
+                        </div>
                     </div>
                 </div>
             </div>
