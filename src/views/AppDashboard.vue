@@ -33,10 +33,10 @@ const incomeDataForGraph: Ref<{
         data: number[]
     }[]
 }> = ref({
-    labels: ['As This Month Class Fees', 'As Pending Payments'],
+    labels: ['As This Month Class Fees', 'As Delayed Payments', 'As Admission Fees'],
     datasets: [
         {
-            backgroundColor: ['#45E713', '#AF19FF'],
+            backgroundColor: ['#45E713', '#AF19FF', '#084a86'],
             data: []
         }
     ]
@@ -46,6 +46,7 @@ const incomeData: Ref<{
     total_income?: { amount: string, currency: string },
     this_month_class_payments?: { amount: string, currency: string },
     out_standing_class_payments?: { amount: string, currency: string },
+    admission_fees?: { amount: string, currency: string },
 }> = ref({})
 
 
@@ -61,7 +62,7 @@ async function loadMonthlyIncomeSummary() {
     let resp = await getMonthlyIncomeSummary(new Date().getFullYear(), (new Date().getMonth() + 1))
     if (resp.status === 'success') {
         incomeData.value = resp.data
-        incomeDataForGraph.value.datasets[0].data = [resp.data.this_month_class_payments.amount, resp.data.out_standing_class_payments.amount]
+        incomeDataForGraph.value.datasets[0].data = [resp.data.this_month_class_payments.amount, resp.data.out_standing_class_payments.amount, resp.data.admission_fees.amount]
     }
 }
 loadMonthlyIncomeSummary()
