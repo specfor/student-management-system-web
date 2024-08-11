@@ -13,7 +13,7 @@ export function getStudentPayments(
     };
     sort?: {
       by: "enrollment_id" | "created_at" | "id" | "amount";
-      direction: "acs" | "desc";
+      direction: "asc" | "desc";
     };
   }
 ) {

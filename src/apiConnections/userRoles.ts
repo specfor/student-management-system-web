@@ -11,7 +11,7 @@ export function getUserRoles(
   options?: {
     sort?: {
       by: "role_name" | "id";
-      direction: "acs" | "desc";
+      direction: "asc" | "desc";
     };
   }
 ) {

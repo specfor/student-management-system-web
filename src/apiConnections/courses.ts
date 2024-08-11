@@ -17,7 +17,7 @@ export function getCourses(
     };
     sort?: {
       by: "name" | "id";
-      direction: "acs" | "desc";
+      direction: "asc" | "desc";
     };
   }
 ) {

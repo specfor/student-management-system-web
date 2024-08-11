@@ -3,6 +3,8 @@ import { getAttendaceOfCourseByEnrollmentId } from '@/apiConnections/attendance'
 import { getEnrollmentById } from '@/apiConnections/enrollments';
 import TableComponent, { type TableColumns } from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
+import type { Attendance } from '@/types/attendanceTypes';
+import type { Enrollment } from '@/types/enrollmentTypes';
 import { getRouterParam } from '@/utils/routeHelpers';
 import { ref, type Ref } from 'vue';
 
