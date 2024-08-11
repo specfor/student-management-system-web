@@ -14,4 +14,5 @@ type Student = {
   updated_at: string;
   custom_id?: string;
   grade: Grade | null;
+  admission_paid: boolean;
 };

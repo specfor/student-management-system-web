@@ -11,6 +11,14 @@ export function getStudents(
   startIndex = 0,
   limit: number | null = null,
   options?: {
+    filters?: {
+      name?: string;
+      email?: string;
+      phone_number?: string;
+      grade_id?: number;
+      custom_id?: string;
+      admission_paid?: boolean;
+    };
     sort?: {
       by: "name" | "id" | "birthday" | "email" | "grade_id" | "custom_id";
       direction: "acs" | "desc";
@@ -23,6 +31,15 @@ export function getStudents(
     params.sort = options.sort.by;
     params.sort_dir = options.sort.direction;
   }
+  if (options?.filters?.name) params.name = options.filters.name;
+  if (options?.filters?.email) params.email = options.filters.email;
+  if (options?.filters?.phone_number)
+    params.phone_number = options.filters.phone_number;
+  if (options?.filters?.grade_id) params.grade_id = options.filters.grade_id;
+  if (options?.filters?.custom_id) params.custom_id = options.filters.custom_id;
+  if (options?.filters?.admission_paid !== undefined)
+    params.admission_paid = options.filters.admission_paid;
+
   return sendGetRequest("/students", params);
 }
 
@@ -97,4 +114,19 @@ export function downloadStudentImage(id: number) {
 
 export function updateStudentImage(id: number, image: Blob) {
   return sendFileUploadRequest(`/students/${id}/image`, "photo", image);
+}
+
+export function markAdmissionFee(
+  student_id: number,
+  amount: number,
+  paid: boolean,
+  reduction_reason: string
+) {
+  if (amount == 0) paid = true;
+  return sendJsonPostRequest("/student-admission-fees", {
+    student_id: student_id,
+    amount: amount,
+    paid: paid,
+    reduction_reason: reduction_reason,
+  });
 }
