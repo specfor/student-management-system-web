@@ -21,7 +21,7 @@ export function getStudents(
     };
     sort?: {
       by: "name" | "id" | "birthday" | "email" | "grade_id" | "custom_id";
-      direction: "acs" | "desc";
+      direction: "asc" | "desc";
     };
   }
 ) {
@@ -129,4 +129,23 @@ export function markAdmissionFee(
     paid: paid,
     reduction_reason: reduction_reason,
   });
+}
+
+export function getAdmissionPaymentStatus(student_id: number) {
+  const params: { [key: string]: any } = { student_id: student_id };
+  return sendGetRequest(`/student-admission-fees`, params);
+}
+
+export function updateAdmissionFee(
+  id: number,
+  amount?: number,
+  paid?: boolean,
+  reduction_reason?: string
+) {
+  const params: { [key: string]: any } = {};
+  if (amount) params.amount = amount;
+  if (paid) params.paid = paid;
+  if (reduction_reason) params.reduction_reason = reduction_reason;
+
+  return sendJsonPatchRequest(`/student-admission-fees/${id}`);
 }

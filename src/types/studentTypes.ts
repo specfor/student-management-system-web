@@ -1,4 +1,6 @@
-type Student = {
+import type { Grade } from "./gradeTypes";
+
+export type Student = {
   id: number;
   name: string;
   full_name: string | null;
@@ -15,4 +17,14 @@ type Student = {
   custom_id?: string;
   grade: Grade | null;
   admission_paid: boolean;
+};
+
+export type AdmissionFee = {
+  id: number;
+  student_id: number;
+  amount: number;
+  paid: boolean;
+  created_at: string;
+  updated_at: string;
+  reductions: null | string;
 };
