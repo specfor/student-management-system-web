@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, ref, watch, type FunctionalComponent, type Ref } from "vue";
+import { defineProps, ref, toRef, watch, type FunctionalComponent, type Ref } from "vue";
 import { ArrowPathIcon, Cog6ToothIcon } from "@heroicons/vue/24/solid";
 import { ArrowLongDownIcon, ArrowLongUpIcon } from "@heroicons/vue/24/outline";
 import PaginateComponent from "./PaginateComponent.vue";
@@ -31,17 +31,7 @@ function isChecked() {
   }
 }
 
-let {
-  tableColumns,
-  tableRows,
-  actions,
-  filters,
-  paginatePageSize,
-  paginateTotal,
-  currentSorting,
-  refreshFunc,
-  options
-} = defineProps<{
+let props = defineProps<{
   tableColumns: TableColumns[]
   tableRows: tableRowItem[][]
   actions?: TableActionType[]
@@ -53,10 +43,20 @@ let {
   options?: { hideActionBar?: boolean, hidePaginateBar?: boolean, showRowCheckBox?: boolean }
 }>()
 
+let tableColumns = toRef(props, 'tableColumns')
+let tableRows = toRef(props, 'tableRows')
+let actions = toRef(props, 'actions')
+let filters = toRef(props, 'filters')
+let paginateTotal = toRef(props, 'paginateTotal')
+let paginatePageSize = toRef(props, 'paginatePageSize')
+let currentSorting = toRef(props, 'currentSorting')
+let refreshFunc = props.refreshFunc
+let options = toRef(props, 'options')
+
 
 watch(selectAll, (isTrue) => {
   if (isTrue) {
-    selectedIds.value = tableRows.map((row) => row[0])
+    selectedIds.value = tableRows.value.map((row) => row[0])
     isDisabled.value = false
   } else {
     selectedIds.value = []
@@ -64,20 +64,21 @@ watch(selectAll, (isTrue) => {
   }
 })
 
-for (const filter of filters ?? []) {
+for (const filter of filters.value ?? []) {
   searchInput.value[filter.name] = filter.value
 }
 
 function resetFilters() {
   showResetBtn.value = false
   searchInput.value = {}
-  for (const filter of filters ?? []) {
+  for (const filter of filters.value ?? []) {
     searchInput.value[filter.name] = filter.value
   }
 }
 
-if (currentSorting)
-  activeSorting.value = currentSorting
+if (currentSorting.value)
+  activeSorting.value = currentSorting.value
+
 
 
 export type TableActionType =
@@ -91,7 +92,7 @@ export type TableActionType =
 
 export type TableColumns = { label: string, sortable?: boolean }
 
-export type tableRowItem = string | number | {
+export type tableRowItem = string | number | null | undefined | {
   type: "group"
   value: string | number | boolean
 } | {
@@ -151,7 +152,7 @@ export type Filter = {
         <button
           class="flex hover:cursor-pointer px-4 py-2 rounded-tr-lg items-center border mr-3 disabled:cursor-not-allowed disabled:text-slate-400"
           :disabled="isDisabled"
-          :class="{ 'bg-red-600 text-white hover:bg-red-700': isActive, 'text-slate-400  ': !isActive }" @click="() => {
+          :class="{ 'bg-red-600 text-white hover:bg-red-700': isActive, 'text-slate-400': !isActive }" @click="() => {
             $emit('deleteEmit', selectedIds); isDisabled = true; isActive = false; selectedIds = []; if (selectedIds) { isDisabled = true };
             selectedIds = [];
           }">Delete
@@ -186,12 +187,12 @@ export type Filter = {
     </div>
 
     <div class="w-full bg-slate-200" :class="{ 'hidden': isHidden }">
-      <div class="grid grid-cols-3 gap-x-5 rounded-tl-lg py-3 px-3">
-        <div v-for="(item, i) in filters" :key="i" class="grid grid-cols-3 ml-5 items-center">
+      <div class="grid grid-cols-3 gap-x-5 gap-y-3 rounded-tl-lg py-3 px-3">
+        <div v-for="(item, i) in filters" :key="i" class="grid grid-cols-3 items-center">
           <h5 v-text="item['label']" class="flex items-center justify-self-end mr-3"></h5>
           <template v-if="item.type == 'select'">
             <SelectionBox :value="searchInput[item.name]" :options="item.options" class="col-span-2"
-              @input="(val) => { searchInput[item.name] = val; console.log(val); $emit('filterValues', searchInput); showResetBtn = true }" />
+              @input="(val) => { searchInput[item.name] = val; $emit('filterValues', searchInput); showResetBtn = true }" />
           </template>
           <template v-else>
             <input :type="item.type" class="rounded-md border border-stone-600 px-3 h-8 mt-1 col-span-2"
