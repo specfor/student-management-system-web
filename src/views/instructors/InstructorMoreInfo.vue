@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { getInstructor, getInstructorsImage } from '@/apiConnections/instructors';
 import { useAlertsStore } from '@/stores/alerts';
+import type { Instructor } from '@/types/InstructorTypes';
 import { getRouterParam } from '@/utils/routeHelpers';
 import { ref, type Ref } from 'vue';
 
