@@ -4,7 +4,7 @@ import { storeToRefs } from 'pinia';
 import { RouterLink } from 'vue-router';
 import {
     BanknotesIcon, UsersIcon, Squares2X2Icon, AcademicCapIcon, UserGroupIcon, BookOpenIcon, RocketLaunchIcon, IdentificationIcon,
-    FolderOpenIcon, BookmarkIcon, DocumentChartBarIcon, ChartBarIcon
+    FolderOpenIcon, BookmarkIcon, DocumentChartBarIcon, ChartBarIcon, Cog8ToothIcon
 } from '@heroicons/vue/24/outline';
 import MenuBarCollapse from './minorUiComponents/MenuBarCollapse.vue';
 
@@ -41,19 +41,18 @@ let { userPermissions } = storeToRefs(authStore)
                 <IdentificationIcon class="h-6 w-6 mr-3" />
                 Students
             </RouterLink>
-            <MenuBarCollapse>
+            <!-- <MenuBarCollapse>
                 <template v-slot:header>
                     <div class="py-2 px-4 w-full text-white hover:bg-blue-700 flex">
                         <ChartBarIcon class="h-6 w-6 mr-3" />
                         Reports
                     </div>
                 </template>
-                <RouterLink v-if="userPermissions.all || userPermissions.students"
-                    to="/reports/instructors-monthly-payment" class="flex py-2 px-4 w-full text-white hover:bg-blue-700"
-                    active-class="bg-blue-600">
-                    <p>Instructor Payment Calculator</p>
-                </RouterLink>
-            </MenuBarCollapse>
+<RouterLink v-if="userPermissions.all || userPermissions.students" to="/reports/instructors-monthly-payment"
+    class="flex py-2 px-4 w-full text-white hover:bg-blue-700" active-class="bg-blue-600">
+    <p>Instructor Payment Calculator</p>
+</RouterLink>
+</MenuBarCollapse> -->
             <div class="h-1 bg-blue-500 mx-2 rounded-xl my-5"></div>
             <MenuBarCollapse v-if="userPermissions.all || userPermissions.payments">
                 <template v-slot:header>
@@ -67,7 +66,7 @@ let { userPermissions } = storeToRefs(authStore)
                     <p>Student Payments</p>
                 </RouterLink>
                 <RouterLink to="/payments/instructors" class="flex py-2 px-4 w-full text-white hover:bg-blue-700"
-                    active-class="bg-blue-600">
+                    active-class="bg-blue-600" v-if="userPermissions.all || userPermissions.instructor_payments">
                     <p>Instructor Payments</p>
                 </RouterLink>
             </MenuBarCollapse>
@@ -96,6 +95,20 @@ let { userPermissions } = storeToRefs(authStore)
                 <UserGroupIcon class="h-6 w-6 mr-3" />
                 User Roles
             </RouterLink>
+
+            <div class="h-1 bg-blue-500 mx-2 rounded-xl my-5"></div>
+            <MenuBarCollapse v-if="userPermissions.all || userPermissions.system_config">
+                <template v-slot:header>
+                    <div class="py-2 px-4 w-full text-white hover:bg-blue-700 flex">
+                        <Cog8ToothIcon class="h-6 w-6 mr-3" />
+                        Settings
+                    </div>
+                </template>
+                <RouterLink to="/settings/message-system" class="flex py-2 px-4 w-full text-white hover:bg-blue-700"
+                    active-class="bg-blue-600">
+                    <p>Message System</p>
+                </RouterLink>
+            </MenuBarCollapse>
         </div>
     </div>
 </template>
