@@ -17,6 +17,7 @@ import EnrollmentMoreInfoPage from "@/views/enrollments/EnrollmentMoreInfo.vue";
 import InstructorMonthlyPayment from "@/views/reports/InstructorMonthlyPayment.vue";
 import InstructorsPaymentsPage from "@/views/payments/InstructorsPaymentsPage.vue";
 import InstructorPaymentCalculator from "@/views/payments/InstructorPaymentCalculator.vue";
+import WhatsappSettings from "@/views/settings/WhatsappSettings.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -110,6 +111,11 @@ const router = createRouter({
       path: "/reports/instructors-monthly-payment",
       name: "instructor-monthly-payment",
       component: InstructorMonthlyPayment,
+    },
+    {
+      path: "/settings/message-system",
+      name: "whatsapp-settings",
+      component: WhatsappSettings,
     },
     // {
     //   path: '/about',
