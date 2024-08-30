@@ -100,10 +100,10 @@ async function loadPayments(startIndex?: number, filters?: { [key: string]: any 
         lastLoadSettings.filters.date_from = filters.date_from
     else
         lastLoadSettings.filters.date_from = ""
-    if (filters?.date_from)
-        lastLoadSettings.filters.date_from = filters.date_from
+    if (filters?.date_to)
+        lastLoadSettings.filters.date_to = filters.date_to
     else
-        lastLoadSettings.filters.date_from = ""
+        lastLoadSettings.filters.date_to = ""
 
     let opt: any = {}
     opt.sort = { by: lastLoadSettings.orderBy, direction: lastLoadSettings.orderDirec }
