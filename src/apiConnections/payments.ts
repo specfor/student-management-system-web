@@ -1,4 +1,8 @@
-import { sendJsonPostRequest, sendGetRequest } from "@/utils/requests";
+import {
+  sendJsonPostRequest,
+  sendGetRequest,
+  sendDeleteRequest,
+} from "@/utils/requests";
 
 export function getStudentPayments(
   startIndex = 0,
@@ -122,4 +126,8 @@ export function markInstructorPayment(
     pending_payment_enrollment_ids,
   };
   return sendJsonPostRequest("/instructor-payments", params);
+}
+
+export function deleteInstructorPayment(payment_id: number) {
+  return sendDeleteRequest(`/instructor-payments/${payment_id}`);
 }

@@ -1,6 +1,6 @@
 <!-- eslint-disable no-constant-condition -->
 <script setup lang="ts">
-import { getInstructorPayments, refundStudentPayment } from '@/apiConnections/payments';
+import { deleteInstructorPayment, getInstructorPayments, refundStudentPayment } from '@/apiConnections/payments';
 import TableComponent, { type Filter, type TableActionType, type TableColumns, type tableRowItem } from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
@@ -11,9 +11,11 @@ import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { getInstructors } from '@/apiConnections/instructors';
 import type { InstructorPayment } from '@/types/paymentTypes';
 import type { Instructor } from '@/types/InstructorTypes';
+import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
+const confirmationForm = useConfirmationFormsStore()
 
 let payments: InstructorPayment[]
 const paymentData: Ref<any[]> = ref([])
@@ -171,8 +173,20 @@ function moreInfo(id: number) {
     setRoute('/payments/instructors/calculate?i_id=' + p.instructor_id + '&m=' + p.paid_month)
 }
 
-async function delPayment() {
-    alertStore.insertAlert('Can not Delete.', 'Payments can not be deleted.', 'error')
+async function delPayment(ids: number[]) {
+    let confirmed = await confirmationForm.newConfirmationForm("Confirm Deletion", "Are you sure you want to delete these paymnets with IDs: " + ids.join(', ') + "?")
+    if (!confirmed)
+        return
+
+    ids.forEach(async id => {
+        let resp = await deleteInstructorPayment(id)
+        if (resp.status === 'error') {
+            alertStore.insertAlert('An error occured deleting the payment.', resp.message, 'error')
+            return
+        }
+        alertStore.insertAlert('Action completed.', resp.message)
+    });
+    loadPayments()
 }
 
 function newPayment() {
