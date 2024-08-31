@@ -51,12 +51,15 @@ let relationData: Ref<StudentPaymentListingResponse['relation_data'] | null> = r
 let selectedMonthTableRows: Ref<{ courseId: number, rows: tableRowItem[][] }[]> = ref([])
 let otherMonthsTableRows: Ref<{ courseId: number, rows: tableRowItem[][] }[]> = ref([])
 
+let selectedPayment: Ref<{ [key: number]: number[] }> = ref({})
 
 let mapIndexToRelaventId: { [key: number]: { paymentId?: number, enrollmentId?: number, paid: boolean } } = {}
 
 async function loadCalculations() {
     if (selectedMonth.value === '' || selectedInstructorId.value === 0)
         return
+
+    selectedPayment.value = {}
 
     let date = selectedMonth.value.split('-')
     let resp = await getStudentPaymentListForInstructorPaymentCalculation(selectedInstructorId.value, Number(date[0]), Number(date[1]))
@@ -127,8 +130,6 @@ async function loadCalculations() {
         })
     });
 }
-
-let selectedPayment: Ref<{ [key: number]: number[] }> = ref({})
 
 function setSelectedRows(courseId: number, rows: number[]) {
     selectedPayment.value[courseId] = rows

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronUpIcon } from '@heroicons/vue/24/outline';
+import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/vue/24/outline';
 import { ref } from 'vue';
 
 let expanded = ref(false);
@@ -11,6 +11,7 @@ let expanded = ref(false);
             <slot name="header">
             </slot>
             <ChevronUpIcon class="w-6 h-6 stroke-2 mr-2 text-white" v-show="expanded" />
+            <ChevronDownIcon class="w-6 h-6 stroke-2 mr-2 text-white" v-show="!expanded" />
         </div>
 
         <div v-show="expanded" class="text-sm">
