@@ -53,7 +53,7 @@ checkLogged()
         <PageHeader />
       </header>
       <div class="flex-1 flex mt-14">
-        <div class="w-[200px] h-full">
+        <div class="w-fit h-full">
           <SideMenu class="TextNotCopy" />
         </div>
         <RouterView class="pt-8" />
