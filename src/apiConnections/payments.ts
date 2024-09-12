@@ -43,13 +43,21 @@ export function getStudentPayments(
 export function createStudentPayment(
   enrollmentId: number,
   amount: number,
-  paymentTime: string = ""
+  paymentTime: string = "",
+  custom_amount: boolean = false,
+  reason: string = ""
 ) {
-  return sendJsonPostRequest("/payments/" + enrollmentId, {
+  const params: { [key: string]: any } = {
     payment_method: "cash",
     amount: amount,
     payment_for: paymentTime,
-  });
+  };
+  if (custom_amount) {
+    params["custom_amount"] = true;
+    params["reason"] = reason;
+  }
+
+  return sendJsonPostRequest("/payments/" + enrollmentId, params);
 }
 
 export function refundStudentPayment(paymentId: number, reason: string) {

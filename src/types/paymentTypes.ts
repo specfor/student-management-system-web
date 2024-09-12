@@ -13,6 +13,7 @@ export type StudentPayment = {
   created_at: string;
   updated_at: string;
   enrollment: Enrollment;
+  custom_amount_reason: null | string;
 };
 
 // used in instructor payments calculation and things
