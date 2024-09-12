@@ -26,7 +26,7 @@ const tableActions: TableActionType[] = [
 ]
 const tableColumns: TableColumns[] = [
     { label: 'ID', sortable: true }, { label: 'Payment For' }, { label: 'Amount', sortable: true },
-    { label: 'Student' }, { label: 'Course' }, { label: 'Method' }, { label: 'Refunded' }]
+    { label: 'Student' }, { label: 'Course' }, { label: 'Custom Payment Reason' }, { label: 'Method' }, { label: 'Refunded' }]
 
 const thisMonth = (new Date()).getFullYear() + '-' + ('0' + ((new Date()).getMonth() + 1)).slice(-2)
 
@@ -150,8 +150,10 @@ async function loadPaymentByStudent(startIndex?: number, studentId = 0, filters?
             // course = { type: 'textWithLink', text: payment.enrollment.course.name, url: `/courses/${payment.enrollment.course.id}/view` }
             course = payment.enrollment.course.name
 
+        let refunded: tableRowItem = { type: 'colorTag', text: payment.refunded ? 'Yes' : 'No', css: payment.refunded ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700' }
+
         paymentDataByStudentTable.value.push([payment.id, payment.payment_for, payment.amount,
-            student, course, payment.payment_method, payment.refunded ? 'Yes' : 'No'])
+            student, course, payment.custom_amount_reason, payment.payment_method, refunded])
     });
 }
 
@@ -195,8 +197,10 @@ async function loadPaymentByCourse(startIndex?: number, courseId = 0, filters?: 
             // course = { type: 'textWithLink', text: payment.enrollment.course.name, url: `/courses/${payment.enrollment.course.id}/view` }
             course = payment.enrollment.course.name
 
+        let refunded: tableRowItem = { type: 'colorTag', text: payment.refunded ? 'Yes' : 'No', css: payment.refunded ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700' }
+
         paymentDatByCourseTable.value.push([payment.id, payment.payment_for, payment.amount,
-            student, course, payment.payment_method, payment.refunded ? 'Yes' : 'No'])
+            student, course, payment.custom_amount_reason, payment.payment_method, refunded])
     });
 }
 
@@ -240,9 +244,9 @@ async function loadPaymentByInstructor(startIndex?: number, instructorId = 0, fi
         if (payment.enrollment.course)
             // course = { type: 'textWithLink', text: payment.enrollment.course.name, url: `/courses/${payment.enrollment.course.id}/view` }
             course = payment.enrollment.course.name
-
+        let refunded: tableRowItem = { type: 'colorTag', text: payment.refunded ? 'Yes' : 'No', css: payment.refunded ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700' }
         paymentDataByInstructorTable.value.push([payment.id, payment.payment_for, payment.amount,
-            student, course, payment.payment_method, payment.refunded ? 'Yes' : 'No'])
+            student, course, payment.custom_amount_reason, payment.payment_method, refunded])
     });
 }
 

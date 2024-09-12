@@ -162,6 +162,9 @@ async function markPayment() {
         { name: 'course', type: 'text', text: 'Course', value: cName, disabled: true },
         { name: 'student', type: 'text', text: 'Student', value: sName, disabled: true },
         { name: 'amount', type: 'text', text: 'Amount', value: feeToPay.value, disabled: true },
+        { type: 'heading', text: 'Custom Class Fee (Optional)' },
+        { name: 'custom_amount', type: 'number', text: 'Custom Amount' },
+        { name: 'reason', type: 'text', text: 'Reason' },
         { type: 'heading', text: 'Select the time period of the payment' },
         timeP
     ], { allowSubmit: true })
@@ -173,7 +176,11 @@ async function markPayment() {
         return
     }
 
-    let resp = await createStudentPayment((enrollmentData.value!.enrollment as Enrollment).id, feeToPay.value, confirmed.data.time as string)
+    let fee = feeToPay.value
+    if (confirmed.data.custom_amount != '')
+        fee = confirmed.data.custom_amount as number
+
+    let resp = await createStudentPayment((enrollmentData.value!.enrollment as Enrollment).id, fee, confirmed.data.time as string, confirmed.data.custom_amount != '', confirmed.data.reason as string)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
     } else {
