@@ -5,80 +5,83 @@ import TableComponent, { type Filter, type TableActionType, type TableColumns, t
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
-import { onMounted, ref, watch, type Ref } from 'vue';
-import CourseSelector from '@/components/dataSelectors/CourseSelector.vue';
-import StudentSelector from '@/components/dataSelectors/StudentSelector.vue';
-import { getRouteQuery, setRouteQuery } from '@/utils/routeHelpers';
-import InstructorSelector from '@/components/dataSelectors/InstructorSelector.vue';
+import { ref, type Ref } from 'vue';
 import type { StudentPayment } from '@/types/paymentTypes';
+import { getInstructors } from '@/apiConnections/instructors';
+import type { Instructor } from '@/types/InstructorTypes';
+import type { Course } from '@/types/courseTypes';
+import { getCourses } from '@/apiConnections/courses';
+import { getStudents } from '@/apiConnections/students';
+import type { Student } from '@/types/studentTypes';
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
 
-const tabSelectMode: Ref<any> = ref(null)
-
-const paymentDatByCourseTable: Ref<any[]> = ref([])
-const paymentDataByStudentTable: Ref<any[]> = ref([])
-const paymentDataByInstructorTable: Ref<any[]> = ref([])
+const paymentDataForTable: Ref<any[]> = ref([])
 
 const tableActions: TableActionType[] = [
     { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
 const tableColumns: TableColumns[] = [
     { label: 'ID', sortable: true }, { label: 'Payment For' }, { label: 'Amount', sortable: true },
-    { label: 'Student' }, { label: 'Course' }, { label: 'Custom Payment Reason' }, { label: 'Method' }, { label: 'Refunded' }]
+    { label: 'Student' }, { label: 'Course' }, { label: 'Custom Payment Reason' }, { label: 'Method' }, { label: 'Paid at' }, { label: 'Refunded' }]
 
-const thisMonth = (new Date()).getFullYear() + '-' + ('0' + ((new Date()).getMonth() + 1)).slice(-2)
+// const thisMonth = (new Date()).getFullYear() + '-' + ('0' + ((new Date()).getMonth() + 1)).slice(-2)
 
-const tableFilters: Filter[] = [{ label: 'From 1st of', name: 'date_from', type: 'month', value: thisMonth }, { label: 'Until 1st of', name: 'date_to', type: 'month' }]
+const tableFilters: Ref<Filter[]> = ref([{ label: 'From 1st of', name: 'date_from', type: 'month' }, { label: 'Until 1st of', name: 'date_to', type: 'month' }])
 
 const limitLoadPayments = 30
-const countTotPaymentsForByCourse = ref(0)
-const countTotPaymentsForByStudent = ref(0)
-const countTotPaymentsForByInstructor = ref(0)
+const countTotPayments = ref(0)
 
-const selectedStudentId = ref(0)
-const selectedCourseId = ref(0)
-const selectedInstructorId = ref(0)
 
-watch(selectedStudentId, (id) => {
-    setRouteQuery('s_id', selectedStudentId.value)
-    loadPaymentByStudent(0, id)
-})
-watch(selectedCourseId, (id) => {
-    setRouteQuery('c_id', selectedCourseId.value)
-    loadPaymentByCourse(0, id)
-})
-watch(selectedInstructorId, (id) => {
-    setRouteQuery('i_id', selectedInstructorId.value)
-    loadPaymentByInstructor(0, id)
-})
-
-// can call selectTab method on tabSelectMode before mounting. that is why this code is not in init
-onMounted(() => {
-    let routeStudentId = getRouteQuery('s_id')
-    if (routeStudentId !== null) {
-        tabSelectMode.value.selectTab('#by-student')
-        selectedStudentId.value = Number(routeStudentId)
+async function initLoadInstructors() {
+    let resp = await getInstructors(undefined, undefined, { sort: { by: 'name', direction: 'asc' } })
+    if (resp.status === 'success') {
+        let insFilter: any = { label: 'Instructor', name: 'instructor_id', type: 'select', options: [] };
+        (resp.data.instructors as Instructor[]).forEach(instructor => {
+            insFilter.options.push({ text: instructor.name, value: instructor.id })
+        });
+        tableFilters.value.push(insFilter)
     }
-    let routeCourseId = getRouteQuery('c_id')
-    if (routeCourseId !== null) {
-        tabSelectMode.value.selectTab('#by-course')
-        selectedCourseId.value = Number(routeCourseId)
+}
+async function initLoadCourses() {
+    let resp = await getCourses()
+    if (resp.status === 'error') {
+        return
     }
-    let routeInstructorId = getRouteQuery('i_id')
-    if (routeInstructorId !== null) {
-        tabSelectMode.value.selectTab('#by-teacher')
-        selectedInstructorId.value = Number(routeInstructorId)
-    }
-})
+    let courseFilter: any = { label: 'Course', name: 'course_id', type: 'select', options: [] };
+    Object.entries(resp.data.courses as Course[][]).forEach(item => {
+        item[1].forEach(course => {
+            let courseName = course.name
+            if (course.group_name)
+                courseName += " - " + course.group_name
+            courseFilter.options.push({ text: courseName, value: course.id })
+        })
+    })
+    tableFilters.value.push(courseFilter)
+}
+async function initLoadStudents() {
+    let resp = await getStudents(undefined, undefined, { sort: { by: 'name', direction: 'asc' } })
+    if (resp.status === 'error')
+        return
 
-let lastLoadSettingsStudents: { lastUsedIndex: number, orderBy: string, orderDirec: 'asc' | 'desc', filters: { student_id: number, date_from?: string, date_to?: string } }
-    = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc', filters: { student_id: 0, date_from: thisMonth, date_to: "" } }
-let lastLoadSettingsCourses: { lastUsedIndex: number, orderBy: string, orderDirec: 'asc' | 'desc', filters: { course_id: number, date_from?: string, date_to?: string } }
-    = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc', filters: { course_id: 0, date_from: thisMonth, date_to: "" } }
-let lastLoadSettingsInstructor: { lastUsedIndex: number, orderBy: string, orderDirec: 'asc' | 'desc', filters: { instructor_id: number, date_from?: string, date_to?: string } }
-    = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc', filters: { instructor_id: 0, date_from: thisMonth, date_to: "" } }
+    let studentFilter: any = { label: 'Student', name: 'student_id', type: 'select', options: [] };
+    (resp.data.students as Student[]).forEach(student => {
+        studentFilter.options.push({ text: student.name, value: student.id })
+    })
+    tableFilters.value.push(studentFilter)
+
+}
+initLoadInstructors()
+initLoadCourses()
+initLoadStudents()
+
+
+let lastLoadSettings: {
+    lastUsedIndex: number, orderBy: string, orderDirec: 'asc' | 'desc',
+    filters: { student_id?: number, course_id?: number, instructor_id?: number, date_from?: string, date_to?: string }
+}
+    = { lastUsedIndex: 0, orderBy: '', orderDirec: 'desc', filters: { date_from: "", date_to: "" } }
 
 
 function setSorting(column: string, direction: 'asc' | 'desc') {
@@ -88,49 +91,47 @@ function setSorting(column: string, direction: 'asc' | 'desc') {
             orderBy = 'id'
             break;
         case 'Amount':
-            orderBy = 'name'
+            orderBy = 'amount'
             break;
         default:
             break;
     }
-    if (tabSelectMode.value.activeTabHash == '#by-student') {
-        lastLoadSettingsStudents.orderBy = orderBy
-        lastLoadSettingsStudents.orderDirec = direction
-    } else if (tabSelectMode.value.activeTabHash == '#by-teacher') {
-        lastLoadSettingsInstructor.orderBy = orderBy
-        lastLoadSettingsInstructor.orderDirec = direction
-    } else {
-        lastLoadSettingsCourses.orderBy = orderBy
-        lastLoadSettingsCourses.orderDirec = direction
-    }
+
+    lastLoadSettings.orderBy = orderBy
+    lastLoadSettings.orderDirec = direction
 }
 
-function loadPayment() {
-    loadPaymentByCourse()
-    loadPaymentByStudent()
-}
-
-async function loadPaymentByStudent(startIndex?: number, studentId = 0, filters?: { [key: string]: any }) {
-    if (studentId !== 0)
-        lastLoadSettingsStudents.filters.student_id = studentId
-
+async function loadPayments(startIndex?: number, filters?: { [key: string]: any }) {
     if (startIndex === undefined)
-        startIndex = lastLoadSettingsStudents.lastUsedIndex
+        startIndex = lastLoadSettings.lastUsedIndex
     else
-        lastLoadSettingsStudents.lastUsedIndex = startIndex
+        lastLoadSettings.lastUsedIndex = startIndex
 
     if (filters?.date_from)
-        lastLoadSettingsStudents.filters.date_from = filters.date_from
+        lastLoadSettings.filters.date_from = filters.date_from
     else
-        lastLoadSettingsStudents.filters.date_from = thisMonth
+        lastLoadSettings.filters.date_from = undefined
     if (filters?.date_to)
-        lastLoadSettingsStudents.filters.date_to = filters.date_to
+        lastLoadSettings.filters.date_to = filters.date_to
     else
-        lastLoadSettingsStudents.filters.date_to = undefined
+        lastLoadSettings.filters.date_to = undefined
+    if (filters?.student_id)
+        lastLoadSettings.filters.student_id = filters.student_id
+    else
+        lastLoadSettings.filters.student_id = undefined
+    if (filters?.course_id)
+        lastLoadSettings.filters.course_id = filters.course_id
+    else
+        lastLoadSettings.filters.course_id = undefined
+    if (filters?.instructor_id)
+        lastLoadSettings.filters.instructor_id = filters.instructor_id
+    else
+        lastLoadSettings.filters.instructor_id = undefined
+
 
     let opt: any = {}
-    opt.sort = { by: lastLoadSettingsStudents.orderBy, direction: lastLoadSettingsStudents.orderDirec }
-    opt.filters = lastLoadSettingsStudents.filters
+    opt.sort = { by: lastLoadSettings.orderBy, direction: lastLoadSettings.orderDirec }
+    opt.filters = lastLoadSettings.filters
 
     let resp = await getStudentPayments(startIndex, limitLoadPayments, opt)
     if (resp.status === 'error') {
@@ -138,8 +139,8 @@ async function loadPaymentByStudent(startIndex?: number, studentId = 0, filters?
         return
     }
 
-    countTotPaymentsForByStudent.value = resp.data.tot_count
-    paymentDataByStudentTable.value = []
+    countTotPayments.value = resp.data.tot_count
+    paymentDataForTable.value = []
     let payments: StudentPayment[] = resp.data.payments
     payments.forEach(payment => {
         let student: tableRowItem = "Deleted"
@@ -152,103 +153,12 @@ async function loadPaymentByStudent(startIndex?: number, studentId = 0, filters?
 
         let refunded: tableRowItem = { type: 'colorTag', text: payment.refunded ? 'Yes' : 'No', css: payment.refunded ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700' }
 
-        paymentDataByStudentTable.value.push([payment.id, payment.payment_for, payment.amount,
-            student, course, payment.custom_amount_reason, payment.payment_method, refunded])
+        paymentDataForTable.value.push([payment.id, payment.payment_for, payment.amount,
+            student, course, payment.custom_amount_reason, payment.payment_method, new Date(payment.created_at).toLocaleString(), refunded])
     });
 }
 
-
-async function loadPaymentByCourse(startIndex?: number, courseId = 0, filters?: { [key: string]: any }) {
-    if (courseId !== 0)
-        lastLoadSettingsCourses.filters.course_id = courseId
-
-    if (startIndex === undefined)
-        startIndex = lastLoadSettingsCourses.lastUsedIndex
-    else
-        lastLoadSettingsCourses.lastUsedIndex = startIndex
-
-    if (filters?.date_from)
-        lastLoadSettingsCourses.filters.date_from = filters.date_from
-    else
-        lastLoadSettingsCourses.filters.date_from = thisMonth
-    if (filters?.date_to)
-        lastLoadSettingsCourses.filters.date_to = filters.date_to
-    else
-        lastLoadSettingsCourses.filters.date_to = undefined
-
-    let opt: any = {}
-    opt.sort = { by: lastLoadSettingsCourses.orderBy, direction: lastLoadSettingsCourses.orderDirec }
-    opt.filters = lastLoadSettingsCourses.filters
-
-    let resp = await getStudentPayments(startIndex, limitLoadPayments, opt)
-    if (resp.status === 'error') {
-        alertStore.insertAlert('An error occured.', resp.message, 'error')
-        return
-    }
-    countTotPaymentsForByCourse.value = resp.data.tot_count
-    paymentDatByCourseTable.value = []
-    let payments: StudentPayment[] = resp.data.payments
-    payments.forEach(payment => {
-        let student: tableRowItem = "Deleted"
-        if (payment.enrollment.student)
-            student = { type: 'textWithLink', text: payment.enrollment.student.name, url: `/students/${payment.enrollment.student.id}/view` }
-        let course: tableRowItem = "Deleted"
-        if (payment.enrollment.course)
-            // course = { type: 'textWithLink', text: payment.enrollment.course.name, url: `/courses/${payment.enrollment.course.id}/view` }
-            course = payment.enrollment.course.name
-
-        let refunded: tableRowItem = { type: 'colorTag', text: payment.refunded ? 'Yes' : 'No', css: payment.refunded ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700' }
-
-        paymentDatByCourseTable.value.push([payment.id, payment.payment_for, payment.amount,
-            student, course, payment.custom_amount_reason, payment.payment_method, refunded])
-    });
-}
-
-async function loadPaymentByInstructor(startIndex?: number, instructorId = 0, filters?: { [key: string]: any }) {
-    console.log('load payments by instructor');
-
-    if (instructorId !== 0)
-        lastLoadSettingsInstructor.filters.instructor_id = instructorId
-
-    if (startIndex === undefined)
-        startIndex = lastLoadSettingsInstructor.lastUsedIndex
-    else
-        lastLoadSettingsInstructor.lastUsedIndex = startIndex
-
-    if (filters?.date_from)
-        lastLoadSettingsInstructor.filters.date_from = filters.date_from
-    else
-        lastLoadSettingsInstructor.filters.date_from = thisMonth
-    if (filters?.date_to)
-        lastLoadSettingsInstructor.filters.date_to = filters.date_to
-    else
-        lastLoadSettingsInstructor.filters.date_to = undefined
-
-    let opt: any = {}
-    opt.sort = { by: lastLoadSettingsInstructor.orderBy, direction: lastLoadSettingsInstructor.orderDirec }
-    opt.filters = lastLoadSettingsInstructor.filters
-
-    let resp = await getStudentPayments(startIndex, limitLoadPayments, opt)
-    if (resp.status === 'error') {
-        alertStore.insertAlert('An error occured.', resp.message, 'error')
-        return
-    }
-    countTotPaymentsForByInstructor.value = resp.data.tot_count
-    paymentDataByInstructorTable.value = []
-    let payments: StudentPayment[] = resp.data.payments
-    payments.forEach(payment => {
-        let student: tableRowItem = "Deleted"
-        if (payment.enrollment.student)
-            student = { type: 'textWithLink', text: payment.enrollment.student.name, url: `/students/${payment.enrollment.student.id}/view` }
-        let course: tableRowItem = "Deleted"
-        if (payment.enrollment.course)
-            // course = { type: 'textWithLink', text: payment.enrollment.course.name, url: `/courses/${payment.enrollment.course.id}/view` }
-            course = payment.enrollment.course.name
-        let refunded: tableRowItem = { type: 'colorTag', text: payment.refunded ? 'Yes' : 'No', css: payment.refunded ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700' }
-        paymentDataByInstructorTable.value.push([payment.id, payment.payment_for, payment.amount,
-            student, course, payment.custom_amount_reason, payment.payment_method, refunded])
-    });
-}
+loadPayments()
 
 async function editPayment(id: number) {
     dataEntryForm.newDataEntryForm('Refund Payment', 'Refund', [
@@ -277,7 +187,7 @@ async function editPayment(id: number) {
         } else {
             dataEntryForm.finishSubmission()
             alertStore.insertAlert('Action completed.', resp.message)
-            loadPayment()
+            loadPayments()
             break
         }
     }
@@ -295,62 +205,16 @@ async function delPayment() {
             <h4 class="font-semibold text-3xl">Student Payments</h4>
         </div>
 
-        <tabs nav-class="flex border-b-2 pb-[6px] justify-center" nav-item-link-class="border px-10 py-2 font-semibold"
-            nav-item-link-active-class="bg-slate-200" panels-wrapper-class="pt-10" ref="tabSelectMode"
-            :options="{ useUrlFragment: false }">
-            <tab name="by Student">
-                <div class="mb-5">
-                    <StudentSelector v-model:student-id="selectedStudentId" />
-                </div>
-                <div class="mb-10">
-                    <TableComponent :table-columns="tableColumns" :table-rows="paymentDataByStudentTable"
-                        @edit-emit="editPayment" :actions="tableActions"
-                        :refresh-func="async () => { await loadPaymentByStudent(); return true }"
-                        @delete-emit="delPayment" @load-page-emit="loadPaymentByStudent"
-                        :paginate-page-size="limitLoadPayments" :paginate-total="countTotPaymentsForByStudent"
-                        :current-sorting="{ column: 'ID', direc: 'asc' }" @sort-by="(col, dir) => {
-                            setSorting(col, dir); loadPaymentByStudent();
-                        }" :filters="tableFilters" @filter-values="(val) => {
-                            loadPaymentByStudent(undefined, undefined, val)
-                        }" />
-                </div>
-            </tab>
+        <div class="mb-10">
+            <TableComponent :table-columns="tableColumns" :table-rows="paymentDataForTable" @edit-emit="editPayment"
+                :actions="tableActions" :refresh-func="async () => { await loadPayments(); return true }"
+                @delete-emit="delPayment" @load-page-emit="loadPayments" :paginate-page-size="limitLoadPayments"
+                :paginate-total="countTotPayments" :current-sorting="{ column: 'ID', direc: 'desc' }" @sort-by="(col, dir) => {
+                    setSorting(col, dir); loadPayments();
+                }" :filters="tableFilters" @filter-values="(val) => {
+                    loadPayments(undefined, val)
+                }" />
+        </div>
 
-            <tab name="by Course">
-                <div class="mb-5">
-                    <CourseSelector v-model:course-id="selectedCourseId" />
-                </div>
-                <div class="mb-10">
-                    <TableComponent :table-columns="tableColumns" :table-rows="paymentDatByCourseTable"
-                        @edit-emit="editPayment" :actions="tableActions"
-                        :refresh-func="async () => { await loadPaymentByCourse(); return true }"
-                        @delete-emit="delPayment" :paginate-page-size="limitLoadPayments"
-                        :paginate-total="countTotPaymentsForByCourse" @load-page-emit="loadPaymentByCourse"
-                        :current-sorting="{ column: 'ID', direc: 'asc' }" @sort-by="(col, dir) => {
-                            setSorting(col, dir); loadPaymentByCourse();
-                        }" :filters="tableFilters" @filter-values="(val) => {
-                            loadPaymentByCourse(undefined, undefined, val)
-                        }" />
-                </div>
-            </tab>
-
-            <tab name="by Teacher">
-                <div class="mb-5">
-                    <InstructorSelector v-model:insturctor-id="selectedInstructorId" />
-                </div>
-                <div class="mb-10">
-                    <TableComponent :table-columns="tableColumns" :table-rows="paymentDataByInstructorTable"
-                        @edit-emit="editPayment" :actions="tableActions"
-                        :refresh-func="async () => { await loadPaymentByInstructor(); return true }"
-                        @delete-emit="delPayment" :paginate-page-size="limitLoadPayments"
-                        :paginate-total="countTotPaymentsForByInstructor" @load-page-emit="loadPaymentByInstructor"
-                        :current-sorting="{ column: 'ID', direc: 'asc' }" @sort-by="(col, dir) => {
-                            setSorting(col, dir); loadPaymentByInstructor();
-                        }" :filters="tableFilters" @filter-values="(val) => {
-                            loadPaymentByInstructor(undefined, undefined, val)
-                        }" />
-                </div>
-            </tab>
-        </tabs>
     </div>
 </template>
