@@ -4,8 +4,8 @@ export function getStudentCount() {
   return sendGetRequest("/analytics/students/count");
 }
 
-export function getMonthlyIncomeSummary(year: number, month: number) {
-  return sendGetRequest("/analytics/summary/income", {
+export function getMonthlyFinancialSummary(year: number, month: number) {
+  return sendGetRequest("/analytics/summary/financial", {
     year,
     month,
   });
