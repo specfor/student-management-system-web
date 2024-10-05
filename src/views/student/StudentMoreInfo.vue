@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { downloadStudentImage, getAdmissionPaymentStatus, getStudentById, markAdmissionFee, updateAdmissionFee, updateStudentImage } from '@/apiConnections/students';
+import FingerprintRegister from '@/components/dataSelectors/FingerprintRegister.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
+import { useExtendablePopUpStore } from '@/stores/formManagers/extendablePopUp';
 import type { AdmissionFee, Student } from '@/types/studentTypes';
 import { getRouterParam, setRoute } from '@/utils/routeHelpers';
 import { ref, type Ref } from 'vue';
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
+const extendablePopUpStore = useExtendablePopUpStore()
 
 const imageUrl: Ref<null | string> = ref(null)
 
@@ -118,6 +121,10 @@ async function uploadStudentImage(studentId: number) {
     loadImage(studentId)
     alertStore.insertAlert('Action completed.', 'Student photo updated successfully.')
 }
+
+function showFingerprintReg() {
+    extendablePopUpStore.showComponent(FingerprintRegister, studentId)
+}
 </script>
 
 <template>
@@ -204,6 +211,12 @@ async function uploadStudentImage(studentId: number) {
                                 @click="() => { payAdmission(admissionPayment !== null) }">Pay</button>
                         </div>
                     </div>
+                    <div class="grid grid-cols-3 mt-3 items-center">
+                        <h4>Fingerprint Status</h4>
+                        <div v-if="student.fingerprint" class="border bg-green-200 text-green-800 text-center">Added
+                        </div>
+                        <div v-else class="border bg-red-200 text-red-800 text-center">Not Added</div>
+                    </div>
                 </div>
             </div>
 
@@ -214,6 +227,9 @@ async function uploadStudentImage(studentId: number) {
                     @click="() => { setRoute(`/enrollments?s_id=${student?.id}`) }">Enrolled Courses</button>
                 <button class="border bg-blue-500 py-2 px-5 rounded-md mb-3"
                     @click="() => { setRoute(`/payments/students?s_id=${student?.id}`) }">Payments</button>
+                <button class="border bg-blue-500 py-2 px-5 rounded-md mb-3"
+                    @click="() => { showFingerprintReg() }">Update
+                    Fingerprint</button>
             </div>
         </div>
     </div>

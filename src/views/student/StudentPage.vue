@@ -14,10 +14,14 @@ import { setRoute } from '@/utils/routeHelpers';
 import { getStudentCount } from '@/apiConnections/analytics';
 import type { Grade } from '@/types/gradeTypes';
 import type { Student } from '@/types/studentTypes';
+import { useExtendablePopUpStore } from '@/stores/formManagers/extendablePopUp';
+import FingerprintRegister from '@/components/dataSelectors/FingerprintRegister.vue';
+
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
 const confirmationForm = useConfirmationFormsStore()
+const extendablePopUp = useExtendablePopUpStore()
 
 let studentData: Student[] = []
 const studentDataForTable: Ref<any[]> = ref([])
@@ -210,6 +214,8 @@ async function addNewStudent() {
     dataEntryForm.finishSubmission()
     loadStudents(0)
     alertStore.insertAlert('Action completed.', 'Admission fee marked successfully.')
+
+    extendablePopUp.showComponent(FingerprintRegister);
 }
 
 async function uploadStudentImage(studentId: number) {
@@ -321,11 +327,12 @@ function showMoreInfo(id: number) {
 function showStudentCourses(id: number) {
     setRoute(`/enrollments?s_id=${id}`)
 }
+
 </script>
 
 <template>
     <div class="container">
-        <div class="flex justify-between items-center mb-10">
+        <div class="flex justify-between items-center mb-10 mt-10">
             <h4 class="font-semibold text-3xl">Students</h4>
             <NewItemButton text="New Student" :on-click="addNewStudent" />
         </div>
@@ -347,4 +354,7 @@ function showStudentCourses(id: number) {
                 }" />
         </div>
     </div>
+    <!-- <div class="fixed w-full h-full" v-show="showFingerprintRegister">
+        <FingerprintRegister />
+    </div> -->
 </template>
