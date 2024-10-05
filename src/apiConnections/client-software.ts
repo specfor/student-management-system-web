@@ -7,3 +7,7 @@ export function getClientAuthToken() {
 export function generateClientAuthToken() {
   return sendJsonPostRequest("/settings/fingerprint-client/auth-token", {});
 }
+
+export function checkClientSoftwareStatus() {
+  return sendGetRequest("/fingerprint-client/status");
+}

@@ -203,19 +203,18 @@ async function addNewStudent() {
         { name: 'reduction_reason', type: 'text', text: 'Reason for reduction' },
     ])
     let results = await dataEntryForm.waitForSubmittedData()
-    if (!results.submitted)
-        return
-
-    let resp = await markAdmissionFee(createdStudentId!, results.data.amount as number, results.data.paid as boolean, results.data.reduction_reason as string)
-    if (resp.status === 'error') {
-        alertStore.insertAlert('An error occured.', resp.message, 'error')
-        return
+    if (results.submitted) {
+        let resp = await markAdmissionFee(createdStudentId!, results.data.amount as number, results.data.paid as boolean, results.data.reduction_reason as string)
+        if (resp.status === 'error') {
+            alertStore.insertAlert('An error occured.', resp.message, 'error')
+        } else {
+            dataEntryForm.finishSubmission()
+            loadStudents(0)
+            alertStore.insertAlert('Action completed.', 'Admission fee marked successfully.')
+        }
     }
-    dataEntryForm.finishSubmission()
-    loadStudents(0)
-    alertStore.insertAlert('Action completed.', 'Admission fee marked successfully.')
 
-    extendablePopUp.showComponent(FingerprintRegister);
+    extendablePopUp.showComponent(FingerprintRegister, createdStudentId);
 }
 
 async function uploadStudentImage(studentId: number) {

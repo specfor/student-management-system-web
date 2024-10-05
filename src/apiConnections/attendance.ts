@@ -6,7 +6,7 @@ import {
 
 export function getAttendace(
   startIndex: number = 0,
-  limit: boolean | null = null,
+  limit: number | null = null,
   options?: {
     sort?: {
       by: "student_id" | "date" | "id";

@@ -5,4 +5,5 @@ export type Attendance = {
   date: string;
   created_at: string;
   updated_at: string;
+  marked_automatically: boolean;
 };
