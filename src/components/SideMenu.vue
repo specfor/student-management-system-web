@@ -54,6 +54,7 @@ const routes: (
         {
             type: 'group', text: 'Settings', icon: Cog8ToothIcon, permissions: checkPermissions('system_config'), children: [
                 { type: 'link', path: '/settings/message-system', text: 'Message System', permissions: checkPermissions('system_config') },
+                { type: 'link', path: '/settings/lms-client', text: 'Client Software', permissions: checkPermissions('system_config') },
             ]
         },
     ]
@@ -62,7 +63,7 @@ const routes: (
 <template>
     <div class="relative h-full" :class="expanded ? 'w-[200px]' : 'w-[70px]'">
         <div class="fixed overflow-y-auto overflow-x-hidden bg-blue-950" :class="expanded ? 'w-[200px]' : 'w-[70px]'">
-            <div class="h-screen -mb-14 pt-3">
+            <div class="h-screen pt-3">
                 <!-- <div class="hover:bg-blue-700 py-2 mb-4 cursor-pointer" @click="expanded = !expanded">
                     <Bars3Icon class="h-6 w-6 ml-4 text-white" />
                 </div> -->
