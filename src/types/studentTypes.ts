@@ -17,6 +17,7 @@ export type Student = {
   custom_id?: string;
   grade: Grade | null;
   admission_paid: boolean;
+  fingerprint?: boolean;
 };
 
 export type AdmissionFee = {
