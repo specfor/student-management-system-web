@@ -8,20 +8,41 @@ let props = defineProps(['totalCount', 'pageSize'])
 
 let pageNums: Ref<number[]> = ref([])
 let currentPage = ref(1)
+let totalPages = 0;
 
 watch(props, () => {
-  let totalPages = Math.ceil(props.totalCount / props.pageSize)
+  totalPages = Math.ceil(props.totalCount / props.pageSize)
 
-  pageNums.value = []
-  for (let i = 0; i < totalPages; i++) {
-    pageNums.value.push(i + 1);
-  }
+  adjustPageNumbers()
 })
 
+function adjustPageNumbers() {
+  pageNums.value = []
+  if (totalPages < 10) {
+    for (let i = 0; i < totalPages; i++) {
+      pageNums.value.push(i + 1);
+    }
+  } else {
+    pageNums.value.push(1)
+    let begin = (currentPage.value > 3) ? currentPage.value - 2 : 2;
+    let end = (totalPages > currentPage.value + 2) ? currentPage.value + 2 : totalPages - 1;
+    if (begin > 2) pageNums.value.push(-1)
+    for (let i = begin; i <= end; i++) {
+      pageNums.value.push(i)
+    }
+    if (end < totalPages - 1) pageNums.value.push(-1)
+    pageNums.value.push(totalPages)
+  }
+}
+
 function loadPage(pageNum: number) {
+  if (pageNum == -1) {
+    return
+  }
   let sIndex = (pageNum - 1) * props.pageSize;
   emit('loadPageEmit', sIndex)
   currentPage.value = pageNum
+  adjustPageNumbers()
 }
 
 function prevPage() {
@@ -56,7 +77,7 @@ function nextPage() {
           :class="currentPage == num ?
             'text-blue-600  border-blue-300 bg-blue-100 hover:bg-blue-200 hover:text-blue-700' :
             'text-gray-500  bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700'">
-          {{ num }}</a>
+          {{ num == -1 ? '..' : num }}</a>
       </li>
       <li>
         <a href="#" @click="nextPage"
