@@ -5,9 +5,12 @@ const baseUrl = import.meta.env.VITE_API_BASE_URL;
 export async function sendJsonPostRequest(
   url: string,
   jsonBody: any,
-  headers = {}
+  headers = {},
+  useBaseUrl = true
 ) {
-  url = baseUrl + url;
+  if (useBaseUrl) {
+    url = baseUrl + url;
+  }
   let headers_ = useHeaderStore().getHeaders();
   headers_ = { ...headers_, ...headers };
   headers_["Content-Type"] = "application/json";
@@ -41,8 +44,15 @@ export async function sendJsonPostRequest(
   }
 }
 
-export async function sendGetRequest(url: string, params = {}, headers = {}) {
-  url = baseUrl + url;
+export async function sendGetRequest(
+  url: string,
+  params = {},
+  headers = {},
+  useBaseUrl = true
+) {
+  if (useBaseUrl) {
+    url = baseUrl + url;
+  }
   let headers_ = useHeaderStore().getHeaders();
   headers_ = { ...headers_, ...headers };
   let response = null;
@@ -74,8 +84,14 @@ export async function sendGetRequest(url: string, params = {}, headers = {}) {
   }
 }
 
-export async function sendDeleteRequest(url: string, headers = {}) {
-  url = baseUrl + url;
+export async function sendDeleteRequest(
+  url: string,
+  headers = {},
+  useBaseUrl = true
+) {
+  if (useBaseUrl) {
+    url = baseUrl + url;
+  }
   let headers_ = useHeaderStore().getHeaders();
   headers_ = { ...headers_, ...headers };
   headers_["Content-Type"] = "application/json";
@@ -111,9 +127,12 @@ export async function sendDeleteRequest(url: string, headers = {}) {
 export async function sendJsonPatchRequest(
   url: string,
   jsonBody = {},
-  headers = {}
+  headers = {},
+  useBaseUrl = true
 ) {
-  url = baseUrl + url;
+  if (useBaseUrl) {
+    url = baseUrl + url;
+  }
   let headers_ = useHeaderStore().getHeaders();
   headers_ = { ...headers_, ...headers };
   headers_["Content-Type"] = "application/json";
@@ -147,8 +166,14 @@ export async function sendJsonPatchRequest(
   }
 }
 
-export async function sendFileDownloadRequest(url: string, headers = {}) {
-  url = baseUrl + url;
+export async function sendFileDownloadRequest(
+  url: string,
+  headers = {},
+  useBaseUrl = true
+) {
+  if (useBaseUrl) {
+    url = baseUrl + url;
+  }
   let headers_ = useHeaderStore().getHeaders();
   headers_ = { ...headers_, ...headers };
 
@@ -191,9 +216,12 @@ export async function sendFileUploadRequest(
   url: string,
   formName: string,
   formValue: string | Blob,
-  headers = {}
+  headers = {},
+  useBaseUrl = true
 ) {
-  url = baseUrl + url;
+  if (useBaseUrl) {
+    url = baseUrl + url;
+  }
   let headers_ = useHeaderStore().getHeaders();
   headers_ = { ...headers_, ...headers };
 
