@@ -8,6 +8,8 @@ export type Enrollment = {
   created_at: string;
   updated_at: string;
   price_adjustments: null | EnrollmentPriceAdjustment;
+  student_id: number;
+  course_id: number;
   course: Course | null;
   student: Student | null;
   status: EnrollmentStatus[];
