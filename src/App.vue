@@ -11,6 +11,7 @@ import AddNewModal from './components/formComponents/AddNewModal.vue';
 import ConfirmationModal from './components/formComponents/ConfirmationModal.vue';
 import ExtendablePopUp from './components/formComponents/ExtendablePopUp.vue';
 import LoadingScreen from '@/views/LoadingScreen.vue'
+import RightMenu from './components/RightMenu.vue';
 
 const authStore = useAuthStore()
 useSystemInfoStore()
@@ -66,6 +67,7 @@ checkLogged()
     <AddNewModal />
     <ConfirmationModal />
     <ExtendablePopUp />
+    <RightMenu />
   </div>
 </template>
 
