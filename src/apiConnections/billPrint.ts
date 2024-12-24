@@ -52,3 +52,11 @@ export function updateBillStatus(
   };
   return sendJsonPatchRequest(`/print-queue`, sendBody);
 }
+
+export function getGeneratedBillData(billId: number) {
+  return sendGetRequest("/print-queue/bill", { bill_id: billId });
+}
+
+export async function sendBillPrintCommand(jsonData: string) {
+  return sendJsonPostRequest("http://127.0.0.1:9000/bill", jsonData, {}, false);
+}

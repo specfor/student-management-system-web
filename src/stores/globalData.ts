@@ -25,7 +25,7 @@ export const useglobalDataStore = defineStore("globalDataStore", () => {
   if (!fetchedStudents)
     setInterval(() => {
       loadStudents();
-    }, 5000);
+    }, 10000);
 
   async function loadCourses() {
     const resp = await getCourses(0, 1000, {
@@ -40,7 +40,7 @@ export const useglobalDataStore = defineStore("globalDataStore", () => {
   if (!fetchedCourses)
     setInterval(() => {
       loadCourses();
-    }, 5000);
+    }, 10000);
 
   async function findStudent(id: number) {
     if (!fetchedStudents) await loadStudents();
