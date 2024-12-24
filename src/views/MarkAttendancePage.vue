@@ -15,6 +15,7 @@ import type { Course } from '@/types/courseTypes';
 import type { Student } from '@/types/studentTypes';
 import TableComponent, { type Filter, type TableActionType, type TableColumns, type tableRowItem } from '@/components/TableComponent.vue';
 import type { Attendance } from '@/types/attendanceTypes';
+import BillEnroller from '@/components/BillEnroller.vue';
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
@@ -25,6 +26,10 @@ let studentOptionFields: Ref<{ text: string, value: any }[]> = ref([])
 let courses: Course[] = []
 let students: Student[] = []
 
+
+const showBillEnroller = ref(false)
+const billEnrollerStudentId = ref(0)
+const paymentIdForBillEnroller = ref(0)
 
 async function init() {
     enrollStatusText.value = 'Select a Course & a Student'
@@ -183,11 +188,19 @@ async function markPayment() {
     if (confirmed.data.custom_amount != '')
         fee = confirmed.data.custom_amount as number
 
+    let shouldShowBillEnroller = true
     let resp = await createStudentPayment((enrollmentData.value!.enrollment as Enrollment).id, fee, confirmed.data.time as string, confirmed.data.custom_amount != '', confirmed.data.reason as string)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
     } else {
+        paymentIdForBillEnroller.value = resp.data.payment.id
+        shouldShowBillEnroller = true
         alertStore.insertAlert('Action completed.', resp.message)
+    }
+
+    if (shouldShowBillEnroller) {
+        billEnrollerStudentId.value = selectedStudentData.value!['id'];
+        showBillEnroller.value = true
     }
     enrollActionsEnabled.value = true
     checkEnrolled()
@@ -458,4 +471,6 @@ function selectForMarking(attendId: number) {
                 setSorting(col, dir); loadStudents();
             }" :current-sorting="{ column: 'Custom ID', direc: 'desc' }"  -->
     </div>
+    <BillEnroller :show="showBillEnroller" :student-id="billEnrollerStudentId" :payment-id="paymentIdForBillEnroller"
+        @close="showBillEnroller = false" />
 </template>

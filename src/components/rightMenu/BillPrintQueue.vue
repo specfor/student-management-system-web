@@ -47,10 +47,15 @@ async function loadBills() {
 loadBills()
 
 watch(filterStatus, loadBills)
+
+function removeBill(id: number, status: typeof bills.value[0]['status']) {
+    if (status != filterStatus.value)
+        bills.value = bills.value.filter(b => b.id != id)
+}
 </script>
 
 <template>
-    <div class="w-full h-full p-4">
+    <div class="w-full h-full max-h-screen p-4">
         <h1 class="font-semibold text-xl text-center mb-5">Bill Print Queue</h1>
 
         <div class="mb-3">
@@ -69,13 +74,12 @@ watch(filterStatus, loadBills)
             <h4>No Bills in queue to print.</h4>
         </div>
 
-        <div v-show="bills.length != 0" class="">
-            <div v-for="bill in bills" :key="bill.id">
-                <BillCard :bill-id="bill.id" :bill-value="bill.billValue" :payment-data="bill.paymentData"
-                    :student-id="bill.studentId" :student-custom-id="bill.studentCustomId"
-                    :stduent-name="bill.studentName" :status="bill.status" class="mt-3" />
 
-            </div>
+        <div v-show="bills.length != 0" class="overflow-y-auto h-[80%]">
+            <BillCard v-for="bill in bills" :key="bill.id" :bill-id="bill.id" :bill-value="bill.billValue"
+                :payment-data="bill.paymentData" :student-id="bill.studentId" :student-custom-id="bill.studentCustomId"
+                :stduent-name="bill.studentName" :status="bill.status" class="mt-3"
+                @action-complete="(status) => { removeBill(bill.id, status) }" />
         </div>
     </div>
 </template>
