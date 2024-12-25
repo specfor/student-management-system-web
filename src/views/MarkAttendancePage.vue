@@ -188,7 +188,7 @@ async function markPayment() {
     if (confirmed.data.custom_amount != '')
         fee = confirmed.data.custom_amount as number
 
-    let shouldShowBillEnroller = true
+    let shouldShowBillEnroller = false
     let resp = await createStudentPayment((enrollmentData.value!.enrollment as Enrollment).id, fee, confirmed.data.time as string, confirmed.data.custom_amount != '', confirmed.data.reason as string)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
