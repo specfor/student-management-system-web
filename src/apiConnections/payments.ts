@@ -139,3 +139,12 @@ export function markInstructorPayment(
 export function deleteInstructorPayment(payment_id: number) {
   return sendDeleteRequest(`/instructor-payments/${payment_id}`);
 }
+
+export function getInstructorPaymentSummary(year: number, month: number) {
+  const params = {
+    year,
+    month,
+  };
+
+  return sendGetRequest("/instructor-payments/summary", params);
+}
