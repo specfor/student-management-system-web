@@ -59,6 +59,7 @@ checkLogged()
         </div>
         <RouterView class="pt-8" />
       </div>
+      <RightMenu />
     </div>
     <div v-if="!authStore.LoggedIn">
       <RouterView />
@@ -67,7 +68,6 @@ checkLogged()
     <AddNewModal />
     <ConfirmationModal />
     <ExtendablePopUp />
-    <RightMenu />
   </div>
 </template>
 
