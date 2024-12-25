@@ -60,13 +60,15 @@ function removeBill(id: number, status: typeof bills.value[0]['status']) {
 
         <div class="mb-3">
             <p class="font-semibold text-lg">Filters</p>
-            <div class="grid grid-cols-2 items-center ml-5">
+            <div class="grid grid-cols-2 gap-x-5 items-center ml-5">
                 <div class="grid grid-cols-3 items-center">
                     <p>Status</p>
                     <SelectionBox :value="filterStatus" @input="(val) => { filterStatus = val }"
                         :options="[{ text: 'PENDING', value: 'pending' }, { text: 'CANCELLED', value: 'cancelled' }, { text: 'PRINTED', value: 'printed' }]"
                         class="col-span-2" />
                 </div>
+                <button @click="loadBills"
+                    class="font-semibold bg-stone-600 hover:bg-stone-800 w-fit px-4 justify-self-end py-1 text-white rounded-md">Refresh</button>
             </div>
         </div>
 

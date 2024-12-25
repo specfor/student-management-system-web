@@ -40,10 +40,12 @@ async function setBillStatus(status: typeof props.status) {
             error.body = bResp.message
         } else {
             let pResp = await sendBillPrintCommand(bResp.data.bill)
-            if (pResp.status == 'success' && pResp.data.code != 0) {
-                error.occured = true
-                error.header = 'Error printing receipt'
-                error.body = pResp.data.message
+            if (pResp.status == 'success') {
+                if (pResp.data.code != 0) {
+                    error.occured = true
+                    error.header = 'Error printing receipt'
+                    error.body = pResp.data.message
+                }
             }
             else {
                 error.occured = true
