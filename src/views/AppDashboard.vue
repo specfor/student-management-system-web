@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { getMonthlyFinancialSummary, getStudentCount } from '@/apiConnections/analytics';
 import CollapseCard from '@/components/minorUiComponents/CollapseCard.vue';
+import SelectionBox from '@/components/primary/SelectionBox.vue';
 import { formatMoney } from '@/utils/money';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import { ref, type Ref } from 'vue';
@@ -11,6 +12,7 @@ ChartJS.register(ArcElement, Tooltip, Legend)
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
 const selectedMonthForIncome = ref(`${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}`)
+const paymentCalculateType: Ref<"marked" | "paid_to"> = ref("paid_to")
 
 const studentCountData: Ref<{
     labels: string[];
@@ -80,7 +82,8 @@ async function loadStudentCount() {
 loadStudentCount()
 
 async function loadMonthlyIncomeSummary() {
-    let resp = await getMonthlyFinancialSummary(Number(selectedMonthForIncome.value.substring(0, 4)), Number(selectedMonthForIncome.value.substring(5)))
+    let byMarkedMonth = paymentCalculateType.value == 'marked'
+    let resp = await getMonthlyFinancialSummary(Number(selectedMonthForIncome.value.substring(0, 4)), Number(selectedMonthForIncome.value.substring(5)), byMarkedMonth)
     if (resp.status === 'success') {
         incomeData.value = resp.data.income
         expenseData.value = resp.data.expenses
@@ -120,9 +123,10 @@ loadMonthlyIncomeSummary()
                                 v-model="selectedMonthForIncome" @change="loadMonthlyIncomeSummary" />
                         </div>
                         <div class="grid grid-cols-2 justify-items-center mb-5 items-center">
-                            <h5>Select Month</h5>
-                            <input type="month" class="w-full border rounded-md px-2 py-1"
-                                v-model="selectedMonthForIncome" @change="loadMonthlyIncomeSummary" />
+                            <h5>Calculate By Payment</h5>
+                            <SelectionBox :value="paymentCalculateType"
+                                @input="(val) => { paymentCalculateType = val; loadMonthlyIncomeSummary() }"
+                                :options="[{ text: 'Marked Month', value: 'marked' }, { text: 'Paid To Month', value: 'paid_to' }]" />
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2">
@@ -149,7 +153,7 @@ loadMonthlyIncomeSummary()
                                 <h5>Total Expenses</h5>
                                 <p>{{ expenseData.total_expenses.currency }} {{
                                     formatMoney(expenseData.total_expenses.amount)
-                                }}
+                                    }}
                                 </p>
                             </div>
                         </div>
