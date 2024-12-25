@@ -61,39 +61,41 @@ const routes: (
 </script>
 
 <template>
-    <div class="relative h-full" :class="expanded ? 'w-[200px]' : 'w-[70px]'">
-        <div class="fixed overflow-y-auto overflow-x-hidden bg-blue-950" :class="expanded ? 'w-[200px]' : 'w-[70px]'">
-            <div class="h-screen pt-3">
-                <!-- <div class="hover:bg-blue-700 py-2 mb-4 cursor-pointer" @click="expanded = !expanded">
+    <div class="" :class="expanded ? 'w-[200px]' : 'w-[70px]'">
+        <div class="fixed top-14 bottom-0 h-full">
+            <div class="h-full overflow-x-hidden bg-blue-950" :class="expanded ? 'w-[200px]' : 'w-[70px]'">
+                <div class="h-fit overflow-y-auto mb-16">
+                    <!-- <div class="hover:bg-blue-700 py-2 mb-4 cursor-pointer" @click="expanded = !expanded">
                     <Bars3Icon class="h-6 w-6 ml-4 text-white" />
                 </div> -->
 
-                <template v-for="(route, index) in routes" :key="index">
-                    <RouterLink v-if="route.type === 'link'" :to="route.path!"
-                        class="flex items-center py-2 px-4 w-full text-white hover:bg-blue-700"
-                        active-class="bg-blue-600">
-                        <component :is="route.icon" class="h-6 w-6 mr-3" />
-                        {{ route.text }}
-                    </RouterLink>
+                    <template v-for="(route, index) in routes" :key="index">
+                        <RouterLink v-if="route.type === 'link'" :to="route.path!"
+                            class="flex items-center py-2 px-4 w-full text-white hover:bg-blue-700"
+                            active-class="bg-blue-600">
+                            <component :is="route.icon" class="h-6 w-6 mr-3" />
+                            {{ route.text }}
+                        </RouterLink>
 
-                    <MenuBarCollapse v-else-if="route.type == 'group'" :key="route.text">
-                        <template v-slot:header>
-                            <div class="py-2 px-4 w-full text-white hover:bg-blue-700 flex">
-                                <component :is="route.icon" class="h-6 w-6 mr-3" />
-                                {{ route.text }}
-                            </div>
-                        </template>
+                        <MenuBarCollapse v-else-if="route.type == 'group'" :key="route.text">
+                            <template v-slot:header>
+                                <div class="py-2 px-4 w-full text-white hover:bg-blue-700 flex">
+                                    <component :is="route.icon" class="h-6 w-6 mr-3" />
+                                    {{ route.text }}
+                                </div>
+                            </template>
 
-                        <template v-for="child in route.children" :key="child.path">
-                            <RouterLink :to="child.path!" class="flex py-2 px-4 w-full text-white hover:bg-blue-700"
-                                active-class="bg-blue-600">
-                                <p>{{ child.text }}</p>
-                            </RouterLink>
-                        </template>
-                    </MenuBarCollapse>
+                            <template v-for="child in route.children" :key="child.path">
+                                <RouterLink :to="child.path!" class="flex py-2 px-4 w-full text-white hover:bg-blue-700"
+                                    active-class="bg-blue-600">
+                                    <p>{{ child.text }}</p>
+                                </RouterLink>
+                            </template>
+                        </MenuBarCollapse>
 
-                    <div v-else-if="route.type == 'seperator'" class="h-1 bg-black mx-2 rounded-xl my-3"></div>
-                </template>
+                        <div v-else-if="route.type == 'seperator'" class="h-1 bg-black mx-2 rounded-xl my-3"></div>
+                    </template>
+                </div>
             </div>
         </div>
     </div>
