@@ -1,6 +1,6 @@
 <!-- eslint-disable no-constant-condition -->
 <script setup lang="ts">
-import { deleteInstructorPayment, getInstructorPayments, refundStudentPayment } from '@/apiConnections/payments';
+import { deleteInstructorPayment, getInstructorPayments, getInstructorPaymentSummary, refundStudentPayment } from '@/apiConnections/payments';
 import TableComponent, { type Filter, type TableActionType, type TableColumns, type tableRowItem } from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
@@ -9,9 +9,11 @@ import { onMounted, ref, watch, type Ref } from 'vue';
 import { getRouteQuery, setRoute, setRouteQuery } from '@/utils/routeHelpers';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { getInstructors } from '@/apiConnections/instructors';
-import type { InstructorPayment } from '@/types/paymentTypes';
+import type { InstructorPayment, InstructorPaymentSummary } from '@/types/paymentTypes';
 import type { Instructor } from '@/types/InstructorTypes';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
+import SelectionBox from '@/components/primary/SelectionBox.vue';
+import { formatMoney } from '@/utils/money';
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
@@ -130,7 +132,7 @@ async function loadPayments(startIndex?: number, filters?: { [key: string]: any 
             pendingResolved.css = 'bg-red-200 text-red-800'
 
         paymentData.value.push([payment.id, payment.paid_month, instructor,
-        `${payment.tot_amount.currency} ${payment.tot_amount.amount}`, `${payment.tot_pending_amount.currency} ${payment.tot_pending_amount.amount}`,
+        `${payment.tot_amount.currency} ${formatMoney(payment.tot_amount.amount)}`, `${payment.tot_pending_amount.currency} ${formatMoney(payment.tot_pending_amount.amount)}`,
             pendingResolved, new Date(payment.created_at).toLocaleString()])
     });
 }
@@ -192,19 +194,74 @@ async function delPayment(ids: number[]) {
 function newPayment() {
     setRoute('/payments/instructors/calculate')
 }
+
+const summaryTableColumns: TableColumns[] = [
+    { label: 'ID' }, { label: 'Instructor' }, { label: 'Paid Total' }, { label: 'Total Payables' }, { label: 'Full Payment' },]
+
+
+const summaryTableActions: TableActionType[] = [
+    { renderAsRouterLink: false, type: 'icon', emit: 'moreInfoEmit', icon: MagnifyingGlassIcon, css: 'fill-blue-600' }
+]
+
+const summaryTableRows: Ref<tableRowItem[][]> = ref([]);
+
+const selectedMonth = ref(`${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}`)
+const countInstructors = ref(0)
+
+async function loadPaymentSummary() {
+    const year = selectedMonth.value.substring(0, 4)
+    const month = selectedMonth.value.substring(5)
+
+    let resp = await getInstructorPaymentSummary(Number(year), Number(month))
+    if (resp.status == 'success') {
+        summaryTableRows.value = [];
+        countInstructors.value = resp.data.summary.length;
+        (resp.data.summary as InstructorPaymentSummary).forEach((instructorPayment) => {
+            let solved: tableRowItem = { type: 'colorTag', text: 'Unpaid', css: 'bg-red-300 text-red-700' }
+            if (instructorPayment.total_payable.amount == '0') {
+                solved = { type: 'colorTag', text: 'Paid', css: 'bg-green-300 text-green-700' }
+            }
+            let row: tableRowItem[] = [instructorPayment.id, instructorPayment.name,
+            `${instructorPayment.total_paid.currency} ${formatMoney(instructorPayment.total_paid.amount)}`,
+            `${instructorPayment.total_payable.currency} ${formatMoney(instructorPayment.total_payable.amount)}`, solved]
+            summaryTableRows.value.push(row)
+        })
+
+    }
+}
+
+loadPaymentSummary()
+
+function moreInfoSummaryTable(id: number) {
+    setRoute('/payments/instructors/calculate?i_id=' + id + '&m=' + selectedMonth.value)
+}
 </script>
 
 <template>
     <div class="container">
         <div class="flex justify-between items-center mb-10">
-            <h4 class="font-semibold text-3xl">Instructor Payments</h4>
-        </div>
-
-        <div class="flex justify-end mb-16">
+            <h4 class="font-semibold text-3xl">Payment Summary</h4>
             <NewItemButton text="Mark Payment" :on-click="newPayment" />
         </div>
 
-        <div class="mb-10">
+        <div class="">
+            <div class="grid grid-cols-2 justify-items-center mb-5 items-center">
+                <div class="grid grid-cols-2 justify-items-center mb-5 items-center">
+                    <h5>Select Month</h5>
+                    <input type="month" class="w-full border rounded-md px-2 py-1" v-model="selectedMonth"
+                        @change="loadPaymentSummary" />
+                </div>
+            </div>
+
+            <TableComponent :table-columns="summaryTableColumns" :actions="summaryTableActions"
+                :table-rows="summaryTableRows"
+                :options="{ hideActionBar: true, showRowCheckBox: false, hidePaginateBar: true }"
+                :paginate-total="countInstructors" @more-info-emit="moreInfoSummaryTable" />
+        </div>
+
+        <h4 class="font-semibold text-3xl mt-10">Payments</h4>
+
+        <div class="my-10">
             <TableComponent :table-columns="tableColumns" :table-rows="paymentData" @more-info-emit="moreInfo"
                 :actions="tableActions" :refresh-func="async () => { await loadPayments(); return true }"
                 @delete-emit="delPayment" @load-page-emit="loadPayments" :paginate-page-size="limitLoadPayments"

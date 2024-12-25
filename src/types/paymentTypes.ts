@@ -68,3 +68,21 @@ export type StudentPaymentListingResponse = {
     }[];
   };
 };
+
+export type InstructorPaymentSummary = {
+  id: number;
+  name: string;
+  total_paid: APIMoney;
+  total_payable: APIMoney;
+  max_payment: APIMoney;
+  count_payments_resolved: number;
+  count_payments_unresolved: number;
+  coursewise?: {
+    course_name: string;
+    total_paid: APIMoney;
+    total_payable: APIMoney;
+    max_payment: APIMoney;
+    count_payments_resolved: number;
+    count_payments_unresolved: number;
+  }[];
+}[];

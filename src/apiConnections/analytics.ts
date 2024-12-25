@@ -4,10 +4,15 @@ export function getStudentCount() {
   return sendGetRequest("/analytics/students/count");
 }
 
-export function getMonthlyFinancialSummary(year: number, month: number) {
+export function getMonthlyFinancialSummary(
+  year: number,
+  month: number,
+  byMarkedMonth: boolean
+) {
   return sendGetRequest("/analytics/summary/financial", {
     year,
     month,
+    use_marked_month: byMarkedMonth,
   });
 }
 
