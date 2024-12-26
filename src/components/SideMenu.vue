@@ -4,7 +4,7 @@ import { storeToRefs } from 'pinia';
 import { RouterLink } from 'vue-router';
 import {
     BanknotesIcon, UsersIcon, Squares2X2Icon, AcademicCapIcon, UserGroupIcon, BookOpenIcon, RocketLaunchIcon, IdentificationIcon,
-    FolderOpenIcon, BookmarkIcon, DocumentChartBarIcon, ChartBarIcon, Cog8ToothIcon, Bars3Icon
+    FolderOpenIcon, BookmarkIcon, DocumentChartBarIcon, ChartBarIcon, Cog8ToothIcon, Bars3Icon,
 } from '@heroicons/vue/24/outline';
 import MenuBarCollapse from './minorUiComponents/MenuBarCollapse.vue';
 import { ref, type FunctionalComponent } from 'vue';
@@ -12,7 +12,7 @@ import { ref, type FunctionalComponent } from 'vue';
 const authStore = useAuthStore()
 let { userPermissions } = storeToRefs(authStore)
 
-const expanded = ref(true)
+const expanded = ref(false)
 
 type link = { type: 'link', path: string, icon?: FunctionalComponent, text: string, permissions?: boolean }
 
@@ -61,34 +61,36 @@ const routes: (
 </script>
 
 <template>
-    <div class="" :class="expanded ? 'w-[200px]' : 'w-[70px]'">
+    <div class="" :class="expanded ? 'w-[200px]' : 'w-[60px]'">
         <div class="fixed top-14 bottom-0 h-full">
-            <div class="h-full overflow-x-hidden bg-blue-950" :class="expanded ? 'w-[200px]' : 'w-[70px]'">
+            <div class="h-full overflow-x-hidden bg-blue-950" :class="expanded ? 'w-[200px]' : 'w-[60px]'">
                 <div class="h-fit overflow-y-auto mb-16">
-                    <!-- <div class="hover:bg-blue-700 py-2 mb-4 cursor-pointer" @click="expanded = !expanded">
-                    <Bars3Icon class="h-6 w-6 ml-4 text-white" />
-                </div> -->
-
+                    <div class="py-2 px-4 w-full text-white hover:bg-blue-700 flex mb-2 cursor-pointer"
+                        @click="expanded = !expanded">
+                        <Bars3Icon class="w-6 h-6" />
+                        <p v-show="expanded" class="ml-3">Collapse</p>
+                    </div>
                     <template v-for="(route, index) in routes" :key="index">
                         <RouterLink v-if="route.type === 'link'" :to="route.path!"
                             class="flex items-center py-2 px-4 w-full text-white hover:bg-blue-700"
                             active-class="bg-blue-600">
-                            <component :is="route.icon" class="h-6 w-6 mr-3" />
-                            {{ route.text }}
+                            <component :is="route.icon" class="h-6 w-6" />
+                            <p v-show="expanded" class="ml-3">{{ route.text }}</p>
                         </RouterLink>
 
-                        <MenuBarCollapse v-else-if="route.type == 'group'" :key="route.text">
+                        <MenuBarCollapse v-else-if="route.type == 'group'" :key="route.text" @click="expanded = true"
+                            :options="{ hideExpandCollapseIcons: !expanded }">
                             <template v-slot:header>
                                 <div class="py-2 px-4 w-full text-white hover:bg-blue-700 flex">
-                                    <component :is="route.icon" class="h-6 w-6 mr-3" />
-                                    {{ route.text }}
+                                    <component :is="route.icon" class="h-6 w-6" />
+                                    <p v-show="expanded" class="ml-3">{{ route.text }}</p>
                                 </div>
                             </template>
 
                             <template v-for="child in route.children" :key="child.path">
                                 <RouterLink :to="child.path!" class="flex py-2 px-4 w-full text-white hover:bg-blue-700"
                                     active-class="bg-blue-600">
-                                    <p>{{ child.text }}</p>
+                                    <p v-show="expanded">{{ child.text }}</p>
                                 </RouterLink>
                             </template>
                         </MenuBarCollapse>
