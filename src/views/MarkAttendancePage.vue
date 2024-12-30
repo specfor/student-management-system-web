@@ -263,67 +263,67 @@ function calculateFee() {
 init()
 
 
-const dataForTable: Ref<any[]> = ref([])
-const countTotAttendances = ref(0)
+// const dataForTable: Ref<any[]> = ref([])
+// const countTotAttendances = ref(0)
 
-const tableActions: TableActionType[] = [
-    { renderAsRouterLink: false, type: 'text', emit: 'Select', text: 'Select', css: 'fill-blue-600 w-5' },
-]
-const tableColumns: TableColumns[] = [
-    { label: 'ID' }, { label: 'Student' }, { label: 'Course' }, { label: 'Date' }, { label: 'Marked Automaticaly' },
-]
+// const tableActions: TableActionType[] = [
+//     { renderAsRouterLink: false, type: 'text', emit: 'Select', text: 'Select', css: 'fill-blue-600 w-5' },
+// ]
+// const tableColumns: TableColumns[] = [
+//     { label: 'ID' }, { label: 'Student' }, { label: 'Course' }, { label: 'Date' }, { label: 'Marked Automaticaly' },
+// ]
 // const tableFilters: Filter[] = [{ name: 'name', label: 'Name', type: 'text' }, { name: 'custom_id', label: 'Custom Id', type: 'text' },
 // { name: 'phone_number', type: 'text', label: 'Phone Number' }, { name: 'email', type: 'text', label: 'Email' },
 // { name: 'admission_paid', label: 'Admission Paid', type: 'select', options: [{ text: 'Paid', value: true }, { text: 'Not Paid', value: false }] }]
 
-let attendanceData: Attendance[] = []
+// let attendanceData: Attendance[] = []
 
-async function loadAttendances(startIndex?: number, filters?: any) {
-    let resp = await getAttendace(startIndex, 20, { filters, sort: { by: "id", direction: 'desc' } })
+// async function loadAttendances(startIndex?: number, filters?: any) {
+//     let resp = await getAttendace(startIndex, 20, { filters, sort: { by: "id", direction: 'desc' } })
 
-    await new Promise(resolve => {
-        const checkStudents = setInterval(() => {
-            if (students.length > 0) {
-                clearInterval(checkStudents);
-                resolve(true);
-            }
-        }, 100);
-    });
-    if (resp.status == 'success') {
-        countTotAttendances.value = resp.data.tot_count;
-        attendanceData = resp.data.records
-        dataForTable.value = [];
-        (resp.data.records as Attendance[]).forEach(attend => {
-            let studentName = students.find(s => s.id == attend.student_id)?.name
-            let student = { type: 'textWithLink', text: studentName, url: `/students/${attend.student_id}/view` }
-            let course = courses.find(c => c.id == attend.course_id)
-            let courseName = course?.name
-            let markedAuto: tableRowItem = {
-                type: 'colorTag', text: attend.marked_automatically ? 'Yes' : 'No',
-                css: attend.marked_automatically ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700'
-            }
+//     await new Promise(resolve => {
+//         const checkStudents = setInterval(() => {
+//             if (students.length > 0) {
+//                 clearInterval(checkStudents);
+//                 resolve(true);
+//             }
+//         }, 100);
+//     });
+//     if (resp.status == 'success') {
+//         countTotAttendances.value = resp.data.tot_count;
+//         attendanceData = resp.data.records
+//         dataForTable.value = [];
+//         (resp.data.records as Attendance[]).forEach(attend => {
+//             let studentName = students.find(s => s.id == attend.student_id)?.name
+//             let student = { type: 'textWithLink', text: studentName, url: `/students/${attend.student_id}/view` }
+//             let course = courses.find(c => c.id == attend.course_id)
+//             let courseName = course?.name
+//             let markedAuto: tableRowItem = {
+//                 type: 'colorTag', text: attend.marked_automatically ? 'Yes' : 'No',
+//                 css: attend.marked_automatically ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700'
+//             }
 
-            if (course?.group_name) {
-                courseName += ' - ' + course.group_name
-            }
+//             if (course?.group_name) {
+//                 courseName += ' - ' + course.group_name
+//             }
 
-            dataForTable.value.push([attend.id, student, courseName, attend.date, markedAuto])
-        });
-    }
-}
+//             dataForTable.value.push([attend.id, student, courseName, attend.date, markedAuto])
+//         });
+//     }
+// }
 
-loadAttendances()
+// loadAttendances()
 
-function selectForMarking(attendId: number) {
-    let attendance = attendanceData.find(a => a.id == attendId)
-    selectedCourseId.value = attendance!.course_id
-    selectedStudentId.value = attendance!.student_id
-}
+// function selectForMarking(attendId: number) {
+//     let attendance = attendanceData.find(a => a.id == attendId)
+//     selectedCourseId.value = attendance!.course_id
+//     selectedStudentId.value = attendance!.student_id
+// }
 </script>
 
 <template>
     <div class="container">
-        <div class="flex items-center">
+        <div class="flex items-center pt-10">
             <h4 class="mr-5 font-semibold">Select a Course</h4>
             <SelectionBox :options="courseGroupOptionFields" :value="selectedCourseGroup"
                 @input="(val) => { selectedCourseGroup = val }" class="w-[300px] mr-5" />
@@ -454,13 +454,12 @@ function selectForMarking(attendId: number) {
                 </button>
             </div>
         </div>
-
-
+        <!-- 
         <h5 class="font-semibold text-xl mb-10">Marked Attendences</h5>
 
         <TableComponent :table-columns="tableColumns" :table-rows="dataForTable" :actions="tableActions"
             :refresh-func="async () => { await loadAttendances(); return true }" :paginate-total="countTotAttendances"
-            :paginate-page-size="20" @load-page-emit="loadAttendances" @select="selectForMarking" />
+            :paginate-page-size="20" @load-page-emit="loadAttendances" @select="selectForMarking" /> -->
         <!--:filters="tableFilters" @filter-values="(val) => {
                 loadStudents(undefined, val)
             }"  -->
