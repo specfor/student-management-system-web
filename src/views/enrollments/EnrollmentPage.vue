@@ -8,7 +8,7 @@ import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { PencilSquareIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/solid';
-import { ref, type Ref } from 'vue';
+import { ref, watch, type Ref } from 'vue';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { getRouteQuery, setRoute, setRouteQuery } from '@/utils/routeHelpers';
 import { getStudentPayments } from '@/apiConnections/payments';
@@ -69,41 +69,41 @@ function checkRequiredDataAvailability() {
     })
 }
 
-// watch(selectedInstructorId, () => {
-//     setRouteQuery('i_id', selectedInstructorId.value)
-//     lastLoadSettings.lastUsedIndex = 0
-//     loadEnrollments()
-// })
+watch(selectedInstructorId, () => {
+    setRouteQuery('i_id', selectedInstructorId.value)
+    lastLoadSettings.lastUsedIndex = 0
+    loadEnrollments()
+})
 
-// watch(selectedStudentId, () => {
-//     setRouteQuery('s_id', selectedStudentId.value)
-//     lastLoadSettings.lastUsedIndex = 0
-//     loadEnrollments();
-// })
+watch(selectedStudentId, () => {
+    setRouteQuery('s_id', selectedStudentId.value)
+    lastLoadSettings.lastUsedIndex = 0
+    loadEnrollments();
+})
 
-// watch(selectedCourseId, () => {
-//     setRouteQuery('c_id', selectedCourseId.value)
-//     lastLoadSettings.lastUsedIndex = 0
-//     loadEnrollments()
-// })
+watch(selectedCourseId, () => {
+    setRouteQuery('c_id', selectedCourseId.value)
+    lastLoadSettings.lastUsedIndex = 0
+    loadEnrollments()
+})
 
 let lastLoadSettings: {
     lastUsedIndex: number, orderBy: string, orderDirec: 'asc' | 'desc',
     filters?: { instructor_id?: number, course_id?: number, student_id?: number, }
 } = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc', filters: {} }
 
-// let routeStudentId = getRouteQuery('s_id')
-// if (routeStudentId !== null) {
-//     lastLoadSettings.filters!.student_id = Number(routeStudentId)
-// }
-// let routeCourseId = getRouteQuery('c_id')
-// if (routeCourseId !== null) {
-//     lastLoadSettings.filters!.course_id = Number(routeCourseId)
-// }
-// let routeInstructorId = getRouteQuery('i_id')
-// if (routeInstructorId !== null) {
-//     lastLoadSettings.filters!.instructor_id = Number(routeInstructorId)
-// }
+let routeStudentId = getRouteQuery('s_id')
+if (routeStudentId !== null) {
+    lastLoadSettings.filters!.student_id = Number(routeStudentId)
+}
+let routeCourseId = getRouteQuery('c_id')
+if (routeCourseId !== null) {
+    lastLoadSettings.filters!.course_id = Number(routeCourseId)
+}
+let routeInstructorId = getRouteQuery('i_id')
+if (routeInstructorId !== null) {
+    lastLoadSettings.filters!.instructor_id = Number(routeInstructorId)
+}
 
 async function loadEnrollments(startIndex?: number, filters?: any) {
     if (startIndex === undefined)
