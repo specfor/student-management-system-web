@@ -86,6 +86,7 @@ export async function sendGetRequest(
 
 export async function sendDeleteRequest(
   url: string,
+  jsonBody?: any,
   headers = {},
   useBaseUrl = true
 ) {
@@ -98,11 +99,14 @@ export async function sendDeleteRequest(
 
   let response = null;
   try {
-    response = await fetch(url, {
+    const body: RequestInit = {
       method: "DELETE",
       headers: headers_,
       credentials: "same-origin",
-    });
+    };
+    if (jsonBody) body["body"] = JSON.stringify(jsonBody);
+
+    response = await fetch(url, body);
   } catch (e) {
     return {
       status: "error",
