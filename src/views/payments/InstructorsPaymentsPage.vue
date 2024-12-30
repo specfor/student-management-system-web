@@ -12,7 +12,6 @@ import { getInstructors } from '@/apiConnections/instructors';
 import type { InstructorPayment, InstructorPaymentSummary } from '@/types/paymentTypes';
 import type { Instructor } from '@/types/InstructorTypes';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
-import SelectionBox from '@/components/primary/SelectionBox.vue';
 import { formatMoney } from '@/utils/money';
 
 const dataEntryForm = useDataEntryFormsStore()
