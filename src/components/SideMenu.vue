@@ -4,7 +4,7 @@ import { storeToRefs } from 'pinia';
 import { RouterLink } from 'vue-router';
 import {
     BanknotesIcon, UsersIcon, Squares2X2Icon, AcademicCapIcon, UserGroupIcon, BookOpenIcon, RocketLaunchIcon, IdentificationIcon,
-    FolderOpenIcon, BookmarkIcon, DocumentChartBarIcon, ChartBarIcon, Cog8ToothIcon, Bars3Icon,
+    FolderOpenIcon, BookmarkIcon, Cog8ToothIcon, Bars3Icon,
 } from '@heroicons/vue/24/outline';
 import MenuBarCollapse from './minorUiComponents/MenuBarCollapse.vue';
 import { ref, type FunctionalComponent } from 'vue';
@@ -42,7 +42,8 @@ const routes: (
         {
             type: 'group', text: 'Payments', icon: BanknotesIcon, permissions: checkPermissions('payments') || checkPermissions('instructor_payments'), children: [
                 { type: 'link', path: '/payments/students', text: 'Student Payments', permissions: checkPermissions('payments') },
-                { type: 'link', path: '/payments/instructors', text: 'Instructor Payments', permissions: checkPermissions('instructor_payments') }
+                { type: 'link', path: '/payments/instructors', text: 'Instructor Payments', permissions: checkPermissions('instructor_payments') },
+                { type: 'link', path: '/expenses', text: 'Expenses', permissions: checkPermissions('expenses') }
             ]
         },
         { type: 'link', path: '/courses', text: 'Courses', icon: BookOpenIcon, permissions: checkPermissions('courses') },

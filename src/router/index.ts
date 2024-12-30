@@ -19,6 +19,7 @@ import InstructorsPaymentsPage from "@/views/payments/InstructorsPaymentsPage.vu
 import InstructorPaymentCalculator from "@/views/payments/InstructorPaymentCalculator.vue";
 import WhatsappSettings from "@/views/settings/WhatsappSettings.vue";
 import LmsClientSettings from "@/views/settings/LmsClientSettings.vue";
+import ExpensesPage from "@/views/ExpensesPage.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -122,6 +123,11 @@ const router = createRouter({
       path: "/settings/lms-client",
       name: "lms-client-settings",
       component: LmsClientSettings,
+    },
+    {
+      path: "/expenses",
+      name: "expenses",
+      component: ExpensesPage,
     },
     // {
     //   path: '/about',
