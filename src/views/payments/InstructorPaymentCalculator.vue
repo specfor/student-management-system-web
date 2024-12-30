@@ -15,10 +15,10 @@ const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
 
 const tableColumns: TableColumns[] = [
-    { label: '#' }, { label: 'Student' }, { label: 'Attendance' }, { label: 'Paid Amount' }, { label: 'Paid Date' },
+    { label: '#' }, { label: 'Student' }, { label: 'Attendance' }, { label: 'Paid Amount' }, { label: 'Student Paid On' },
     { label: "Paid Instructor's Share" }]
 const tableColumnsForOtherMonthPayments: TableColumns[] = [
-    { label: '#' }, { label: 'Student' }, { label: 'Attendance' }, { label: 'Paid Amount' }, { label: 'Paid Date' },
+    { label: '#' }, { label: 'Student' }, { label: 'Attendance' }, { label: 'Paid Amount' }, { label: 'Student Paid On' },
     { label: "Paid Instructor's Share" }]
 
 let selectedInstructorId = ref(0)
