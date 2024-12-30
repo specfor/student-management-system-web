@@ -6,6 +6,7 @@ import { formatMoney } from '@/utils/money';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import { ref, type Ref } from 'vue';
 import { Doughnut } from 'vue-chartjs'
+import autocolors from 'chartjs-plugin-autocolors';
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
@@ -48,14 +49,12 @@ const incomeDataForGraph: Ref<{
 const expenseDataForGraph: Ref<{
     labels: string[];
     datasets: {
-        backgroundColor: string[],
         data: number[]
     }[]
 }> = ref({
-    labels: ['As Instructor Salaries', 'Other Expenses'],
+    labels: ['As Instructor Salaries'],
     datasets: [
         {
-            backgroundColor: ['#CE9308', '#407CE3'],
             data: []
         }
     ]
@@ -70,7 +69,7 @@ const incomeData: Ref<{
 const expenseData: Ref<{
     total_expenses?: { amount: string, currency: string },
     instructor_salaries?: { amount: string, currency: string },
-    other_expenses?: { amount: string, currency: string },
+    other_expenses?: { [expenseCateg: string]: { amount: string, currency: string } },
 }> = ref({})
 
 async function loadStudentCount() {
@@ -87,6 +86,7 @@ async function loadMonthlyIncomeSummary() {
     if (resp.status === 'success') {
         incomeData.value = resp.data.income
         expenseData.value = resp.data.expenses
+
         incomeDataForGraph.value = {
             labels: ['As This Month Class Fees', 'As Delayed Payments', 'As Admission Fees'],
             datasets: [
@@ -97,11 +97,10 @@ async function loadMonthlyIncomeSummary() {
             ]
         }
         expenseDataForGraph.value = {
-            labels: ['As Instructor Salaries', 'Other Expenses'],
+            labels: ['As Instructor Salaries'].concat(Object.keys(expenseData.value.other_expenses!)),
             datasets: [
                 {
-                    backgroundColor: ['#CE9308', '#407CE3'],
-                    data: [Number(expenseData.value.instructor_salaries?.amount), Number(expenseData.value.other_expenses?.amount)]
+                    data: [Number(expenseData.value.instructor_salaries?.amount)].concat(Object.values(expenseData.value.other_expenses!).map((exp) => { return Number(exp.amount) }))
                 }
             ]
         }
@@ -133,7 +132,7 @@ loadMonthlyIncomeSummary()
                         <div>
                             <div class="w-full h-300px">
                                 <Doughnut :data="incomeDataForGraph"
-                                    :options="{ responsive: true, maintainAspectRatio: false }"
+                                    :options="{ responsive: true, maintainAspectRatio: false, }"
                                     v-if="incomeDataForGraph.datasets[0].data.length > 0" />
                             </div>
                             <div class="flex justify-center gap-x-10 mt-8" v-if="incomeData.total_income">
@@ -145,15 +144,20 @@ loadMonthlyIncomeSummary()
                         </div>
                         <div>
                             <div class="w-full h-300px">
-                                <Doughnut :data="expenseDataForGraph"
-                                    :options="{ responsive: true, maintainAspectRatio: false }"
-                                    v-if="expenseDataForGraph.datasets[0].data.length > 0" />
+                                <Doughnut :data="expenseDataForGraph" :plugins="[autocolors]" :options="{
+                                    responsive: true, maintainAspectRatio: false, plugins: {
+                                        autocolors: {
+                                            mode: 'data',
+                                            enabled: true
+                                        }
+                                    }
+                                }" v-if="expenseDataForGraph.datasets[0].data.length > 0" />
                             </div>
                             <div class="flex justify-center gap-x-10 mt-8" v-if="expenseData.total_expenses">
                                 <h5>Total Expenses</h5>
                                 <p>{{ expenseData.total_expenses.currency }} {{
                                     formatMoney(expenseData.total_expenses.amount)
-                                    }}
+                                }}
                                 </p>
                             </div>
                         </div>
