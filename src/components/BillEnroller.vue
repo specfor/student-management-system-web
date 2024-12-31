@@ -38,7 +38,7 @@ watch(selectedBillId, (val) => {
         disableSelectBtn.value = false
 })
 
-async function init() {
+async function loadBills() {
     let resp = await getBills(0, 100, {
         filters: {
             status: "pending"
@@ -48,13 +48,14 @@ async function init() {
         bills.value = resp.data.bills
     }
 }
-init()
+loadBills()
 
 async function selectBill() {
     disableSelectBtn.value = true
     let resp = await createBill(props.studentId, [props.paymentId], selectedBillId.value)
     if (resp.status == 'success') {
         alertStore.insertAlert('Receipt Created.', '')
+        loadBills()
         emit('close')
     } else {
         alertStore.insertAlert('Error Creating a Receipt', resp.message, 'error')
