@@ -28,3 +28,9 @@ export function getInstructorMonthyPaymentCalculations(
     payments_by: paymentsBy,
   });
 }
+
+export function getFinancialSummaryForMonths(monthsBackward: number) {
+  return sendGetRequest("/analytics/summary/financial/for-months", {
+    "months-backward": monthsBackward,
+  });
+}
