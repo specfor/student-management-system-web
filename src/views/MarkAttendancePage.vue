@@ -25,7 +25,7 @@ let courseGroupOptionFields: Ref<{ text: string, value: any }[]> = ref([])
 let studentOptionFields: Ref<{ text: string, value: any }[]> = ref([])
 let courses: Course[] = []
 let students: Student[] = []
-
+let studentEnrolledCourses: Ref<Course[]> = ref([])
 
 const showBillEnroller = ref(false)
 const billEnrollerStudentId = ref(0)
@@ -76,14 +76,13 @@ watch(showAllStudentsForSelection, (newVal) => {
 watch(selectedCourseGroup, async (gName) => {
     feeToPay.value = -1
     coursesOptionFields.value = []
-    let groups = courses.filter(c => c.name == gName)
-    if (groups.length === 1) {
-        selectedCourseId.value = groups[0].id
+    let coursesList = courses.filter(c => c.name == gName)
+    if (coursesList.length === 1) {
+        selectedCourseId.value = coursesList[0].id
     } else {
-        selectedCourseId.value = 0
         selectedCourseData.value = null
-        groups.forEach(group => {
-            coursesOptionFields.value.push({ value: group.id, text: group.group_name ? group.group_name : 'No Name' })
+        coursesList.forEach(course => {
+            coursesOptionFields.value.push({ value: course.id, text: course.group_name ? course.group_name : 'No Name' })
         })
     }
 })
@@ -98,6 +97,7 @@ watch(selectedCourseId, async (courseId) => {
 })
 watch(selectedStudentId, async (studentId) => {
     checkEnrolled()
+    loadEnrolledCourses(selectedStudentId.value)
     selectedStudentData.value = students.find(s => s.id == studentId)!
 
     studentImageUrl.value = ""
@@ -131,9 +131,33 @@ async function loadStudentsOfCourse(courseId: number) {
     }
 
     studentOptionFields.value = [];
+
+    let selectedStudentFoundInList = false;
     (resp.data.enrollments as Enrollment[]).forEach(enrollment => {
-        if (enrollment.student)
+        if (enrollment.student) {
             studentOptionFields.value.push({ text: enrollment.student.name, value: enrollment.student.id })
+            if (enrollment.student.id == selectedStudentId.value)
+                selectedStudentFoundInList = true
+        }
+    })
+    if (!selectedStudentFoundInList)
+        selectedStudentId.value = 0
+}
+
+async function loadEnrolledCourses(studentId: number) {
+    studentEnrolledCourses.value = [];
+    if (studentId == 0)
+        return
+
+    let resp = await getEnrollments(0, undefined, { filters: { student_id: studentId } })
+    if (resp.status === 'error') {
+        alertStore.insertAlert('An error occured.', resp.message, 'error')
+        return
+    }
+
+    (resp.data.enrollments as Enrollment[]).forEach(enrollment => {
+        if (enrollment.course)
+            studentEnrolledCourses.value.push(enrollment.course)
     })
 }
 
@@ -263,6 +287,15 @@ function calculateFee() {
 init()
 
 
+function selectCourse(courseId: number) {
+    let course = courses.find(c => c.id == courseId)
+    if (course) {
+        selectedCourseGroup.value = course.name
+        selectedCourseId.value = course.id
+    }
+
+}
+
 // const dataForTable: Ref<any[]> = ref([])
 // const countTotAttendances = ref(0)
 
@@ -380,54 +413,79 @@ init()
                 </div>
             </div>
         </div>
-        <div class="grid grid-cols-2 gap-x-10">
-            <div>
-                <div class="flex items-center">
-                    <h4 class="mr-5 font-semibold">Select a Student</h4>
+        <div class="grid grid-cols-3 gap-x-10">
+            <div class="col-span-2 grid grid-cols-2 gap-x-10 border py-3 px-5 rounded-xl">
+                <div>
+                    <div class="flex items-center">
+                        <h4 class="mr-5 font-semibold">Select a Student</h4>
 
-                    <SelectionBox :options="studentOptionFields" :value="selectedStudentId"
-                        @input="(val) => { selectedStudentId = val }" class="w-[300px] mr-5" />
+                        <SelectionBox :options="studentOptionFields" :value="selectedStudentId"
+                            @input="(val) => { selectedStudentId = val }" class="w-[300px] mr-5" />
 
-                    <p class="mr-3">Show all Students</p>
-                    <input v-model="showAllStudentsForSelection" type="checkbox" class="w-6 h-6" />
-                </div>
-                <div class="mb-10 border rounded-xl py-3 px-10 mt-4 text-slate-800">
-                    <h1 class="font-semibold text-lg">Basic Info</h1>
-                    <div class="grid grid-cols-2 ml-5">
-                        <h4>ID</h4>
-                        <h4>{{ selectedStudentData ? selectedStudentData!.id : '' }}</h4>
+                        <p class="mr-3">Show all Students</p>
+                        <input v-model="showAllStudentsForSelection" type="checkbox" class="w-6 h-6" />
                     </div>
-                    <div class="grid grid-cols-2 ml-5">
-                        <h4>Name</h4>
-                        <h4>{{ selectedStudentData ? selectedStudentData!.name : '' }}</h4>
-                    </div>
-                    <div class="grid grid-cols-2 ml-5">
-                        <h4>Grade</h4>
-                        <h4>{{ selectedStudentData ? (selectedStudentData!.grade ? selectedStudentData!.grade.name :
-                            'Deleted Grade') : '' }}</h4>
-                    </div>
-                    <div class="grid grid-cols-2 ml-5">
-                        <h4>School</h4>
-                        <h4>{{ selectedStudentData ? selectedStudentData!.school : '' }}</h4>
-                    </div>
-                    <div class="flex flex-col items-center mt-3">
-                        <div v-show="studentImageUrl === ''"
-                            class="flex items-center justify-center w-[300px] h-[300px]">
-                            <div v-show="selectedStudentId !== 0"
-                                class="animate-pulse bg-gray-300 w-full h-full rounded-lg flex items-center justify-center">
-                                <h4 class="text-2xl text-slate-700">Loading</h4>
+                    <div class="border-t-2 py-3 px-10 mt-4 text-slate-800">
+                        <h1 class="font-semibold text-lg">Basic Info</h1>
+                        <div class="grid grid-cols-2 ml-5">
+                            <h4>ID</h4>
+                            <h4>{{ selectedStudentData ? selectedStudentData!.id : '' }}</h4>
+                        </div>
+                        <div class="grid grid-cols-2 ml-5">
+                            <h4>Name</h4>
+                            <h4>{{ selectedStudentData ? selectedStudentData!.name : '' }}</h4>
+                        </div>
+                        <div class="grid grid-cols-2 ml-5">
+                            <h4>Grade</h4>
+                            <h4>{{ selectedStudentData ? (selectedStudentData!.grade ? selectedStudentData!.grade.name :
+                                'Deleted Grade') : '' }}</h4>
+                        </div>
+                        <div class="grid grid-cols-2 ml-5">
+                            <h4>School</h4>
+                            <h4>{{ selectedStudentData ? selectedStudentData!.school : '' }}</h4>
+                        </div>
+                        <div class="flex flex-col items-center mt-3">
+                            <div v-show="studentImageUrl === ''"
+                                class="flex items-center justify-center w-[300px] h-[300px]">
+                                <div v-show="selectedStudentId !== 0"
+                                    class="animate-pulse bg-gray-300 w-full h-full rounded-lg flex items-center justify-center">
+                                    <h4 class="text-2xl text-slate-700">Loading</h4>
+                                </div>
+                                <div v-show="selectedStudentId === 0"
+                                    class="bg-gray-300 w-full h-full rounded-lg flex items-center justify-center">
+                                    <h4 class="text-2xl text-slate-700">Select a Student</h4>
+                                </div>
                             </div>
-                            <div v-show="selectedStudentId === 0"
-                                class="bg-gray-300 w-full h-full rounded-lg flex items-center justify-center">
-                                <h4 class="text-2xl text-slate-700">Select a Student</h4>
+                            <div v-show="studentImageUrl !== ''" class="w-[300px]">
+                                <img :src="studentImageUrl" alt="student image">
                             </div>
                         </div>
-                        <div v-show="studentImageUrl !== ''" class="w-[300px]">
-                            <img :src="studentImageUrl" alt="student image">
+                    </div>
+                </div>
+                <div class="border-l-2 px-3 py-4 max-h-[520px]">
+                    <h4 class="font-semibold text-lg text-center mb-5">Student Enrolled Courses</h4>
+
+                    <div class="border rounded-xl bg-yellow-100 py-4 px-3 text-yellow-800"
+                        v-show="selectedStudentId == 0">
+                        <p class="text-center">Select a Student to load Enrolled Courses</p>
+                    </div>
+
+                    <div class="border rounded-xl bg-yellow-100 py-4 px-3 text-yellow-800"
+                        v-show="selectedStudentId != 0 && studentEnrolledCourses.length == 0">
+                        <p class="text-center">No Enrolled Courses Found</p>
+                    </div>
+
+                    <div class="text-blue-800">
+                        <div class="flex justify-between items-center bg-blue-100 py-1 px-5 mt-1"
+                            v-for="course in studentEnrolledCourses" :key="course.id">
+                            <p>{{ course.name + (course.group_name ? ' - ' + course.group_name : '') }}</p>
+                            <button @click="() => { selectCourse(course.id) }"
+                                class="border bg-blue-300 hover:bg-blue-400 active:bg-blue-500 border-blue-400 rounded-lg px-2 py-1 text-sm">Select</button>
                         </div>
                     </div>
                 </div>
             </div>
+
             <div class="flex flex-col items-center">
                 <div class="py-3 w-full text-center text-xl"
                     :class="enrollmentLoading ? 'bg-slate-400' : (enrollActionsEnabled ? 'bg-blue-500' : 'bg-red-500')">
