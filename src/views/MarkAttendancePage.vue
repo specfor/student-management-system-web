@@ -456,13 +456,14 @@ function selectCourse(courseId: number) {
                                     <h4 class="text-2xl text-slate-700">Select a Student</h4>
                                 </div>
                             </div>
-                            <div v-show="studentImageUrl !== ''" class="w-[300px]">
-                                <img :src="studentImageUrl" alt="student image">
+                            <div v-show="studentImageUrl !== ''" class="">
+                                <img :src="studentImageUrl" alt="student image"
+                                    class="object-contain w-[300px] h-[300px]">
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="border-l-2 px-3 py-4 max-h-[520px]">
+                <div class="border-l-2 px-3 py-4">
                     <h4 class="font-semibold text-lg text-center mb-5">Student Enrolled Courses</h4>
 
                     <div class="border rounded-xl bg-yellow-100 py-4 px-3 text-yellow-800"
@@ -475,7 +476,7 @@ function selectCourse(courseId: number) {
                         <p class="text-center">No Enrolled Courses Found</p>
                     </div>
 
-                    <div class="text-blue-800">
+                    <div class="text-blue-800 max-h-[450px] overflow-y-auto">
                         <div class="flex justify-between items-center bg-blue-100 py-1 px-5 mt-1"
                             v-for="course in studentEnrolledCourses" :key="course.id">
                             <p>{{ course.name + (course.group_name ? ' - ' + course.group_name : '') }}</p>
