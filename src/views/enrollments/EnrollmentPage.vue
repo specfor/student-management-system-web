@@ -128,7 +128,7 @@ async function loadEnrollments(startIndex?: number, filters?: any) {
 
     resp.data.enrollments.forEach((enrollment: Enrollment) => {
         let paid = { type: 'colorTag', text: 'Not Paid', css: 'bg-red-200 text-red-800' }
-        let payment = payments.find(p => p.enrollment.id == enrollment.id)
+        let payment = payments.find(p => p.enrollment_id == enrollment.id)
         if (payment)
             paid = { type: 'colorTag', text: 'Paid', css: 'bg-green-200 text-green-800' }
 
@@ -331,14 +331,16 @@ async function editEnrollment(id: number) {
 }
 
 async function delEnrollment(ids: number[]) {
-    let confirmed = await confirmationForm.newConfirmationForm("Confirm Deletion", "Are you sure you want to delete these enrollments with IDs: " + ids.join(', ') + "?")
+    let confirmed = await confirmationForm.newConfirmationForm("Confirm Deletion", "Are you sure you want to delete these enrollments with IDs: " + ids.join(', ') + "?  " +
+        "Note some enrollments may have payments and attendance records associated with them and you will not be allowed to delete them if they have such records. " +
+        "You may need to change the enrollment status in such a case")
     if (!confirmed)
         return
 
     ids.forEach(async id => {
         let resp = await deleteEnrollment(id)
         if (resp.status === 'error') {
-            alertStore.insertAlert('An error occured deleting grade.', resp.message, 'error')
+            alertStore.insertAlert('An error occured deleting enrollment.', resp.message, 'error')
             return
         }
         alertStore.insertAlert('Action completed.', resp.message)

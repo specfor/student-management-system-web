@@ -144,10 +144,10 @@ async function loadPayments(startIndex?: number, filters?: { [key: string]: any 
     let payments: StudentPayment[] = resp.data.payments
     payments.forEach(payment => {
         let student: tableRowItem = "Deleted"
-        if (payment.enrollment.student)
+        if (payment.enrollment?.student)
             student = { type: 'textWithLink', text: payment.enrollment.student.name, url: `/students/${payment.enrollment.student.id}/view` }
         let course: tableRowItem = "Deleted"
-        if (payment.enrollment.course)
+        if (payment.enrollment?.course)
             // course = { type: 'textWithLink', text: payment.enrollment.course.name, url: `/courses/${payment.enrollment.course.id}/view` }
             course = payment.enrollment.course.name
 
