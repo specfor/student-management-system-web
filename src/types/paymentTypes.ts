@@ -12,7 +12,8 @@ export type StudentPayment = {
   refund_reason: null | string;
   created_at: string;
   updated_at: string;
-  enrollment: Enrollment;
+  enrollment_id: number;
+  enrollment?: Enrollment;
   custom_amount_reason: null | string;
 };
 
