@@ -13,7 +13,7 @@ export function getBills(
       status?: "pending" | "printed" | "cancelled";
     };
     sort?: {
-      by: "id" | "student_id";
+      by: "id" | "student_id" | "updated_at";
       direction: "asc" | "desc";
     };
   }
