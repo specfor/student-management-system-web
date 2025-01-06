@@ -64,8 +64,33 @@ export const useglobalDataStore = defineStore("globalDataStore", () => {
     return course;
   }
 
+  const hooks: Ref<{ [name: string]: CallableFunction }> = ref({});
+
+  function insertHook(name: string, fn: CallableFunction) {
+    hooks.value[name] = fn;
+
+    return true;
+  }
+
+  function removeHook(name: string) {
+    if (hooks.value[name]) {
+      delete hooks.value[name];
+      return true;
+    }
+    return false;
+  }
+
+  function getHook(name: string) {
+    if (!hooks.value[name]) return null;
+
+    return hooks.value[name];
+  }
+
   return {
     findStudent,
     findCourse,
+    insertHook,
+    removeHook,
+    getHook,
   };
 });
