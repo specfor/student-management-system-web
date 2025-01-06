@@ -16,6 +16,7 @@ import type { Student } from '@/types/studentTypes';
 import TableComponent, { type Filter, type TableActionType, type TableColumns, type tableRowItem } from '@/components/TableComponent.vue';
 import type { Attendance } from '@/types/attendanceTypes';
 import BillEnroller from '@/components/BillEnroller.vue';
+import LoadingCursor from '@/components/minorUiComponents/loadingCursor.vue';
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
@@ -26,6 +27,7 @@ let studentOptionFields: Ref<{ text: string, value: any }[]> = ref([])
 let courses: Course[] = []
 let students: Student[] = []
 let studentEnrolledCourses: Ref<Course[]> = ref([])
+const loadingStudentEnrolledCourses = ref(false)
 
 const showBillEnroller = ref(false)
 const billEnrollerStudentId = ref(0)
@@ -149,6 +151,8 @@ async function loadEnrolledCourses(studentId: number) {
     if (studentId == 0)
         return
 
+    loadingStudentEnrolledCourses.value = true
+
     let resp = await getEnrollments(0, undefined, { filters: { student_id: studentId } })
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
@@ -159,6 +163,7 @@ async function loadEnrolledCourses(studentId: number) {
         if (enrollment.course)
             studentEnrolledCourses.value.push(enrollment.course)
     })
+    loadingStudentEnrolledCourses.value = false
 }
 
 async function loadStudentEnrollmentOfCourse() {
@@ -213,7 +218,12 @@ async function markPayment() {
         fee = confirmed.data.custom_amount as number
 
     let shouldShowBillEnroller = false
-    let resp = await createStudentPayment((enrollmentData.value!.enrollment as Enrollment).id, fee, confirmed.data.time as string, confirmed.data.custom_amount != '', confirmed.data.reason as string)
+    let resp;
+    if (selectedCourseData.value!['fee']['type'] === 'onetime')
+        resp = await createStudentPayment((enrollmentData.value!.enrollment as Enrollment).id, fee, 'onetime', confirmed.data.custom_amount != '', confirmed.data.reason as string)
+    else
+        resp = await createStudentPayment((enrollmentData.value!.enrollment as Enrollment).id, fee, confirmed.data.time as string, confirmed.data.custom_amount != '', confirmed.data.reason as string)
+
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
     } else {
@@ -466,13 +476,18 @@ function selectCourse(courseId: number) {
                 <div class="border-l-2 px-3 py-4">
                     <h4 class="font-semibold text-lg text-center mb-5">Student Enrolled Courses</h4>
 
+
+                    <div v-show="loadingStudentEnrolledCourses" class="mt-10">
+                        <LoadingCursor />
+                    </div>
+
                     <div class="border rounded-xl bg-yellow-100 py-4 px-3 text-yellow-800"
-                        v-show="selectedStudentId == 0">
+                        v-show="selectedStudentId == 0 && !loadingStudentEnrolledCourses">
                         <p class="text-center">Select a Student to load Enrolled Courses</p>
                     </div>
 
                     <div class="border rounded-xl bg-yellow-100 py-4 px-3 text-yellow-800"
-                        v-show="selectedStudentId != 0 && studentEnrolledCourses.length == 0">
+                        v-show="selectedStudentId != 0 && studentEnrolledCourses.length == 0 && !loadingStudentEnrolledCourses">
                         <p class="text-center">No Enrolled Courses Found</p>
                     </div>
 
