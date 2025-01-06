@@ -25,12 +25,16 @@ const emit = defineEmits<{
 }>()
 
 watch(props, (propNew) => {
+    disableSelectBtn.value = true
+
     if (propNew.show) {
         selectedBillId.value = -1
     }
     StudentBills.value = bills.value.filter(b => b.student_id == propNew.studentId)
     if (StudentBills.value.length == 0)
         disableSelectBtn.value = false
+    else
+        selectedBillId.value = StudentBills.value[0].id
 });
 
 watch(selectedBillId, (val) => {
@@ -52,6 +56,7 @@ loadBills()
 
 async function selectBill() {
     disableSelectBtn.value = true
+
     let resp = await createBill(props.studentId, [props.paymentId], selectedBillId.value)
     if (resp.status == 'success') {
         alertStore.insertAlert('Receipt Created.', '')
@@ -62,6 +67,10 @@ async function selectBill() {
     }
 
     disableSelectBtn.value = false
+}
+
+function skipReceipt() {
+    emit('close')
 }
 </script>
 
@@ -87,6 +96,10 @@ async function selectBill() {
             </div>
 
             <div class="flex justify-end gap-x-4 px-5 py-4 bg-slate-200">
+                <button @click="skipReceipt"
+                    class="bg-blue-600 text-white font-bold px-3 py-2 rounded-lg hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-300">
+                    Skip Receipt
+                </button>
                 <button @click="selectBill" :disabled="disableSelectBtn"
                     class="bg-blue-600 text-white font-bold px-3 py-2 rounded-lg hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-300">
                     Select
