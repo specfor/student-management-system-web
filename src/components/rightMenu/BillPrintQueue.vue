@@ -58,8 +58,10 @@ globalDataStore.insertHook('refresh-receipt-list', loadBills)
 watch(filterStatus, loadBills)
 
 function removeBill(id: number, status: typeof bills.value[0]['status']) {
-    if (status != filterStatus.value)
+    if (status != filterStatus.value) {
         bills.value = bills.value.filter(b => b.id != id)
+        shownBills.value = shownBills.value.filter(b => b.id != id)
+    }
 }
 
 let showingAllBills = ref(false)
