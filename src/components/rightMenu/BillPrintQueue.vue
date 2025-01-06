@@ -5,10 +5,12 @@ import { ref, watch, type Ref } from 'vue';
 import BillCard from './BillCard.vue';
 import { useglobalDataStore } from '@/stores/globalData';
 import SelectionBox from '../primary/SelectionBox.vue';
+import LoadingCursor from '../minorUiComponents/loadingCursor.vue';
 
 const globalDataStore = useglobalDataStore()
 
 const filterStatus: Ref<"pending" | "cancelled" | "printed"> = ref("pending")
+const loadingBills = ref(false)
 
 let bills: Ref<Array<{
     id: number
@@ -24,11 +26,14 @@ let bills: Ref<Array<{
     }>
 }>> = ref([]);
 
+let shownBills: typeof bills = ref([])
+
 async function loadBills() {
+    loadingBills.value = true
     let resp = await getBills(0, 15, { sort: { by: "id", direction: "desc" }, filters: { status: filterStatus.value } })
     if (resp.status == 'success') {
         bills.value = [];
-        (resp.data.bills as StudentPaymentBill[]).forEach(async (bill) => {
+        await Promise.all((resp.data.bills as StudentPaymentBill[]).map(async (bill) => {
             let student = await globalDataStore.findStudent(bill.student_id)
             let b = {
                 id: bill.id,
@@ -40,8 +45,10 @@ async function loadBills() {
                 paymentData: Object.values(bill.payment_data)
             }
             bills.value.push(b)
-        })
+        }))
+        shownBills.value = bills.value.slice(0, 1)
     }
+    loadingBills.value = false
 }
 
 loadBills()
@@ -51,6 +58,17 @@ watch(filterStatus, loadBills)
 function removeBill(id: number, status: typeof bills.value[0]['status']) {
     if (status != filterStatus.value)
         bills.value = bills.value.filter(b => b.id != id)
+}
+
+let showingAllBills = ref(false)
+
+function flipShowAllBills() {
+    if (!showingAllBills.value)
+        shownBills.value = bills.value
+    else
+        shownBills.value = bills.value.slice(0, 1)
+
+    showingAllBills.value = !showingAllBills.value
 }
 </script>
 
@@ -72,16 +90,28 @@ function removeBill(id: number, status: typeof bills.value[0]['status']) {
             </div>
         </div>
 
-        <div v-show="bills.length == 0" class="border-2 border-white py-5 px-2">
+        <div class="mt-20" v-show="loadingBills">
+            <LoadingCursor />
+        </div>
+
+        <div v-show="bills.length == 0 && !loadingBills" class="border-2 border-white py-5 px-2">
             <h4>No Bills in queue to print.</h4>
         </div>
 
+        <div v-show="shownBills.length !== 0 && !loadingBills" class="overflow-y-auto h-[80%]">
+            <template v-for="(bill, index) in shownBills" :key="bill.id">
+                <BillCard :bill-id="bill.id" :bill-value="bill.billValue" :payment-data="bill.paymentData"
+                    :student-id="bill.studentId" :student-custom-id="bill.studentCustomId"
+                    :stduent-name="bill.studentName" :status="bill.status" class="mt-3"
+                    @action-complete="(status) => { removeBill(bill.id, status) }" />
 
-        <div v-show="bills.length != 0" class="overflow-y-auto h-[80%]">
-            <BillCard v-for="bill in bills" :key="bill.id" :bill-id="bill.id" :bill-value="bill.billValue"
-                :payment-data="bill.paymentData" :student-id="bill.studentId" :student-custom-id="bill.studentCustomId"
-                :stduent-name="bill.studentName" :status="bill.status" class="mt-3"
-                @action-complete="(status) => { removeBill(bill.id, status) }" />
+                <div class="flex justify-center" v-show="index == 0">
+                    <button @click="flipShowAllBills" class="my-2 border px-3 bg-gray-400 text-black">{{ showingAllBills
+                        ? 'Hide' :
+                        'Show All'
+                        }}</button>
+                </div>
+            </template>
         </div>
     </div>
 </template>
