@@ -26,7 +26,7 @@ const limitLoadExpenses = 30
 const countTotExpenses = ref(0)
 
 
-let lastLoadSettings = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc' }
+let lastLoadSettings = { lastUsedIndex: 0, orderBy: 'id', orderDirec: 'desc' }
 
 function setSorting(column: string, direction: 'asc' | 'desc') {
     // 'id', 'type', 'month'
