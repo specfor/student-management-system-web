@@ -30,7 +30,7 @@ let shownBills: typeof bills = ref([])
 
 async function loadBills() {
     loadingBills.value = true
-    let resp = await getBills(0, 15, { sort: { by: "id", direction: "desc" }, filters: { status: filterStatus.value } })
+    let resp = await getBills(0, 15, { sort: { by: "updated_at", direction: "desc" }, filters: { status: filterStatus.value } })
     if (resp.status == 'success') {
         bills.value = [];
         await Promise.all((resp.data.bills as StudentPaymentBill[]).map(async (bill) => {
@@ -48,10 +48,12 @@ async function loadBills() {
         }))
         shownBills.value = bills.value.slice(0, 1)
     }
+    showingAllBills.value = false
     loadingBills.value = false
 }
 
 loadBills()
+globalDataStore.insertHook('refresh-receipt-list', loadBills)
 
 watch(filterStatus, loadBills)
 
