@@ -143,7 +143,8 @@ type InputTypes =
         | "date"
         | "month"
         | "time"
-        | "number";
+        | "number"
+        | "hidden";
       disabled?: boolean;
       value?: string | number | boolean | null;
       min?: number;
