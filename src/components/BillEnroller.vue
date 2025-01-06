@@ -6,8 +6,10 @@ import BillCard from './rightMenu/BillCard.vue';
 import type { StudentPaymentBill } from '@/types/billTypes';
 import { createBill, getBills } from '@/apiConnections/billPrint';
 import { useAlertsStore } from '@/stores/alerts';
+import { useglobalDataStore } from '@/stores/globalData';
 
 const alertStore = useAlertsStore()
+const globalDataStore = useglobalDataStore()
 
 const StudentBills: Ref<StudentPaymentBill[]> = ref([])
 const selectedBillId = ref(-1)
@@ -61,6 +63,11 @@ async function selectBill() {
     if (resp.status == 'success') {
         alertStore.insertAlert('Receipt Created.', '')
         loadBills()
+        const billRefresher = globalDataStore.getHook('refresh-receipt-list')
+
+        if (billRefresher)
+            billRefresher()
+
         emit('close')
     } else {
         alertStore.insertAlert('Error Creating a Receipt', resp.message, 'error')
