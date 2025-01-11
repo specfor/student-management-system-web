@@ -32,4 +32,5 @@ export type Course = {
   instructor: Instructor | null;
   grade: null | Grade;
   instructor_fee_percent: number;
+  print_name: string;
 };
