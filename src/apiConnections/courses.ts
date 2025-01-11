@@ -46,7 +46,8 @@ export function createCourse(
   fee_type: CourseFee["type"],
   amount: number,
   instructor_fee_percent: number,
-  grade_id: number
+  grade_id: number,
+  print_name: string
 ) {
   const t = `${start_time}-${end_time}`;
 
@@ -70,6 +71,7 @@ export function createCourse(
       amount: amount,
     },
     instructor_fee_percent,
+    print_name,
   });
 }
 
@@ -85,7 +87,8 @@ export function updateCourse(
   fee_type: CourseFee["type"],
   amount: number,
   instructor_fee_percent: number,
-  grade_id: number
+  grade_id: number,
+  print_name: string
 ) {
   const t = `${start_time}-${end_time}`;
 
@@ -109,6 +112,7 @@ export function updateCourse(
       amount: amount,
     },
     instructor_fee_percent,
+    print_name,
   });
 }
 

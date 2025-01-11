@@ -115,6 +115,7 @@ async function addNewCourse() {
     dataEntryForm.newDataEntryForm('Create New Course', 'Create', [
         { name: 'name', type: 'text', text: 'Course Name', required: true },
         { name: 'group_name', type: 'text', text: 'Group (if course has groups )' },
+        { name: 'print_name', type: 'text', text: 'Course Name Printed on Receipt', required: true },
         { name: 'instructor_id', type: 'select', text: 'Instructor', options: instructorOptionFields, required: true },
         { type: 'heading', text: 'Enter Course Schedule' },
         {
@@ -161,7 +162,8 @@ async function addNewCourse() {
 
         let resp = await createCourse(results.data.name as string, results.data.group_name as string, results.data.instructor_id as number,
             results.data.day as CourseSchedule['day'], results.data.s_time as string, results.data.e_time as string, results.data.venue as string,
-            results.data.fee_type as CourseFee['type'], results.data.amount as number, results.data.instructor_percent as number, results.data.grade_id as number)
+            results.data.fee_type as CourseFee['type'], results.data.amount as number, results.data.instructor_percent as number, results.data.grade_id as number,
+            results.data.print_name as string)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
@@ -191,6 +193,7 @@ async function editCourse(id: number) {
         { name: 'id', type: 'text', text: 'Course ID', disabled: true, value: course.id },
         { name: 'name', type: 'text', text: 'Course Name', required: true, value: course.name },
         { name: 'group_name', type: 'text', text: 'Group (if course has groups )', value: course.group_name },
+        { name: 'print_name', type: 'text', text: 'Course Name Printed on Receipt', required: true, value: course.print_name },
         { name: 'instructor_id', type: 'select', text: 'Instructor', options: instructorOptionFields, required: true, value: course.instructor ? course.instructor.id : '' },
         { type: 'heading', text: 'Enter Course Schedule' },
         {
@@ -239,7 +242,8 @@ async function editCourse(id: number) {
 
         let resp = await updateCourse(id, results.data.name as string, results.data.group_name as string, results.data.instructor_id as number,
             results.data.day as CourseSchedule['day'], results.data.s_time as string, results.data.e_time as string, results.data.venue as string,
-            results.data.fee_type as CourseFee['type'], results.data.amount as number, results.data.instructor_percent as number, results.data.grade_id as number)
+            results.data.fee_type as CourseFee['type'], results.data.amount as number, results.data.instructor_percent as number, results.data.grade_id as number,
+            results.data.print_name as string)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
