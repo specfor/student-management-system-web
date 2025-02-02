@@ -202,6 +202,12 @@ function showFingerprintReg() {
                         <p class="col-span-2 border-b border-slate-300">{{ student.parent_phone_number ?? 'None' }}</p>
                     </div>
                     <div class="grid grid-cols-3 mt-3 items-center">
+                        <h4>Registered Date</h4>
+                        <p class="col-span-2 border-b border-slate-300">{{ student.created_at ?
+                            new
+                                Date(student.created_at).toLocaleString() : 'None' }}</p>
+                    </div>
+                    <div class="grid grid-cols-3 mt-3 items-center">
                         <h4>Admission Fee</h4>
                         <div v-if="admissionPayment?.paid" class="border bg-green-200 text-green-800 text-center">Paid
                         </div>
