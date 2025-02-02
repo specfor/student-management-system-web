@@ -44,12 +44,16 @@ export function createBill(
 
 export function updateBillStatus(
   bill_id: number,
-  status: "cancelled" | "pending" | "printed"
+  status?: "cancelled" | "pending" | "printed",
+  remove_payment_ids?: number[]
 ) {
   const sendBody: { [key: string]: any } = {
     bill_id,
-    status,
   };
+
+  if (status) sendBody["status"] = status;
+  if (remove_payment_ids) sendBody["remove_payment_ids"] = remove_payment_ids;
+
   return sendJsonPatchRequest(`/print-queue`, sendBody);
 }
 

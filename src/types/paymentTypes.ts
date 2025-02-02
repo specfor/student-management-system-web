@@ -15,6 +15,7 @@ export type StudentPayment = {
   enrollment_id: number;
   enrollment?: Enrollment;
   custom_amount_reason: null | string;
+  bill_id: number | null;
 };
 
 // used in instructor payments calculation and things
