@@ -8,11 +8,17 @@ import SelectionBox from '../primary/SelectionBox.vue';
 import LoadingCursor from '../minorUiComponents/loadingCursor.vue';
 import PopUpPlaceholder from '../popUpPlaceholder.vue';
 import BillPaymentManager from './BillPaymentManager.vue';
+import PaginateComponent from '../PaginateComponent.vue';
 
 const globalDataStore = useglobalDataStore()
 
-const filterStatus: Ref<"pending" | "cancelled" | "printed"> = ref("pending")
+const paginatePageSize = 5
+let queryStartIndex = 0
+const paginateTotal = ref(0)
+
+const filters: Ref<{ printStatus: "pending" | "cancelled" | "printed"; billId: number | undefined }> = ref({ billId: undefined, printStatus: 'pending' })
 const loadingBills = ref(false)
+
 
 type BillPaymentManagerProps = InstanceType<typeof BillPaymentManager>['$props'];
 const selectedPaymentToRemove: Ref<BillPaymentManagerProps['payment']> = ref({ amount: '', course: "", student: '', id: 0, billId: 0 });
@@ -37,7 +43,7 @@ let shownBills: typeof bills = ref([])
 
 async function loadBills() {
     loadingBills.value = true
-    let resp = await getBills(0, 15, { sort: { by: "updated_at", direction: "desc" }, filters: { status: filterStatus.value } })
+    let resp = await getBills(queryStartIndex, paginatePageSize, { sort: { by: "updated_at", direction: "desc" }, filters: { status: filters.value.printStatus, bill_id: filters.value.billId } })
     if (resp.status == 'success') {
         bills.value = [];
         await Promise.all((resp.data.bills as StudentPaymentBill[]).map(async (bill) => {
@@ -57,19 +63,37 @@ async function loadBills() {
             })
             bills.value.push(b)
         }))
-        shownBills.value = bills.value.slice(0, 1)
+
+        paginateTotal.value = resp.data.tot_count
     }
-    showingAllBills.value = false
+
+    if (queryStartIndex >= paginatePageSize) {
+        shownBills.value = bills.value
+        showingAllBills.value = true
+    }
+    else {
+        shownBills.value = bills.value.slice(0, 1)
+        showingAllBills.value = false
+    }
     loadingBills.value = false
 }
 
 loadBills()
-globalDataStore.insertHook('refresh-receipt-list', loadBills)
+globalDataStore.insertHook('refresh-receipt-list', () => { queryStartIndex = 0; loadBills() })
 
-watch(filterStatus, loadBills)
+let lastStatus = filters.value.printStatus
+
+watch(filters, () => {
+    if (lastStatus != filters.value.printStatus) {
+        queryStartIndex = 0
+        lastStatus = filters.value.printStatus
+    }
+
+    loadBills()
+}, { deep: true })
 
 function removeBill(id: number, status: typeof bills.value[0]['status']) {
-    if (status != filterStatus.value) {
+    if (status != filters.value.printStatus) {
         bills.value = bills.value.filter(b => b.id != id)
         shownBills.value = shownBills.value.filter(b => b.id != id)
     }
@@ -100,17 +124,24 @@ function showRemovePayment(paymentId: number) {
 
 <template>
     <div class="w-full h-full max-h-screen p-4">
-        <h1 class="font-semibold text-xl text-center mb-5">Bill Print Queue</h1>
+        <h1 class="font-semibold text-xl text-center mb-5">Receipt Queue</h1>
 
         <div class="mb-3">
             <p class="font-semibold text-lg">Filters</p>
             <div class="grid grid-cols-2 gap-x-5 items-center ml-5">
                 <div class="grid grid-cols-3 items-center">
                     <p>Status</p>
-                    <SelectionBox :value="filterStatus" @input="(val) => { filterStatus = val }"
+                    <SelectionBox :value="filters.printStatus" @input="(val) => { filters.printStatus = val }"
                         :options="[{ text: 'PENDING', value: 'pending' }, { text: 'CANCELLED', value: 'cancelled' }, { text: 'PRINTED', value: 'printed' }]"
                         class="col-span-2" />
                 </div>
+                <div class="flex items-center justify-evenly">
+                    <p>Receipt Id</p>
+                    <input v-model="filters.billId" type="number"
+                        class="border border-slate-600 py-1 px-2 ml-4 rounded-lg w-28" />
+                </div>
+            </div>
+            <div class="flex justify-end mt-2">
                 <button @click="loadBills"
                     class="font-semibold bg-stone-600 hover:bg-stone-800 w-fit px-4 justify-self-end py-1 text-white rounded-md">Refresh</button>
             </div>
@@ -121,7 +152,7 @@ function showRemovePayment(paymentId: number) {
         </div>
 
         <div v-show="bills.length == 0 && !loadingBills" class="border-2 border-white py-5 px-2">
-            <h4>No Bills in queue to print.</h4>
+            <h4>No Receipts in the queue to print.</h4>
         </div>
 
         <div v-show="shownBills.length !== 0 && !loadingBills" class="overflow-y-auto h-[80%]">
@@ -139,6 +170,9 @@ function showRemovePayment(paymentId: number) {
                         }}</button>
                 </div>
             </template>
+            <PaginateComponent :total-count="paginateTotal" :page-size="paginatePageSize" @load-page-emit="(startIndex) => {
+                queryStartIndex = startIndex; loadBills()
+            }" class="my-3" />
         </div>
     </div>
 
