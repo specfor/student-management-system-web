@@ -11,6 +11,7 @@ export function getBills(
     filters?: {
       student_id?: number;
       status?: "pending" | "printed" | "cancelled";
+      bill_id?: number;
     };
     sort?: {
       by: "id" | "student_id" | "updated_at";
@@ -27,6 +28,8 @@ export function getBills(
   if (options?.filters?.status) params.status = options.filters.status;
   if (options?.filters?.student_id)
     params.student_id = options.filters.student_id;
+  if (options?.filters?.bill_id) params.bill_id = options.filters.bill_id;
+
   return sendGetRequest("/print-queue", params);
 }
 
