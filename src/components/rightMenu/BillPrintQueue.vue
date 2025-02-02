@@ -6,11 +6,17 @@ import BillCard from './BillCard.vue';
 import { useglobalDataStore } from '@/stores/globalData';
 import SelectionBox from '../primary/SelectionBox.vue';
 import LoadingCursor from '../minorUiComponents/loadingCursor.vue';
+import PopUpPlaceholder from '../popUpPlaceholder.vue';
+import BillPaymentManager from './BillPaymentManager.vue';
 
 const globalDataStore = useglobalDataStore()
 
 const filterStatus: Ref<"pending" | "cancelled" | "printed"> = ref("pending")
 const loadingBills = ref(false)
+
+type BillPaymentManagerProps = InstanceType<typeof BillPaymentManager>['$props'];
+const selectedPaymentToRemove: Ref<BillPaymentManagerProps['payment']> = ref({ amount: '', course: "", student: '', id: 0, billId: 0 });
+const showBillPaymentManager = ref(false)
 
 let bills: Ref<Array<{
     id: number
@@ -20,6 +26,7 @@ let bills: Ref<Array<{
     studentCustomId: string
     studentName: string
     paymentData: Array<{
+        paymentId: number
         courseName: string
         paymentFor: string
         amount: string
@@ -35,15 +42,19 @@ async function loadBills() {
         bills.value = [];
         await Promise.all((resp.data.bills as StudentPaymentBill[]).map(async (bill) => {
             let student = await globalDataStore.findStudent(bill.student_id)
-            let b = {
+
+            let b: typeof bills.value[0] = {
                 id: bill.id,
                 billValue: bill.total,
                 status: bill.status,
                 studentId: bill.student_id,
                 studentCustomId: bill.student_custom_id,
                 studentName: student ? student.name : "Deleted",
-                paymentData: Object.values(bill.payment_data)
+                paymentData: []
             }
+            Object.entries(bill.payment_data).forEach(payment => {
+                b.paymentData.push({ paymentId: Number(payment[0]), ...payment[1] })
+            })
             bills.value.push(b)
         }))
         shownBills.value = bills.value.slice(0, 1)
@@ -73,6 +84,17 @@ function flipShowAllBills() {
         shownBills.value = bills.value.slice(0, 1)
 
     showingAllBills.value = !showingAllBills.value
+}
+
+function showRemovePayment(paymentId: number) {
+    bills.value.forEach((bill) => {
+        let p = bill.paymentData.find(payment => payment.paymentId == paymentId)
+        if (p) {
+            selectedPaymentToRemove.value = { id: p.paymentId, billId: bill.id, amount: p.amount, course: p.courseName, student: bill.studentName }
+            showBillPaymentManager.value = true;
+            return
+        }
+    });
 }
 </script>
 
@@ -107,7 +129,8 @@ function flipShowAllBills() {
                 <BillCard :bill-id="bill.id" :bill-value="bill.billValue" :payment-data="bill.paymentData"
                     :student-id="bill.studentId" :student-custom-id="bill.studentCustomId"
                     :stduent-name="bill.studentName" :status="bill.status" class="mt-3"
-                    @action-complete="(status) => { removeBill(bill.id, status) }" />
+                    @action-complete="(status) => { removeBill(bill.id, status) }" :expand="index == 0"
+                    @remove-payment="showRemovePayment" />
 
                 <div class="flex justify-center" v-show="index == 0">
                     <button @click="flipShowAllBills" class="my-2 border px-3 bg-gray-400 text-black">{{ showingAllBills
@@ -118,4 +141,9 @@ function flipShowAllBills() {
             </template>
         </div>
     </div>
+
+    <PopUpPlaceholder :show="showBillPaymentManager">
+        <BillPaymentManager :payment="selectedPaymentToRemove" @close="showBillPaymentManager = false"
+            @close-and-refresh-bills="() => { showBillPaymentManager = false; loadBills() }" />
+    </PopUpPlaceholder>
 </template>

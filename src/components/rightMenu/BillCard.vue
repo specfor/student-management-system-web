@@ -2,7 +2,7 @@
 import { getGeneratedBillData, sendBillPrintCommand, updateBillStatus } from '@/apiConnections/billPrint';
 import { useAlertsStore } from '@/stores/alerts';
 import { formatMoney } from '@/utils/money';
-import { ArrowDownCircleIcon, ArrowUpCircleIcon, PrinterIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import { ArrowDownCircleIcon, ArrowUpCircleIcon, PrinterIcon, TrashIcon, MinusCircleIcon } from '@heroicons/vue/24/outline';
 import { ref } from 'vue';
 
 const alertStore = useAlertsStore()
@@ -17,15 +17,21 @@ const props = defineProps<{
     studentCustomId: string
     stduentName: string
     paymentData?: Array<{
+        paymentId: number
         courseName: string
         paymentFor: string
         amount: string
     }>
     hideButtons?: boolean
+    expand?: boolean
 }>()
 
+if (props.expand)
+    expanded.value = true
+
 const emit = defineEmits<{
-    actionComplete: [action: typeof props.status]
+    actionComplete: [action: typeof props.status],
+    removePayment: [paymentId: number]
 }>()
 
 async function setBillStatus(status: typeof props.status) {
@@ -131,17 +137,23 @@ async function setBillStatus(status: typeof props.status) {
         <div v-show="expanded" v-if="paymentData">
             <div class="h-1 my-3 w-full bg-slate-400 rounded-full"></div>
 
-            <div class="mx-5">
-                <div class="grid grid-cols-5 font-semibold mb-2">
-                    <p class="col-span-3">Course</p>
+            <div class="mx-2">
+                <div class="grid grid-cols-[3fr_1fr_1fr_10px] font-semibold mb-2">
+                    <p class="">Course</p>
                     <p class="justify-self-end">Paid For</p>
                     <p class="justify-self-end">Payment</p>
+                    <p class="w-7"></p>
                 </div>
 
-                <div class="grid grid-cols-5" v-for="(payment, index) in props.paymentData" :key="index">
-                    <p class="col-span-3">{{ payment.courseName }}</p>
+                <div class="grid grid-cols-[3fr_1fr_1fr_10px]" v-for="(payment, index) in props.paymentData"
+                    :key="index">
+                    <p class="">{{ payment.courseName }}</p>
                     <p class="justify-self-end">{{ payment.paymentFor }}</p>
-                    <p class="justify-self-end">{{ payment.amount }}</p>
+                    <div class="flex justify-end items-center">
+                        <p class="justify-self-end">{{ payment.amount }}</p>
+                    </div>
+                    <MinusCircleIcon @click="$emit('removePayment', payment.paymentId)"
+                        class="w-5 h-5 text-red-800 rounded-full ml-2 hover:bg-red-200 cursor-pointer" />
                 </div>
             </div>
         </div>
