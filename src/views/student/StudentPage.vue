@@ -204,7 +204,7 @@ async function addNewStudent() {
     ])
     let results = await dataEntryForm.waitForSubmittedData()
     if (results.submitted) {
-        let resp = await markAdmissionFee(createdStudentId!, results.data.amount as number, results.data.paid as boolean, results.data.reduction_reason as string)
+        let resp = await markAdmissionFee(createdStudentId!, results.data.amount as number, Boolean(results.data.paid), results.data.reduction_reason as string)
         if (resp.status === 'error') {
             alertStore.insertAlert('An error occured.', resp.message, 'error')
         } else {
