@@ -142,7 +142,7 @@ async function loadStudentsOfCourse(courseId: number) {
 
     let selectedStudentFoundInList = false;
     (resp.data.enrollments as Enrollment[]).forEach(enrollment => {
-        if (enrollment.student) {
+        if (enrollment.student && enrollment.status[enrollment.status.length - 1].type === 'active') {
             studentOptionFields.value.push({ text: enrollment.student.name, value: enrollment.student.id })
             if (enrollment.student.id == selectedStudentId.value)
                 selectedStudentFoundInList = true
