@@ -64,6 +64,12 @@ const selectedStudentData: Ref<Student | null> = ref(null)
 const studentImageUrl = ref("")
 const showAllStudentsForSelection = ref(false)
 
+const showOnlyActiveEnrollments = ref(true)
+
+watch(showOnlyActiveEnrollments, () => {
+    loadEnrolledCourses(selectedStudentId.value)
+})
+
 watch(showAllStudentsForSelection, (newVal) => {
     if (newVal) {
         studentOptionFields.value = []
@@ -153,7 +159,12 @@ async function loadEnrolledCourses(studentId: number) {
 
     loadingStudentEnrolledCourses.value = true
 
-    let resp = await getEnrollments(0, undefined, { filters: { student_id: studentId } })
+    let filters: { [key: string]: any } = { student_id: studentId }
+
+    if (showOnlyActiveEnrollments.value)
+        filters['status_is'] = 'active'
+
+    let resp = await getEnrollments(0, undefined, { filters: filters })
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
         return
@@ -476,7 +487,10 @@ function selectCourse(courseId: number) {
                 <div class="border-l-2 px-3 py-4">
                     <h4 class="font-semibold text-lg text-center mb-5">Student Enrolled Courses</h4>
 
-
+                    <div class="flex gap-x-5 mb-5">
+                        <p>Show only active enrollments</p>
+                        <input type="checkbox" class="w-6 h-6" v-model="showOnlyActiveEnrollments" />
+                    </div>
                     <div v-show="loadingStudentEnrolledCourses" class="mt-10">
                         <LoadingCursor />
                     </div>

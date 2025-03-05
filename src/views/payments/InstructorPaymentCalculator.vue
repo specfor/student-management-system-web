@@ -281,7 +281,7 @@ async function showCalculatedPayment() {
             </div>
         </div>
 
-        <div class="my-20 flex justify-end" v-show="forSelectedMonthPayments !== null">
+        <div class="my-20 pb-10 flex justify-end" v-show="forSelectedMonthPayments !== null">
             <button class="bg-blue-600 hover:bg-blue-800 py-2 px-5 text-white" @click="showCalculatedPayment">Calculate
                 Payment</button>
         </div>
