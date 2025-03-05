@@ -16,7 +16,8 @@ const paginatePageSize = 5
 let queryStartIndex = 0
 const paginateTotal = ref(0)
 
-const filters: Ref<{ printStatus: "pending" | "cancelled" | "printed"; billId: number | undefined }> = ref({ billId: undefined, printStatus: 'pending' })
+const filters: Ref<{ printStatus: "pending" | "cancelled" | "printed"; billId: number | undefined, issuedMonth: string }> =
+    ref({ billId: undefined, printStatus: 'pending', issuedMonth: new Date().toISOString().slice(0, 7) })
 const loadingBills = ref(false)
 
 
@@ -43,7 +44,10 @@ let shownBills: typeof bills = ref([])
 
 async function loadBills() {
     loadingBills.value = true
-    let resp = await getBills(queryStartIndex, paginatePageSize, { sort: { by: "updated_at", direction: "desc" }, filters: { status: filters.value.printStatus, bill_id: filters.value.billId } })
+    let resp = await getBills(queryStartIndex, paginatePageSize, {
+        sort: { by: "updated_at", direction: "desc" },
+        filters: { status: filters.value.printStatus, bill_id: filters.value.billId, updated_month: filters.value.issuedMonth }
+    })
     if (resp.status == 'success') {
         bills.value = [];
         await Promise.all((resp.data.bills as StudentPaymentBill[]).map(async (bill) => {
@@ -120,6 +124,10 @@ function showRemovePayment(paymentId: number) {
         }
     });
 }
+
+function resetFilters() {
+    filters.value = { billId: undefined, printStatus: 'pending', issuedMonth: new Date().toISOString().slice(0, 7) }
+}
 </script>
 
 <template>
@@ -140,8 +148,16 @@ function showRemovePayment(paymentId: number) {
                     <input v-model="filters.billId" type="number"
                         class="border border-slate-600 py-1 px-2 ml-4 rounded-lg w-28" />
                 </div>
+                <div class="flex items-center justify-evenly">
+                    <p>Issued Month</p>
+                    <input type="month" class="border border-slate-600 py-1 px-2 ml-4 rounded-lg w-36 "
+                        v-model="filters.issuedMonth" />
+                </div>
             </div>
-            <div class="flex justify-end mt-2">
+            <div class="flex justify-end gap-x-4 mt-2">
+                <button @click="resetFilters"
+                    class="font-semibold bg-stone-600 hover:bg-stone-800 w-fit px-4 justify-self-end py-1 text-white rounded-md">Reset
+                    Filters</button>
                 <button @click="loadBills"
                     class="font-semibold bg-stone-600 hover:bg-stone-800 w-fit px-4 justify-self-end py-1 text-white rounded-md">Refresh</button>
             </div>
@@ -167,7 +183,7 @@ function showRemovePayment(paymentId: number) {
                     <button @click="flipShowAllBills" class="my-2 border px-3 bg-gray-400 text-black">{{ showingAllBills
                         ? 'Hide' :
                         'Show All'
-                        }}</button>
+                    }}</button>
                 </div>
             </template>
             <PaginateComponent :total-count="paginateTotal" :page-size="paginatePageSize" @load-page-emit="(startIndex) => {
