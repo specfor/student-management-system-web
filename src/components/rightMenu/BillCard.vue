@@ -2,12 +2,13 @@
 import { getGeneratedBillData, sendBillPrintCommand, updateBillStatus } from '@/apiConnections/billPrint';
 import { useAlertsStore } from '@/stores/alerts';
 import { formatMoney } from '@/utils/money';
-import { ArrowDownCircleIcon, ArrowUpCircleIcon, PrinterIcon, TrashIcon, MinusCircleIcon } from '@heroicons/vue/24/outline';
+import { ArrowDownCircleIcon, ArrowUpCircleIcon, PrinterIcon, TrashIcon, MinusCircleIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/vue/24/outline';
 import { ref } from 'vue';
 
 const alertStore = useAlertsStore()
 
 const expanded = ref(false)
+const expandPrint = ref(false)
 const disableBtns = ref(false)
 const props = defineProps<{
     billId: number
@@ -36,6 +37,18 @@ const emit = defineEmits<{
 
 async function setBillStatus(status: typeof props.status) {
     disableBtns.value = true
+
+    let resp = await updateBillStatus(props.billId, status)
+
+    if (resp.status != 'success') {
+        return false;
+    }
+    emit('actionComplete', status)
+    return true;
+}
+
+async function printBill(status: typeof props.status) {
+    disableBtns.value = true
     let error = { occured: false, header: "", body: "" };
 
     if (status == 'printed') {
@@ -63,13 +76,12 @@ async function setBillStatus(status: typeof props.status) {
     }
 
     if (!error.occured) {
-        let resp = await updateBillStatus(props.billId, status)
-
-        if (resp.status != 'success') {
+        let statusSet = await setBillStatus(status)
+        if (!statusSet) {
+            error.occured = true
             error.header = 'Receipt status update failed.'
-            error.body = resp.message
+            error.body = "An error occured while updating the receipt status."
         }
-        emit('actionComplete', status)
     }
 
     if (error.occured)
@@ -119,14 +131,29 @@ async function setBillStatus(status: typeof props.status) {
                 <ArrowUpCircleIcon class="w-6 h-6" />
                 <p>Collapse</p>
             </button>
-            <button class="flex items-center justify-center gap-2 bg-green-600 px-2 py-1 rounded-sm text-white hover:cursor-pointer active:bg-green-800
-                 disabled:bg-green-300 disabled:hover:cursor-not-allowed" @click="() => { setBillStatus('printed') }"
-                :disabled="disableBtns">
-                <PrinterIcon class="w-6 h-6" />
-                <p>Print</p>
-            </button>
+            <div class="flex relative text-white">
+                <button class="flex items-center justify-center gap-2 bg-green-600 px-2 py-1 rounded-l-sm hover:cursor-pointer active:bg-green-800
+                disabled:bg-green-300 disabled:hover:cursor-not-allowed w-full" @click="() => { printBill('printed') }"
+                    :disabled="disableBtns">
+                    <PrinterIcon class="w-6 h-6" />
+                    <p>Print</p>
+                </button>
+                <button class="w-fit flex items-center justify-center bg-green-600 active:bg-green-800
+                disabled:bg-green-300 disabled:hover:cursor-not-allowed px-2 cursor-pointer border-l"
+                    :disabled="disableBtns">
+                    <ChevronDownIcon class="w-5 h-5" @click="expandPrint = !expandPrint" v-show="!expandPrint" />
+                    <ChevronUpIcon class="w-5 h-5" @click="expandPrint = !expandPrint" v-show="expandPrint" />
+                </button>
+                <div class="absolute right-0 top-8" v-show="expandPrint">
+                    <button class="w-fit flex items-center justify-center bg-green-600 active:bg-green-800
+                    disabled:bg-green-300 disabled:hover:cursor-not-allowed px-5 py-2 cursor-pointer border-l border-t"
+                        :disabled="disableBtns" @click="() => { setBillStatus('printed') }">
+                        Mark as Printed
+                    </button>
+                </div>
+            </div>
             <button class="flex items-center justify-center gap-2 px-2 py-1 rounded-sm text-white hover:cursor-pointer bg-red-600 active:bg-red-800
-                 disabled:bg-red-300 disabled:hover:cursor-not-allowed" @click="() => { setBillStatus('cancelled') }"
+                 disabled:bg-red-300 disabled:hover:cursor-not-allowed" @click="() => { printBill('cancelled') }"
                 :disabled="disableBtns || props.status == 'printed' || props.status == 'cancelled'">
                 <TrashIcon class="w-6 h-6" />
                 <p>Cancel</p>
@@ -145,8 +172,8 @@ async function setBillStatus(status: typeof props.status) {
                     <p class="w-7"></p>
                 </div>
 
-                <div class="grid grid-cols-[3fr_1fr_1fr_10px]" v-for="(payment, index) in props.paymentData"
-                    :key="index">
+                <div class="grid grid-cols-[3fr_1fr_1fr_10px] items-center"
+                    v-for="(payment, index) in props.paymentData" :key="index">
                     <p class="">{{ payment.courseName }}</p>
                     <p class="justify-self-end">{{ payment.paymentFor }}</p>
                     <div class="flex justify-end items-center">
