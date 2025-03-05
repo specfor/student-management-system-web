@@ -54,14 +54,14 @@ const countTotEnrollments = ref(0)
 
 let courses: Course[] = []
 let students: Student[] = []
-let payments: StudentPayment[] = []
+let payments: StudentPayment[] | null = null
 let attendance: Attendance[] = []
 
 
 function checkRequiredDataAvailability() {
     return new Promise((resolve) => {
         let id = setInterval(() => {
-            if (payments.length !== 0) { //&& attendance.length !== 0
+            if (payments !== null) { //&& attendance.length !== 0
                 clearInterval(id)
                 resolve(true)
             }
@@ -124,11 +124,12 @@ async function loadEnrollments(startIndex?: number, filters?: any) {
     countTotEnrollments.value = resp.data.tot_count
     enrollmentsDataForTable.value = []
 
+    console.log(enrollments);
     await checkRequiredDataAvailability()
 
     resp.data.enrollments.forEach((enrollment: Enrollment) => {
         let paid = { type: 'colorTag', text: 'Not Paid', css: 'bg-red-200 text-red-800' }
-        let payment = payments.find(p => p.enrollment_id == enrollment.id)
+        let payment = payments!.find(p => p.enrollment_id == enrollment.id)
         if (payment)
             paid = { type: 'colorTag', text: 'Paid', css: 'bg-green-200 text-green-800' }
 
@@ -164,6 +165,7 @@ async function loadEnrollments(startIndex?: number, filters?: any) {
         }
         enrollmentsDataForTable.value.push([enrollment.id, student, course, priceOffer, status, paid, attend])
     });
+    console.log(enrollmentsDataForTable.value);
 }
 loadEnrollments()
 
