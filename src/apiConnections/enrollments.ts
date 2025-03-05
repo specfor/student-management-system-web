@@ -1,7 +1,4 @@
-import type {
-  EnrollmentPriceAdjustment,
-  EnrollmentStatus,
-} from "@/types/enrollmentTypes";
+import type { EnrollmentPriceAdjustment, EnrollmentStatus } from "@/types/enrollmentTypes";
 import {
   sendJsonPatchRequest,
   sendJsonPostRequest,
@@ -21,6 +18,8 @@ export function getEnrollments(
       course_id?: number;
       student_id?: number;
       instructor_id?: number;
+      status_is?: EnrollmentStatus["type"];
+      status_not?: EnrollmentStatus["type"];
     };
   }
 ) {
@@ -31,10 +30,10 @@ export function getEnrollments(
     params.sort_dir = options.sort.direction;
   }
   if (options?.filters?.course_id) params.course_id = options.filters.course_id;
-  if (options?.filters?.student_id)
-    params.student_id = options.filters.student_id;
-  if (options?.filters?.instructor_id)
-    params.instructor_id = options.filters.instructor_id;
+  if (options?.filters?.student_id) params.student_id = options.filters.student_id;
+  if (options?.filters?.instructor_id) params.instructor_id = options.filters.instructor_id;
+  if (options?.filters?.status_is) params.status_is = options.filters.status_is;
+  if (options?.filters?.status_not) params.status_not = options.filters.status_not;
 
   return sendGetRequest("/enroll", params);
 }
@@ -43,10 +42,7 @@ export function getEnrollmentById(enrollmentId: number) {
   return sendGetRequest("/enroll/enrollment/" + enrollmentId);
 }
 
-export function getStudentEnrollmentOfCourse(
-  courseId: number,
-  studentId: number
-) {
+export function getStudentEnrollmentOfCourse(courseId: number, studentId: number) {
   return sendGetRequest(`/enroll/${courseId}/${studentId}`);
 }
 
@@ -65,8 +61,7 @@ export function enrollCourse(
       type: discount_type,
       reason: discount_reason,
     };
-    if (discount_type == "fixed")
-      params["price_adjustment"].amount = discount_amount;
+    if (discount_type == "fixed") params["price_adjustment"].amount = discount_amount;
     else params["price_adjustment"].percentage = discount_amount;
   }
   return sendJsonPostRequest("/enroll/" + course_id, params);
@@ -90,8 +85,7 @@ export function updateEnrollment(
       type: discount_type,
       reason: discount_reason,
     };
-    if (discount_type === "fixed")
-      params["price_adjustment"].amount = discount_amount;
+    if (discount_type === "fixed") params["price_adjustment"].amount = discount_amount;
     else params["price_adjustment"].percentage = discount_amount;
   }
   params["status"] = { type: status, reason: status_reason };
