@@ -23,7 +23,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-    close: []
+    close: [],
+    billCreated: [billId: number]
 }>()
 
 watch(props, (propNew) => {
@@ -33,10 +34,9 @@ watch(props, (propNew) => {
         selectedBillId.value = -1
     }
     StudentBills.value = bills.value.filter(b => b.student_id == propNew.studentId)
-    if (StudentBills.value.length == 0)
-        disableSelectBtn.value = false
-    else
+    if (StudentBills.value.length != 0)
         selectedBillId.value = StudentBills.value[0].id
+    disableSelectBtn.value = false
 });
 
 watch(selectedBillId, (val) => {
@@ -56,10 +56,15 @@ async function loadBills() {
 }
 loadBills()
 
-async function selectBill() {
+async function selectBill(createNew: boolean) {
     disableSelectBtn.value = true
 
-    let resp = await createBill(props.studentId, [props.paymentId], selectedBillId.value)
+    let resp;
+    if (createNew)
+        resp = await createBill(props.studentId, [props.paymentId], -1)
+    else
+        resp = await createBill(props.studentId, [props.paymentId], selectedBillId.value)
+
     if (resp.status == 'success') {
         alertStore.insertAlert('Receipt Created.', '')
         loadBills()
@@ -69,6 +74,7 @@ async function selectBill() {
             billRefresher()
 
         emit('close')
+        emit('billCreated', resp.data.bill.id)
     } else {
         alertStore.insertAlert('Error Creating a Receipt', resp.message, 'error')
     }
@@ -107,7 +113,11 @@ function skipReceipt() {
                     class="bg-blue-600 text-white font-bold px-3 py-2 rounded-lg hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-300">
                     Skip Receipt
                 </button>
-                <button @click="selectBill" :disabled="disableSelectBtn"
+                <button @click="() => { selectBill(true) }" :disabled="disableSelectBtn"
+                    class="bg-blue-600 text-white font-bold px-3 py-2 rounded-lg hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-300">
+                    New Bill
+                </button>
+                <button @click="() => { selectBill(false) }" :disabled="disableSelectBtn"
                     class="bg-blue-600 text-white font-bold px-3 py-2 rounded-lg hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-300">
                     Select
                 </button>
