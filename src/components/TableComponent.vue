@@ -96,6 +96,11 @@ export type tableRowItem = string | number | null | undefined | {
   type: "group"
   value: string | number | boolean
 } | {
+  type: 'button',
+  text: string,
+  emit: string,
+  css: string
+} | {
   type: "html"
   html: string
 } | {
@@ -245,9 +250,12 @@ export type Filter = {
             <input type="checkbox" class="h-5 w-5" :value="row[0]" v-model="selectedIds"
               v-on:change="() => { isChecked(); $emit('selected-rows', selectedIds) }">
           </td>
+          <!-- <td
+            v-if="!row.some(value => { return typeof value == 'object' && value !== null && value.type === 'group' })">
+            {{ getRecordNum() }}</td> -->
           <td colspan="100%" class="py-1 font-semibold bg-white pl-6"
             v-if="row.find(value => { return typeof value == 'object' && value !== null && value.type === 'group' })">
-            {{ (row.find(value => { return typeof value == 'object' && value !== null && value.type === 'group' })! as
+            {{(row.find(value => { return typeof value == 'object' && value !== null && value.type === 'group' })! as
               any).value
             }}
           </td>
@@ -256,6 +264,9 @@ export type Filter = {
             <td v-for="(data, index) in row" :key="index" class="pl-1 pr-3 py-1 text-slate-800">
               <span v-if="data === null || data === ''" class="">None</span>
               <span v-else-if="typeof data === 'object'">
+                <button v-if="data['type'] === 'button'" class="border border-slate-300 px-2 py-1 text-sm"
+                  :class="data['css']" @click="$emit(data['emit'], row[0])">{{ data['text']
+                  }}</button>
                 <span v-if="data['type'] === 'html'" v-html="data['html']"></span>
                 <TableColoredTag v-else-if="data['type'] === 'colorTag'" :text="data['text']"
                   :css="data['css'] ?? ''" />
@@ -294,8 +305,9 @@ export type Filter = {
     </table>
 
     <div class="flex justify-center mt-4" v-if="options?.hidePaginateBar ? !options.hidePaginateBar : true">
-      <PaginateComponent :total-count="paginateTotal" :page-size="paginatePageSize"
-        @load-page-emit="$emit('loadPageEmit', $event)" />
+      <PaginateComponent :total-count="paginateTotal" :page-size="paginatePageSize" @load-page-emit="(startIndex) => {
+        pageNum = ((startIndex / (paginatePageSize ?? 30)) | 0) + 1; $emit('loadPageEmit', startIndex);
+      }" />
     </div>
   </div>
 
