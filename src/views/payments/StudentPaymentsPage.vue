@@ -13,6 +13,7 @@ import type { Course } from '@/types/courseTypes';
 import { getCourses } from '@/apiConnections/courses';
 import { getStudents } from '@/apiConnections/students';
 import type { Student } from '@/types/studentTypes';
+import BillEnroller from '@/components/BillEnroller.vue';
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
@@ -24,12 +25,14 @@ const tableActions: TableActionType[] = [
 ]
 const tableColumns: TableColumns[] = [
     { label: 'ID', sortable: true }, { label: 'Payment For' }, { label: 'Amount', sortable: true },
-    { label: 'Student' }, { label: 'Course' }, { label: 'Custom Payment Reason' }, { label: 'Method' }, { label: 'Paid at' }, { label: 'Refunded' }]
+    { label: 'Student' }, { label: 'Course' }, { label: 'Custom Payment Reason' }, { label: 'Method' }, { label: 'Receipt ID' }, { label: 'Paid at' }, { label: 'Refunded' }]
 
 // const thisMonth = (new Date()).getFullYear() + '-' + ('0' + ((new Date()).getMonth() + 1)).slice(-2)
 
 const tableFilters: Ref<Filter[]> = ref([{ label: 'From 1st of', name: 'date_from', type: 'month' }, { label: 'Until 1st of', name: 'date_to', type: 'month' }])
 
+
+let payments: StudentPayment[] = []
 const limitLoadPayments = 30
 const countTotPayments = ref(0)
 
@@ -141,7 +144,7 @@ async function loadPayments(startIndex?: number, filters?: { [key: string]: any 
 
     countTotPayments.value = resp.data.tot_count
     paymentDataForTable.value = []
-    let payments: StudentPayment[] = resp.data.payments
+    payments = resp.data.payments
     payments.forEach(payment => {
         let student: tableRowItem = "Deleted"
         if (payment.enrollment?.student)
@@ -154,7 +157,9 @@ async function loadPayments(startIndex?: number, filters?: { [key: string]: any 
         let refunded: tableRowItem = { type: 'colorTag', text: payment.refunded ? 'Yes' : 'No', css: payment.refunded ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700' }
 
         paymentDataForTable.value.push([payment.id, payment.payment_for, payment.amount,
-            student, course, payment.custom_amount_reason, payment.payment_method, new Date(payment.created_at).toLocaleString(), refunded])
+            student, course, payment.custom_amount_reason, payment.payment_method, payment.bill_id ??
+        { type: 'button', text: "Assign Receipt", emit: 'assignBill', css: 'bg-blue-200 active:bg-blue-400 text-blue-700' },
+        new Date(payment.created_at).toLocaleString(), refunded])
     });
 }
 
@@ -197,6 +202,20 @@ async function delPayment() {
     alertStore.insertAlert('Can not Delete.', 'Payments can not be deleted.', 'error')
 }
 
+const billAsignerVisible = ref(false)
+const billAsignPaymentId = ref(0)
+const billAsignStudentId = ref(0)
+
+function showBillAsigner(PaymentId: number) {
+    payments.find(p => {
+        if (p.id === PaymentId) {
+            billAsignStudentId.value = p.enrollment?.student_id ?? 0
+        }
+    })
+    billAsignPaymentId.value = PaymentId
+    billAsignerVisible.value = true
+}
+
 </script>
 
 <template>
@@ -213,8 +232,16 @@ async function delPayment() {
                     setSorting(col, dir); loadPayments();
                 }" :filters="tableFilters" @filter-values="(val) => {
                     loadPayments(undefined, val)
+                }" @assign-bill="(paymentId) => {
+                    showBillAsigner(paymentId)
                 }" />
         </div>
 
+        <div class="aboslute inset-0 bg-gray-800 bg-opacity-50">
+            <BillEnroller :payment-id="billAsignPaymentId" :student-id="billAsignStudentId" :show="billAsignerVisible"
+                @close="() => { billAsignerVisible = false }" @bill-created="(id) => {
+                    loadPayments()
+                }" />
+        </div>
     </div>
 </template>
