@@ -77,7 +77,7 @@ async function addNewExpense() {
         },
         { name: 'amount', type: "number", text: "Amount (LKR)", required: true },
         { name: 'description', type: "text", text: "Description", required: true },
-        { name: 'month', type: "month", text: "Month incurred", required: true },
+        { name: 'month', type: "date", text: "Month incurred", required: true },
     ])
 
     // eslint-disable-next-line no-constant-condition
