@@ -49,7 +49,8 @@ checkLogged()
   <LoadingScreen v-if="loading" />
 
   <div v-else>
-    <div v-if="authStore.LoggedIn" class="h-dvh flex flex-col">
+    <div v-if="authStore.LoggedIn && router.currentRoute.value.path !== '/client-general-ui'"
+      class="h-dvh flex flex-col">
       <header class="TextNotCopy">
         <PageHeader />
       </header>
@@ -59,10 +60,10 @@ checkLogged()
       </div>
       <RightMenu />
     </div>
-    <div v-if="!authStore.LoggedIn">
+    <div v-if="!authStore.LoggedIn || router.currentRoute.value.path === '/client-general-ui'">
       <RouterView />
     </div>
-    <SideAlerts class="fixed right-4 top-20 z-30" />
+    <SideAlerts class=" fixed right-4 top-20 z-30" />
     <AddNewModal />
     <ConfirmationModal />
     <ExtendablePopUp />
