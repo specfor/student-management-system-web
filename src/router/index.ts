@@ -20,6 +20,7 @@ import InstructorPaymentCalculator from "@/views/payments/InstructorPaymentCalcu
 import WhatsappSettings from "@/views/settings/WhatsappSettings.vue";
 import LmsClientSettings from "@/views/settings/LmsClientSettings.vue";
 import ExpensesPage from "@/views/ExpensesPage.vue";
+import AttendanceMarker from "@/views/settings/AttendanceMarker.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -118,6 +119,11 @@ const router = createRouter({
       path: "/settings/message-system",
       name: "whatsapp-settings",
       component: WhatsappSettings,
+    },
+    {
+      path: "/settings/attendance-marker",
+      name: "attendance-marker-settings",
+      component: AttendanceMarker,
     },
     {
       path: "/settings/lms-client",

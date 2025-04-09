@@ -19,11 +19,9 @@ async function setToRegMode() {
             let resp = await getFingerprintRegStatus()
             if (resp.status == 'success') {
                 let data: getFingerprintRegStatusResponse = resp.data
-                console.log(data);
                 if (data.status == 'completed') {
                     finRegSuccess.value = true
                     finImage.value = URL.createObjectURL(base64ToBlob(data.image, 'image/octet-stream'))
-                    console.log(finImage.value);
                     clearInterval(checkerId)
                 }
                 if (data.status == 'ongoing') {
