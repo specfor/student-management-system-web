@@ -44,12 +44,7 @@ export async function sendJsonPostRequest(
   }
 }
 
-export async function sendGetRequest(
-  url: string,
-  params = {},
-  headers = {},
-  useBaseUrl = true
-) {
+export async function sendGetRequest(url: string, params = {}, headers = {}, useBaseUrl = true) {
   if (useBaseUrl) {
     url = baseUrl + url;
   }
@@ -170,11 +165,7 @@ export async function sendJsonPatchRequest(
   }
 }
 
-export async function sendFileDownloadRequest(
-  url: string,
-  headers = {},
-  useBaseUrl = true
-) {
+export async function sendFileDownloadRequest(url: string, headers = {}, useBaseUrl = true) {
   if (useBaseUrl) {
     url = baseUrl + url;
   }
@@ -247,13 +238,6 @@ export async function sendFileUploadRequest(
       data: null,
     };
   }
-
-  if (response.status === 200)
-    return {
-      status: "success",
-      data: { file: await response.blob() },
-      message: "Succssfully downloaded the file.",
-    };
 
   let data_;
   try {
