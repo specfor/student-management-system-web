@@ -56,6 +56,7 @@ const routes: (
             type: 'group', text: 'Settings', icon: Cog8ToothIcon, permissions: checkPermissions('system_config'), children: [
                 { type: 'link', path: '/settings/message-system', text: 'Message System', permissions: checkPermissions('system_config') },
                 { type: 'link', path: '/settings/lms-client', text: 'Client Software', permissions: checkPermissions('system_config') },
+                { type: 'link', path: '/settings/attendance-marker', text: 'Attendance Marker', permissions: checkPermissions('system_config') },
             ]
         },
     ]
