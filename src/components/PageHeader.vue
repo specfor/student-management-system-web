@@ -20,6 +20,10 @@ setInterval(async () => {
         fingerprintConnected.value = data.fingerprint == "connected"
     }
 }, 4000);
+
+function openClientUI() {
+    window.open("/client-general-ui", "_blank", "toolbar=no,location=no,directories=no,status=no,menubar=no,resizable=yes,width=" + (screen.width) + ",height=" + (screen.height) + ",top=0,left=0");
+}
 </script>
 
 <template>
@@ -31,6 +35,8 @@ setInterval(async () => {
             </div>
             <div class="flex">
                 <div class="flex justify-end font-semibold items-center mr-10">
+                    <button class="bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-600 mr-10"
+                        @click="openClientUI">Open Client UI</button>
                     <h5 class="mr-4 text-slate-200">Fingerprint Sensor</h5>
                     <h6 v-show="fingerprintConnected" class="bg-green-200 text-green-700 py-1 px-5">Connected</h6>
                     <h6 v-show="!fingerprintConnected" class="bg-red-200 text-red-700 py-1 px-5">Disconnected</h6>

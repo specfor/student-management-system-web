@@ -21,6 +21,7 @@ import WhatsappSettings from "@/views/settings/WhatsappSettings.vue";
 import LmsClientSettings from "@/views/settings/LmsClientSettings.vue";
 import ExpensesPage from "@/views/ExpensesPage.vue";
 import AttendanceMarker from "@/views/settings/AttendanceMarker.vue";
+import ClientGeneralUi from "@/views/ClientGeneralUi.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -134,6 +135,11 @@ const router = createRouter({
       path: "/expenses",
       name: "expenses",
       component: ExpensesPage,
+    },
+    {
+      path: "/client-general-ui",
+      name: "client-general-ui",
+      component: ClientGeneralUi,
     },
     // {
     //   path: '/about',
