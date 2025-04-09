@@ -89,8 +89,7 @@ async function getStatus() {
         if (lastAttendance.value.marked_time != "")
             mode.value = 'mark-attendance'
 
-        console.log(resp.data.last_attendance);
-
+        localStorage.setItem('last_attendance', JSON.stringify(resp.data.last_attendance))
         lastAttendance.value = resp.data.last_attendance
         markedAttendanceShowStartTime = Date.now()
     } else if (resp.data.fingerprint.mode == 'read-mark-attendance')

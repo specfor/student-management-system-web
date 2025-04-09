@@ -12,10 +12,15 @@ import ConfirmationModal from './components/formComponents/ConfirmationModal.vue
 import ExtendablePopUp from './components/formComponents/ExtendablePopUp.vue';
 import LoadingScreen from '@/views/LoadingScreen.vue'
 import RightMenu from './components/RightMenu.vue';
+import { useAlertsStore } from './stores/alerts';
 
 const authStore = useAuthStore()
+const alertStore = useAlertsStore()
 useSystemInfoStore()
 const loading = ref(true)
+
+let lastAttendance: { marked_time: string, course: string, student: string, student_id: number, course_id: number } =
+  { marked_time: "", course: "", student: "", student_id: 0, course_id: 0 };
 
 async function checkAppUpdates() {
   let resp = await fetch('/build')
@@ -42,6 +47,17 @@ async function checkLogged() {
 }
 
 checkLogged()
+
+setInterval(() => {
+  const lastAttend = localStorage.getItem('last_attendance')
+  if (lastAttend) {
+    const attenData = JSON.parse(lastAttend)
+    if (lastAttendance.marked_time != "" && attenData.marked_time !== lastAttendance.marked_time) {
+      alertStore.insertAlert("Attendance Marked", `${attenData.student_id} - ${attenData.student} ---> ${attenData.course}`, "info", -1)
+    }
+    lastAttendance = attenData
+  }
+}, 1000)
 
 </script>
 
