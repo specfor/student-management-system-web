@@ -164,8 +164,12 @@ async function showCalculatedPayment() {
 
     dataEntryForm.newDataEntryForm('New Instructor Payment', 'Create', [
         {
+            name: 'tot_amount', text: "Total Amount", type: 'text', disabled: true,
+            value: `${calculated.overall_amount.total.currency} ${formatMoney(calculated.overall_amount.total.amount)}`
+        },
+        {
             name: 'instructor_share', text: "Total Instructor's Share", type: 'text', disabled: true,
-            value: `${calculated.overall.total.currency} ${formatMoney(calculated.overall.total.amount)}`
+            value: `${calculated.overall_instructors_share.total.currency} ${formatMoney(calculated.overall_instructors_share.total.amount)}`
         },
         {
             name: 'paid', text: 'From Paid Students', type: 'text', disabled: true,
