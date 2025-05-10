@@ -38,6 +38,26 @@ export type AnalyticsPaymentRecord = {
   }[];
 };
 
+export type AnalyticsStudentMonthlyPaymentSummary = {
+  summary: {
+    instructor_id: number;
+    instructor_name: string;
+    collected_payment_amount: APIMoney;
+    estimated_payment_amount: APIMoney;
+    collected_instructors_payment_amount: APIMoney;
+    estimated_instructors_payment_amount: APIMoney;
+    coursewise_payment_summary: {
+      course_id: number;
+      course_name: string;
+      enrollment_count: number;
+      collected_payment_amount: APIMoney;
+      estimated_payment_amount: APIMoney;
+      collected_instructors_payment_amount: APIMoney;
+      estimated_instructors_payment_amount: APIMoney;
+    }[];
+  }[];
+};
+
 export type APIMoney = {
   amount: string;
   currency: string;

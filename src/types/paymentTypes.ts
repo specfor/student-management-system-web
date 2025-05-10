@@ -52,6 +52,10 @@ export type StudentPaymentListingResponse = {
     course_fee: CourseFee;
     instructor_fee_percentage: number;
     enrollment_count: number;
+    collected_payment_amount: APIMoney;
+    estimated_payment_amount: APIMoney;
+    collected_instructors_payment_amount: APIMoney;
+    estimated_instructors_payment_amount: APIMoney;
     records: StudentPaymentListItem[];
   }[];
   for_other_months: {
