@@ -188,7 +188,7 @@ async function showCalculatedPayment() {
     dataEntryForm.finishSubmission()
 
     let resp2 = await markInstructorPayment(selectedInstructorId.value, paymentIds, Number(selectedMonth.value.substring(5)),
-        Number(selectedMonth.value.substring(0, 4)), calculated.overall.total.amount, pendingPaymentEnrollmentIds)
+        Number(selectedMonth.value.substring(0, 4)), calculated.overall_instructors_share.total.amount, pendingPaymentEnrollmentIds)
 
     if (resp2.status === 'error') {
         alertStore.insertAlert('An error occured while marking payment.', resp2.message, 'error')
