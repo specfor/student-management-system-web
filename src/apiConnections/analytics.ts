@@ -4,11 +4,7 @@ export function getStudentCount() {
   return sendGetRequest("/analytics/students/count");
 }
 
-export function getMonthlyFinancialSummary(
-  year: number,
-  month: number,
-  byMarkedMonth: boolean
-) {
+export function getMonthlyFinancialSummary(year: number, month: number, byMarkedMonth: boolean) {
   return sendGetRequest("/analytics/summary/financial", {
     year,
     month,
@@ -32,5 +28,12 @@ export function getInstructorMonthyPaymentCalculations(
 export function getFinancialSummaryForMonths(monthsBackward: number) {
   return sendGetRequest("/analytics/summary/financial/for-months", {
     "months-backward": monthsBackward,
+  });
+}
+
+export function getStudentMonthlyPaymentSummary(year: number, month: number) {
+  return sendGetRequest("/analytics/summary/student-payments", {
+    year,
+    month,
   });
 }
