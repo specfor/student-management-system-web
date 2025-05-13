@@ -1,17 +1,15 @@
 <script lang="ts" setup>
 import { downloadBannerImage, getClientBanners } from '@/apiConnections/client-banners';
-import { getGeneralClientStatus } from '@/apiConnections/general-client-ui';
-import { useAlertsStore } from '@/stores/alerts';
+import { getGeneralClientStatus, getLocalFingerprintStatus } from '@/apiConnections/general-client-ui';
+import LoadingCursor from '@/components/minorUiComponents/loadingCursor.vue';
 import type { ClientBanner } from '@/types/client-banners';
 import type { Student } from '@/types/studentTypes';
 import { ref, type Ref } from 'vue';
 
-const alertStore = useAlertsStore();
-
 const bannerData: Ref<ClientBanner[]> = ref([]);
 const bannerImageUrls: Ref<Map<string, string>> = ref(new Map());
 const bannerImageUrl = ref('');
-const mode: Ref<"home" | "register" | "mark-attendance"> = ref("home");
+const mode: Ref<"home" | "register" | "mark-attendance" | "action-pending" | "fingerprint-not-found"> = ref("home");
 const lastAttendance: Ref<{ marked_time: string, course: string, student: string, student_id: number, course_id: number }> =
     ref({ marked_time: "", course: "", student: "", student_id: 0, course_id: 0 });
 
@@ -30,7 +28,6 @@ async function downloadImage(bannerId: number, imageId: string) {
     } else {
         const response = await downloadBannerImage(bannerId);
         if (response.status == 'error') {
-            alertStore.insertAlert('Image download error', 'Unable to download image.', 'error');
             return;
         } else {
             const imageUrl = URL.createObjectURL(response.data.file);
@@ -42,7 +39,7 @@ async function downloadImage(bannerId: number, imageId: string) {
 async function fetchBanners() {
     const resp = await getClientBanners(0, null, { filters: { active: true } });
     if (resp.status == 'error') {
-        alertStore.insertAlert("Data fetch error", "Unable to fetch data from server.", "error")
+        return
     } else {
         bannerData.value = resp.data.banners;
         bannerData.value.forEach((banner) => {
@@ -66,7 +63,6 @@ fetchBanners()
 async function getStatus() {
     const resp = await getGeneralClientStatus()
     if (resp.status == 'error') {
-        alertStore.insertAlert("Data fetch error", "Unable to fetch data from server.", "error")
         return
     }
 
@@ -77,7 +73,7 @@ async function getStatus() {
         setTimeout(() => {
             mode.value = 'home'
             student.value = null
-        }, 2000);
+        }, 5000);
         return
     }
 
@@ -137,22 +133,65 @@ setInterval(() => {
     date.value = now.toLocaleDateString();
     time.value = now.toLocaleTimeString();
 }, 1000);
+
+
+let lastFinStatus: { status: "idle" | "found-finger-match" | "not-found-finger-match", update_time: number } = { status: "idle", update_time: 0 }
+
+async function getLocalFinStatus() {
+    const resp = await getLocalFingerprintStatus()
+    if (resp.status != 'success') {
+        return
+    }
+
+    if (lastFinStatus.update_time != resp.data.update_time) {
+        if (resp.data.status == 'found-finger-match') {
+            mode.value = 'action-pending'
+        } else if (resp.data.status == 'not-found-finger-match') {
+            mode.value = 'fingerprint-not-found'
+            setTimeout(() => {
+                mode.value = 'home'
+            }, 6000);
+        }
+    }
+
+    lastFinStatus = resp.data
+}
+
+setInterval(() => {
+    getLocalFinStatus()
+}, 1000);
 </script>
 
 <template>
     <div class="h-screen">
         <div class="flex h-full">
-            <div class="w-[500px] border-r-4 border-gray-200 flex flex-col justify-between">
+            <div class="border-r-4 border-gray-200 flex flex-col justify-between"
+                :class="mode == 'home' ? 'w-[500px]' : 'w-full'">
                 <div class="flex flex-col items-center" v-show="mode === 'home'">
                     <img src="/logo.png" alt="Logo" class="w-[200px] h-[200px] object-contain my-10" />
                     <p class="px-5 text-3xl text-center">Place your finger to mark attendance. If you are not a
                         registered student go to the counter</p>
                 </div>
 
-                <div v-show="mode === 'register'" class="flex flex-col items-center pt-10 px-5 h-full">
+                <div v-show="mode === 'action-pending'"
+                    class="flex flex-col items-center justify-center pt-10 px-5 h-full">
+                    <p class="text-3xl bg-green-400 text-green-800 px-6 py-4">Found a matching fingerprint.</p>
+                    <p class="text-2xl mt-5">Looking for enrolled courses...</p>
+                    <LoadingCursor class="h-[400px]" />
+                </div>
+
+                <div v-show="mode === 'fingerprint-not-found'"
+                    class="flex flex-col items-center justify-center pt-10 px-5 h-full">
+                    <p class="text-3xl font-bold text-center bg-red-300 text-red-800 px-6 py-4">Fingerprint Not Matched.
+                        Try Again....</p>
+                    <p class="mt-20 text-xl">Please go to the counter if this issue persists or to register your
+                        fingerprint.</p>
+                </div>
+
+                <div v-show="mode === 'register'" class="flex flex-col items-center justify-center pt-10 px-5 h-full">
                     <p class="text-3xl font-bold text-center">Register Student Fingerprint</p>
 
-                    <div class="grid grid-cols-3 mt-20 gap-3 w-full text-xl">
+                    <div class="grid grid-cols-3 mt-20 gap-3 w-full text-xl max-w-lg">
                         <p class="font-semibold">Student Id</p>
                         <p class="col-span-2">{{ student?.custom_id ?? '-' }}</p>
                         <p class="font-semibold">Name</p>
@@ -165,10 +204,10 @@ setInterval(() => {
                     <p class="mt-10 text-2xl text-center p-4" :class="regStatusStyles">{{ regStatusMsg }}</p>
                 </div>
 
-                <div class="pt-10 px-5" v-show="mode === 'mark-attendance'">
+                <div class="pt-10 px-5 flex flex-col items-center justify-center" v-show="mode === 'mark-attendance'">
                     <p class="text-3xl font-bold text-center">Mark Attendance</p>
 
-                    <div class="grid grid-cols-3 mt-20 gap-3 w-full text-xl">
+                    <div class="grid grid-cols-3 mt-20 gap-3 w-full text-xl max-w-lg">
                         <p class="font-semibold">Student Id</p>
                         <p class="col-span-2">{{ lastAttendance.student_id }}</p>
                         <p class="font-semibold">Name</p>
@@ -189,7 +228,7 @@ setInterval(() => {
                     </div>
                 </div>
             </div>
-            <div class="h-full w-full py-10 px-10">
+            <div class="h-full w-full py-10 px-10" :class="mode == 'home' ? 'w-full' : 'hidden'">
                 <div v-if="bannerImageUrl === ''" class="flex items-center justify-center h-full">
                     <p class="text-2xl">Loading...</p>
                 </div>

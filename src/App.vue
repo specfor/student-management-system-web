@@ -79,10 +79,12 @@ setInterval(() => {
     <div v-if="!authStore.LoggedIn || router.currentRoute.value.path === '/client-general-ui'">
       <RouterView />
     </div>
-    <SideAlerts class=" fixed right-4 top-20 z-30" />
-    <AddNewModal />
-    <ConfirmationModal />
-    <ExtendablePopUp />
+    <div v-if="router.currentRoute.value.path !== '/client-general-ui'">
+      <SideAlerts class=" fixed right-4 top-20 z-30" />
+      <AddNewModal />
+      <ConfirmationModal />
+      <ExtendablePopUp />
+    </div>
   </div>
 </template>
 
