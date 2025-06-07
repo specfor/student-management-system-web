@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getFinancialSummaryForMonths, getMonthlyFinancialSummary, getStudentCount, getStudentMonthlyPaymentSummary } from '@/apiConnections/analytics';
+import { getCourseCalendar, getFinancialSummaryForMonths, getMonthlyFinancialSummary, getStudentCount, getStudentMonthlyPaymentSummary } from '@/apiConnections/analytics';
 import CollapseCard from '@/components/minorUiComponents/CollapseCard.vue';
 import SelectionBox from '@/components/primary/SelectionBox.vue';
 import { formatMoney } from '@/utils/money';
@@ -9,6 +9,7 @@ import { Doughnut, Line } from 'vue-chartjs'
 import autocolors from 'chartjs-plugin-autocolors';
 import type { AnalyticsStudentMonthlyPaymentSummary, APIMoney } from '@/types/analytics';
 import LoadingCursor from '@/components/minorUiComponents/loadingCursor.vue';
+import CalandarComponent from '@/components/minorUiComponents/CalandarComponent.vue';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement)
 
@@ -153,6 +154,38 @@ loadPaymentSummary()
 watch(selectedMonthForStudentPayment, () => {
     loadPaymentSummary()
 })
+
+const calendarData = ref<{ title: string; body: string; timeRange: string; date: string, status: string, notes: string, courseId: number }[]>([]);
+
+async function loadCourseCalendar() {
+    const resp = await getCourseCalendar(2025, 6);
+    if (resp.status === 'success') {
+        // resp.data.calendar is an object with date keys and array of class objects
+        // Transform it into array of cards for CalandarComponent
+        calendarData.value = [];
+        const calendar = resp.data.calendar;
+        for (const date in calendar) {
+            if (Object.prototype.hasOwnProperty.call(calendar, date)) {
+                const classes = calendar[date];
+                classes.forEach((cls: any) => {
+                    calendarData.value.push({
+                        title: cls.class_name,
+                        body: `Instructor: ${cls.instructor_name}`,
+                        status: cls.status,
+                        timeRange: cls.time,
+                        date: date,
+                        notes: cls.notes,
+                        courseId: cls.id
+                    });
+                });
+            }
+        }
+    } else {
+        console.error('Failed to load course calendar:', resp.message);
+    }
+}
+
+loadCourseCalendar()
 </script>
 
 <template>
@@ -193,7 +226,7 @@ watch(selectedMonthForStudentPayment, () => {
                                     <h5>Total Income</h5>
                                     <p>{{ incomeData.total_income.currency }} {{
                                         formatMoney(incomeData.total_income.amount)
-                                        }}
+                                    }}
                                     </p>
                                 </div>
                             </div>
@@ -220,7 +253,7 @@ watch(selectedMonthForStudentPayment, () => {
                                     <h5>Total Expenses</h5>
                                     <p>{{ expenseData.total_expenses.currency }} {{
                                         formatMoney(expenseData.total_expenses.amount)
-                                        }}
+                                    }}
                                     </p>
                                 </div>
                             </div>
@@ -238,6 +271,15 @@ watch(selectedMonthForStudentPayment, () => {
                             <h5>Total Number of Students</h5>
                             <p>{{ studentCountData.datasets[0].data[0] + studentCountData.datasets[0].data[1] }}</p>
                         </div>
+                    </CollapseCard>
+
+                    <CollapseCard header="Course Calendar" class="col-span-3">
+                        <CalandarComponent :cards="calendarData" @update:cards="(card) => {
+                            const idx = calendarData.findIndex(c => c.courseId === card.courseId && c.date === card.date);
+                            if (idx !== -1) {
+                                calendarData[idx] = { ...calendarData[idx], ...card };
+                            }
+                        }" />
                     </CollapseCard>
 
                     <CollapseCard class="col-span-3" header="Financial Summary for Last 12 Months">
@@ -270,25 +312,25 @@ watch(selectedMonthForStudentPayment, () => {
                                         <h5 class="text-green-900">Collected Payment Income</h5>
                                         <p>{{ instructorSummary.collected_payment_amount.currency }} {{
                                             formatMoney(instructorSummary.collected_payment_amount.amount)
-                                            }}</p>
+                                        }}</p>
                                     </div>
                                     <div class="bg-green-400 px-3 py-2">
                                         <h5 class="text-green-900">Estimated Payment Income</h5>
                                         <p>{{ instructorSummary.estimated_payment_amount.currency }} {{
                                             formatMoney(instructorSummary.estimated_payment_amount.amount)
-                                            }}</p>
+                                        }}</p>
                                     </div>
                                     <div class="bg-orange-200 px-3 py-2">
                                         <h5 class="text-orange-900">Collected Instructor's Share Amount</h5>
                                         <p>{{ instructorSummary.collected_instructors_payment_amount.currency }} {{
                                             formatMoney(instructorSummary.collected_instructors_payment_amount.amount)
-                                            }}</p>
+                                        }}</p>
                                     </div>
                                     <div class="bg-orange-400 px-3 py-2">
                                         <h5 class="text-orange-900">Estimated Instructor's Share Amount</h5>
                                         <p>{{ instructorSummary.estimated_instructors_payment_amount.currency }} {{
                                             formatMoney(instructorSummary.estimated_instructors_payment_amount.amount)
-                                            }}</p>
+                                        }}</p>
                                     </div>
                                 </div>
 
@@ -305,25 +347,25 @@ watch(selectedMonthForStudentPayment, () => {
                                             <h5 class="text-gray-500">Collected Payment Income</h5>
                                             <p>{{ courseData.collected_payment_amount.currency }} {{
                                                 formatMoney(courseData.collected_payment_amount.amount)
-                                            }}</p>
+                                                }}</p>
                                         </div>
                                         <div>
                                             <h5 class="text-gray-500">Estimated Payment Income</h5>
                                             <p>{{ courseData.estimated_payment_amount.currency }} {{
                                                 formatMoney(courseData.estimated_payment_amount.amount)
-                                            }}</p>
+                                                }}</p>
                                         </div>
                                         <div>
                                             <h5 class="text-gray-500">Collected Instructor's Share Amount</h5>
                                             <p>{{ courseData.collected_instructors_payment_amount.currency }} {{
                                                 formatMoney(courseData.collected_instructors_payment_amount.amount)
-                                            }}</p>
+                                                }}</p>
                                         </div>
                                         <div>
                                             <h5 class="text-gray-500">Estimated Instructor's Share Amount</h5>
                                             <p>{{ courseData.estimated_instructors_payment_amount.currency }} {{
                                                 formatMoney(courseData.estimated_instructors_payment_amount.amount)
-                                            }}</p>
+                                                }}</p>
                                         </div>
                                     </div>
                                 </div>
