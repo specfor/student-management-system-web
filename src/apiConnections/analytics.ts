@@ -37,3 +37,10 @@ export function getStudentMonthlyPaymentSummary(year: number, month: number) {
     month,
   });
 }
+
+export function getCourseCalendar(year: number, month: number) {
+  return sendGetRequest("/analytics/course-calendar", {
+    year,
+    month,
+  });
+}
