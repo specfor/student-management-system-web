@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { createUpdateClassConductRecord } from '@/apiConnections/class_conduct';
+import { createUpdateClassConductRecord, resheduleClass } from '@/apiConnections/class_conduct';
 import { useAlertsStore } from '@/stores/alerts';
 import { ref, computed, defineProps, toRef, type Ref, watch } from 'vue';
 
@@ -109,14 +109,15 @@ const showCardModal = ref(false);
 const selectedCard = ref<Card | null>(null);
 
 // Modal extra state
-const statusOptions = ['Scheduled', 'Completed', 'Cancelled'];
+const statusOptions = ['Scheduled', 'Completed', 'Cancelled', 'Rescheduled'];
 const selectedStatus = ref('Scheduled');
 const notes = ref('');
 
 function openCardModal(card: Card) {
+    showReschedule.value = false;
     selectedCard.value = card;
     showCardModal.value = true;
-    selectedStatus.value = card.status; // Reset or set default
+    selectedStatus.value = card.status.charAt(0).toUpperCase() + card.status.slice(1); // Reset or set default
     notes.value = card.notes || ''; // Reset or set default
 }
 function closeCardModal() {
@@ -127,7 +128,11 @@ function closeCardModal() {
 async function updateClassConduct() {
     if (!selectedCard.value) return;
 
-    const resp = await createUpdateClassConductRecord(selectedCard.value.courseId, selectedCard.value.date, selectedStatus.value, notes.value);
+    const sTime = selectedCard.value.timeRange.split('-')[0];
+    const eTime = selectedCard.value.timeRange.split('-')[1];
+
+    const resp = await createUpdateClassConductRecord(
+        selectedCard.value.courseId, selectedCard.value.date, selectedStatus.value.toLowerCase(), notes.value, sTime, eTime);
     if (resp.status === 'success') {
         // Update the card in the showCards array
         const index = showCards.value.findIndex(card => card.title === selectedCard.value?.title && card.date === selectedCard.value?.date);
@@ -140,6 +145,47 @@ async function updateClassConduct() {
     } else {
         alertStore.insertAlert('Error', 'Failed to update class schedule: ' + resp.message, 'error');
     }
+}
+
+// Reschedule state
+const showReschedule = ref(false);
+const rescheduleDate = ref('');
+const rescheduleStartTime = ref('');
+const rescheduleEndTime = ref('');
+
+function openReschedule() {
+    rescheduleDate.value = selectedCard.value?.date || '';
+    // Try to extract start time from timeRange if available
+    rescheduleStartTime.value = selectedCard.value?.timeRange?.split('-')[0] || '';
+    rescheduleEndTime.value = selectedCard.value?.timeRange?.split('-')[1] || '';
+    showReschedule.value = true;
+}
+function closeReschedule() {
+    showReschedule.value = false;
+}
+
+const handlingReschedule = ref(false);
+
+async function handleReschedule() {
+    handlingReschedule.value = true;
+
+    if (!selectedCard.value || !rescheduleDate.value || !rescheduleStartTime.value || !rescheduleEndTime.value) return;
+    // Call update function with new date and time
+    const resp = await resheduleClass(
+        selectedCard.value.courseId,
+        selectedCard.value.date,
+        rescheduleDate.value,
+        rescheduleStartTime.value,
+        rescheduleEndTime.value
+    );
+    if (resp.status === 'success') {
+        alertStore.insertAlert('Success', 'Class rescheduled successfully.', 'success');
+        closeReschedule();
+        closeCardModal();
+    } else {
+        alertStore.insertAlert('Error', 'Failed to reschedule class: ' + resp.message, 'error');
+    }
+    handlingReschedule.value = false;
 }
 </script>
 
@@ -179,8 +225,9 @@ async function updateClassConduct() {
                     <span class="font-semibold">{{ day.getDate() }}</span>
                 </div>
                 <div v-for="card in getCardsForDate(formatDate(day))" :key="card.title + card.timeRange"
-                    class="cursor-pointer rounded p-1 mb-2"
-                    :class="card.status == 'Scheduled' ? 'bg-blue-200 hover:bg-blue-300' : card.status == 'Completed' ? 'bg-green-200 hover:bg-green-300' : 'bg-yellow-200 hover:bg-yellow-300'"
+                    class="cursor-pointer rounded p-1 mb-2" :class="card.status == 'scheduled' ? 'bg-blue-200 hover:bg-blue-300' :
+                        card.status == 'completed' ? 'bg-green-200 hover:bg-green-300' : (card.status == 'rescheduled' ?
+                            'bg-yellow-200 hover:bg-yellow-300' : 'bg-rose-200 hover:bg-rose-300')"
                     @click="openCardModal(card)">
                     <div class="font-bold truncate">{{ card.title }}</div>
                     <div class="text-md text-gray-600">{{ card.timeRange }}</div>
@@ -213,9 +260,40 @@ async function updateClassConduct() {
                             placeholder="Add notes..."></textarea>
                     </div>
 
+                    <!-- Reschedule section inside modal -->
+                    <div class="mt-4">
+                        <button v-if="!showReschedule" @click="openReschedule"
+                            class="px-4 py-2 bg-yellow-400 hover:bg-yellow-600 rounded w-full">Reschedule Class</button>
+                        <div v-if="showReschedule" class="mt-4 border-t pt-4">
+                            <h3 class="font-bold text-md mb-2">Reschedule Class</h3>
 
+                            <div class="mb-4">
+                                <label class="block text-md font-medium mb-1">New Date</label>
+                                <input type="date" v-model="rescheduleDate"
+                                    class="border border-gray-400 rounded p-2 w-full" />
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="mb-4">
+                                    <label class="block text-md font-medium mb-1">Start Time</label>
+                                    <input type="time" v-model="rescheduleStartTime"
+                                        class="border border-gray-400 rounded p-2 w-full" />
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-md font-medium mb-1">End Time</label>
+                                    <input type="time" v-model="rescheduleEndTime"
+                                        class="border border-gray-400 rounded p-2 w-full" />
+                                </div>
+                            </div>
+                            <div class="flex justify-end gap-2">
+                                <button @click="closeReschedule"
+                                    class="px-4 py-2 bg-gray-400 hover:bg-gray-600 rounded">Cancel</button>
+                                <button @click="handleReschedule" :disabled="handlingReschedule"
+                                    class="px-4 py-2 bg-yellow-400 hover:bg-yellow-600 rounded disabled:bg-yellow-200">Confirm
+                                    Reschedule</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
                 <div class="bg-gray-100 p-4 flex justify-end gap-2">
                     <button @click="closeCardModal"
                         class="px-4 py-2 bg-gray-400 hover:bg-gray-600 rounded">Close</button>

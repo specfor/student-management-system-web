@@ -1,4 +1,4 @@
-import { sendGetRequest, sendJsonPatchRequest, sendJsonPostRequest } from "@/utils/requests";
+import { sendGetRequest, sendJsonPostRequest } from "@/utils/requests";
 
 export async function getClassConductRecords(classId?: number, date?: string, status?: string) {
   const params: Record<string, any> = {};
@@ -18,12 +18,31 @@ export async function createUpdateClassConductRecord(
   classId: number,
   date: string,
   status: string,
-  notes: string
+  notes: string,
+  startTime: string,
+  endTime: string
 ) {
   return sendJsonPostRequest("/course-conduct", {
     class_id: classId,
     date,
     status,
     notes: [notes],
+    startTime,
+    endTime,
+  });
+}
+
+export async function resheduleClass(
+  classId: number,
+  formDate: string,
+  toData: string,
+  startTime: string,
+  endTime: string
+) {
+  return sendJsonPostRequest("/course-conduct/reschedule/" + classId, {
+    from_date: formDate,
+    to_date: toData,
+    startTime,
+    endTime,
   });
 }
