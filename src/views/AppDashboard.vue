@@ -157,8 +157,8 @@ watch(selectedMonthForStudentPayment, () => {
 
 const calendarData = ref<{ title: string; body: string; timeRange: string; date: string, status: string, notes: string, courseId: number }[]>([]);
 
-async function loadCourseCalendar() {
-    const resp = await getCourseCalendar(2025, 6);
+async function loadCourseCalendar(year: number, month: number) {
+    const resp = await getCourseCalendar(year, month);
     if (resp.status === 'success') {
         // resp.data.calendar is an object with date keys and array of class objects
         // Transform it into array of cards for CalandarComponent
@@ -185,7 +185,12 @@ async function loadCourseCalendar() {
     }
 }
 
-loadCourseCalendar()
+
+
+const now = new Date();
+const year = now.getFullYear();
+const month = now.getMonth() + 1;
+loadCourseCalendar(year, month)
 </script>
 
 <template>
@@ -279,7 +284,7 @@ loadCourseCalendar()
                             if (idx !== -1) {
                                 calendarData[idx] = { ...calendarData[idx], ...card };
                             }
-                        }" />
+                        }" @update:date="(dt) => { loadCourseCalendar(dt.getFullYear(), dt.getMonth() + 1) }" />
                     </CollapseCard>
 
                     <CollapseCard class="col-span-3" header="Financial Summary for Last 12 Months">
