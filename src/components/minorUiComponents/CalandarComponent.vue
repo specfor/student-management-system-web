@@ -22,6 +22,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     (e: 'update:cards', card: Card): void;
+    (e: 'update:date', date: Date): void;
 }>();
 
 let allCards = toRef(props, 'cards');
@@ -36,6 +37,10 @@ watch(props, (newProps) => {
 const mode = ref<'week' | 'month'>('week');
 const today = new Date();
 const currentDate = ref(new Date(today.getFullYear(), today.getMonth(), today.getDate()));
+
+watch(currentDate, () => {
+    emit('update:date', currentDate.value)
+})
 
 function formatDate(date: Date) {
     // Use local time zone for formatting
