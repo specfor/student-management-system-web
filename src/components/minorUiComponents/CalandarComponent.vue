@@ -53,7 +53,10 @@ function formatDate(date: Date) {
 function getStartOfWeek(date: Date) {
     // Use local time zone for week calculation
     const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    d.setDate(d.getDate() - d.getDay());
+    // Adjust to start week on Monday (getDay() returns 0 for Sunday, 1 for Monday, etc.)
+    const dayOfWeek = d.getDay();
+    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // If Sunday (0), go back 6 days, otherwise go back (dayOfWeek - 1) days
+    d.setDate(d.getDate() - daysToSubtract);
     return d;
 }
 
@@ -74,8 +77,21 @@ const days = computed(() => {
         const year = currentDate.value.getFullYear();
         const month = currentDate.value.getMonth();
         const numDays = getDaysInMonth(year, month);
-        return Array.from({ length: numDays }, (_, i) => {
-            return new Date(year, month, i + 1);
+        
+        // Get the first day of the month and calculate padding
+        const firstDay = new Date(year, month, 1);
+        const firstDayOfWeek = firstDay.getDay();
+        // Convert Sunday (0) to 6, Monday (1) to 0, etc. for Monday-start week
+        const paddingDays = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+        
+        // Create array with padding null values + actual days
+        const totalCells = paddingDays + numDays;
+        return Array.from({ length: totalCells }, (_, i) => {
+            if (i < paddingDays) {
+                return null; // Empty padding days
+            } else {
+                return new Date(year, month, i - paddingDays + 1);
+            }
         });
     }
 });
@@ -196,10 +212,10 @@ async function handleReschedule() {
             <button @click="prev" class="px-2 py-1 bg-gray-200 rounded">Prev</button>
             <span class="font-bold text-lg">
                 <template v-if="mode === 'week'">
-                    Week of {{ days[0].toLocaleDateString() }}
+                    Week of {{ days.find(d => d !== null)?.toLocaleDateString() }}
                 </template>
                 <template v-else>
-                    {{ days[0].toLocaleString('default', { month: 'long' }) }} {{ days[0].getFullYear() }}
+                    {{ days.find(d => d !== null)?.toLocaleString('default', { month: 'long' }) }} {{ days.find(d => d !== null)?.getFullYear() }}
                 </template>
             </span>
             <button @click="next" class="px-2 py-1 bg-gray-200 rounded">Next</button>
@@ -212,26 +228,27 @@ async function handleReschedule() {
         <!-- Days of week row (one time only) -->
         <div class="grid grid-cols-7 gap-2 mb-2">
             <div v-for="i in 7" :key="'label-' + i" class="text-center font-semibold text-gray-700">
-                {{ new Date(currentDate.getFullYear(), currentDate.getMonth(), i).toLocaleDateString('en-US', {
-                    weekday:
-                        'long'
+                {{ new Date(2024, 0, i).toLocaleDateString('en-US', {
+                    weekday: 'long'
                 }) }}
             </div>
         </div>
         <div :class="mode === 'week' ? 'grid grid-cols-7 gap-2' : 'grid grid-cols-7 gap-2'"
             class="max-h-[800px] overflow-y-auto">
-            <div v-for="day in days" :key="day.toISOString()" class="border rounded p-2 min-h-[120px] flex flex-col">
+            <div v-for="(day, index) in days" :key="day ? day.toISOString() : `empty-${index}`" class="border rounded p-2 min-h-[120px] flex flex-col">
                 <div class="flex justify-between items-center mb-2">
-                    <span class="font-semibold">{{ day.getDate() }}</span>
+                    <span class="font-semibold">{{ day ? day.getDate() : '' }}</span>
                 </div>
-                <div v-for="card in getCardsForDate(formatDate(day))" :key="card.title + card.timeRange"
-                    class="cursor-pointer rounded p-1 mb-2" :class="card.status == 'scheduled' ? 'bg-blue-200 hover:bg-blue-300' :
-                        card.status == 'completed' ? 'bg-green-200 hover:bg-green-300' : (card.status == 'rescheduled' ?
-                            'bg-yellow-200 hover:bg-yellow-300' : 'bg-rose-200 hover:bg-rose-300')"
-                    @click="openCardModal(card)">
-                    <div class="font-bold truncate">{{ card.title }}</div>
-                    <div class="text-md text-gray-600">{{ card.timeRange }}</div>
-                </div>
+                <template v-if="day">
+                    <div v-for="card in getCardsForDate(formatDate(day))" :key="card.title + card.timeRange"
+                        class="cursor-pointer rounded p-1 mb-2" :class="card.status == 'scheduled' ? 'bg-blue-200 hover:bg-blue-300' :
+                            card.status == 'completed' ? 'bg-green-200 hover:bg-green-300' : (card.status == 'rescheduled' ?
+                                'bg-yellow-200 hover:bg-yellow-300' : 'bg-rose-200 hover:bg-rose-300')"
+                        @click="openCardModal(card)">
+                        <div class="font-bold truncate">{{ card.title }}</div>
+                        <div class="text-md text-gray-600">{{ card.timeRange }}</div>
+                    </div>
+                </template>
             </div>
         </div>
 
