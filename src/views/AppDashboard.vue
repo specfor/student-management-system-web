@@ -19,10 +19,10 @@ const selectedMonthForIncome = ref(`${new Date().getFullYear()}-${(new Date().ge
 const paymentCalculateType: Ref<"marked" | "paid_to"> = ref("paid_to")
 
 const studentCountData: Ref<ChartData<'doughnut'>> = ref({
-    labels: ['Active', 'Inactive'],
+    labels: ['Active Not Paid', 'Active Paid', 'Inactive'],
     datasets: [
         {
-            backgroundColor: ['#00D8FF', '#FF9136'],
+            backgroundColor: ['#00D8FF', '#5355a2','#FF9136'],
             data: []
         }
     ]
@@ -62,7 +62,8 @@ const loadingMonthlyIncomeSummary = ref(false)
 async function loadStudentCount() {
     let resp = await getStudentCount()
     if (resp.status === 'success') {
-        studentCountData.value.datasets[0].data = [resp.data.active, resp.data.inactive]
+        studentCountData.value.datasets[0].data = 
+        [resp.data.active - resp.data['paid_student_count'], resp.data['paid_student_count'], resp.data.inactive]
     }
 }
 loadStudentCount()
@@ -273,8 +274,18 @@ loadCourseCalendar(year, month)
                         </div>
                         <div class="flex justify-center gap-x-10 mt-8"
                             v-if="studentCountData.datasets[0].data.length > 0">
-                            <h5>Total Number of Students</h5>
-                            <p>{{ studentCountData.datasets[0].data[0] + studentCountData.datasets[0].data[1] }}</p>
+                            <h5>Total Student Count</h5>
+                            <p>{{ studentCountData.datasets[0].data[0] + studentCountData.datasets[0].data[1] + studentCountData.datasets[0].data[2]}}</p>
+                        </div>
+                         <div class="flex justify-center gap-x-10 mt-2"
+                            v-if="studentCountData.datasets[0].data.length > 0">
+                            <h5>Total Active Student Count</h5>
+                            <p>{{ studentCountData.datasets[0].data[0] + studentCountData.datasets[0].data[1]}}</p>
+                        </div>
+                        <div class="flex justify-center gap-x-10 mt-2"
+                            v-if="studentCountData.datasets[0].data.length > 0">
+                            <h5>Total Paid Student Count</h5>
+                            <p>{{ studentCountData.datasets[0].data[1] }}</p>
                         </div>
                     </CollapseCard>
 
@@ -284,7 +295,7 @@ loadCourseCalendar(year, month)
                             if (idx !== -1) {
                                 calendarData[idx] = { ...calendarData[idx], ...card };
                             }
-                        }" @update:date="(dt) => { loadCourseCalendar(dt.getFullYear(), dt.getMonth() + 1) }" />
+                        }" @update:date="(dt) => { console.log(dt.toDateString());loadCourseCalendar(dt.getFullYear(), dt.getMonth() + 1) }" />
                     </CollapseCard>
 
                     <CollapseCard class="col-span-3" header="Financial Summary for Last 12 Months">
