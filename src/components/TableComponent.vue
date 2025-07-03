@@ -36,6 +36,7 @@ let props = defineProps<{
   tableRows: tableRowItem[][]
   actions?: TableActionType[]
   filters?: Filter[]
+  selectedRows?: any[]
   paginateTotal?: number
   paginatePageSize?: number
   refreshFunc?: () => Promise<boolean>
@@ -52,7 +53,10 @@ let paginatePageSize = toRef(props, 'paginatePageSize')
 let currentSorting = toRef(props, 'currentSorting')
 let refreshFunc = props.refreshFunc
 let options = toRef(props, 'options')
+selectedIds.value = toRef(props, 'selectedRows')?.value ?? []
 
+
+let pageNum = 1
 
 watch(selectAll, (isTrue) => {
   if (isTrue) {
@@ -79,6 +83,21 @@ function resetFilters() {
 if (currentSorting.value)
   activeSorting.value = currentSorting.value
 
+let recordNumber = 0
+
+function updateRecordNumber() {
+  recordNumber = (pageNum - 1) * (paginatePageSize.value ? paginatePageSize.value : 30)
+}
+
+watch(tableRows, () => {
+  updateRecordNumber()
+
+})
+
+function getRecordNum() {
+  recordNumber = recordNumber + 1
+  return recordNumber
+}
 
 
 export type TableActionType =
@@ -145,6 +164,19 @@ export type Filter = {
   | "time"
   | "number"
 })
+
+let lastSearchTime = Date.now()
+let timeOutId: undefined | number = undefined
+
+function doneEnteringFilter(f: () => void) {
+  if (Date.now() - lastSearchTime < 500 && timeOutId !== undefined) {
+    clearTimeout(timeOutId)
+  }
+  timeOutId = setTimeout(() => {
+    f()
+  }, 500)
+
+}
 </script>
 
 <template>
@@ -201,7 +233,12 @@ export type Filter = {
           </template>
           <template v-else>
             <input :type="item.type" class="rounded-md border border-stone-600 px-3 h-8 mt-1 col-span-2"
-              v-model="searchInput[item.name]" @input="$emit('filterValues', searchInput); showResetBtn = true">
+              v-model="searchInput[item.name]" @input="() => {
+                // doneEnteringFilter(() = {
+                $emit('filterValues', searchInput);
+                // })
+                showResetBtn = true
+              }">
           </template>
         </div>
       </div>
