@@ -26,7 +26,7 @@ const confirmationForm = useConfirmationFormsStore();
 const bannerData: Ref<ClientBanner[]> = ref([]);
 const isLoading = ref(false);
 
-const itemsPerPage = 3;
+const itemsPerPage = 12;
 const totalCount = ref(0);
 const currentPage = ref(1);
 
@@ -178,7 +178,7 @@ fetchBanners();
 </script>
 
 <template>
-    <div class="bg-slate-200 w-full">
+    <div class="bg-slate-200 w-full h-full">
         <div class="container my-10">
             <CollapseCard header="Banner Slideshow" header-text-css="text-2xl font-semibold" header-css="my-2 mx-2">
                 <p>These are the images shown on the student attendance marking system monitor as a slide show.</p>
