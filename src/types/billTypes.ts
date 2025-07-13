@@ -15,4 +15,11 @@ export type StudentPaymentBill = {
       amount: string;
     };
   };
+  admission_payment:
+    | false
+    | {
+        printName: string;
+        paymentFor: string;
+        amount: string;
+      };
 };
