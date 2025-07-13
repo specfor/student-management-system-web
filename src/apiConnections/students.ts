@@ -33,12 +33,10 @@ export function getStudents(
   }
   if (options?.filters?.name) params.name = options.filters.name;
   if (options?.filters?.email) params.email = options.filters.email;
-  if (options?.filters?.phone_number)
-    params.phone_number = options.filters.phone_number;
+  if (options?.filters?.phone_number) params.phone_number = options.filters.phone_number;
   if (options?.filters?.grade_id) params.grade_id = options.filters.grade_id;
   if (options?.filters?.custom_id) params.custom_id = options.filters.custom_id;
-  if (options?.filters?.admission_paid !== undefined)
-    params.admission_paid = options.filters.admission_paid;
+  if (options?.filters?.admission_paid !== undefined) params.admission_paid = options.filters.admission_paid;
 
   return sendGetRequest("/students", params);
 }
@@ -116,12 +114,7 @@ export function updateStudentImage(id: number, image: Blob) {
   return sendFileUploadRequest(`/students/${id}/image`, "photo", image);
 }
 
-export function markAdmissionFee(
-  student_id: number,
-  amount: number,
-  paid: boolean,
-  reduction_reason: string
-) {
+export function markAdmissionFee(student_id: number, amount: number, paid: boolean, reduction_reason: string) {
   if (amount == 0) paid = true;
   return sendJsonPostRequest("/student-admission-fees", {
     student_id: student_id,
@@ -136,16 +129,11 @@ export function getAdmissionPaymentStatus(student_id: number) {
   return sendGetRequest(`/student-admission-fees`, params);
 }
 
-export function updateAdmissionFee(
-  id: number,
-  amount?: number,
-  paid?: boolean,
-  reduction_reason?: string
-) {
+export function updateAdmissionFee(id: number, amount?: number, paid?: boolean, reduction_reason?: string) {
   const params: { [key: string]: any } = {};
   if (amount) params.amount = amount;
   if (paid) params.paid = paid;
   if (reduction_reason) params.reduction_reason = reduction_reason;
 
-  return sendJsonPatchRequest(`/student-admission-fees/${id}`);
+  return sendJsonPatchRequest(`/student-admission-fees/${id}`, params);
 }

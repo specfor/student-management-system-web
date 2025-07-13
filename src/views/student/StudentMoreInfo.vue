@@ -7,6 +7,7 @@ import {
   updateAdmissionFee,
   updateStudentImage,
 } from "@/apiConnections/students";
+import BillEnroller from "@/components/BillEnroller.vue";
 import FingerprintRegister from "@/components/dataSelectors/FingerprintRegister.vue";
 import { useAlertsStore } from "@/stores/alerts";
 import { useDataEntryFormsStore } from "@/stores/formManagers/dataEntryForm";
@@ -24,6 +25,10 @@ const imageUrl: Ref<null | string> = ref(null);
 const studentId = getRouterParam("id");
 let student: Ref<Student | null> = ref(null);
 const admissionPayment: Ref<AdmissionFee | null> = ref(null);
+
+const showBillEnroller = ref(false);
+const billEnrollerStudentId = ref(Number(studentId));
+const billEnrollerAdmissionPaid = ref(false);
 
 loadStudent(Number(studentId));
 loadAdmissionPayment(Number(studentId));
@@ -90,6 +95,11 @@ async function payAdmission(update: boolean) {
   dataEntryForm.finishSubmission();
   alertStore.insertAlert("Success", "Admission fee payment marked successfully.", "success");
   loadAdmissionPayment(student.value?.id!);
+
+  if (results.data.paid) {
+    billEnrollerAdmissionPaid.value = true;
+    showBillEnroller.value = true;
+  }
 }
 
 async function loadStudent(studentID: number) {
@@ -288,4 +298,10 @@ function showFingerprintReg() {
       </div>
     </div>
   </div>
+  <BillEnroller
+    :show="showBillEnroller"
+    :student-id="billEnrollerStudentId"
+    :admission-paid="billEnrollerAdmissionPaid"
+    @close="showBillEnroller = false"
+  />
 </template>
