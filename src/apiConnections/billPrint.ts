@@ -30,10 +30,16 @@ export function getBills(
   return sendGetRequest("/print-queue", params);
 }
 
-export function createBill(student_id: number, payment_ids: Array<number>, bill_id: number = -1) {
+export function createBill(
+  student_id: number,
+  payment_ids?: Array<number>,
+  admissionPaid?: boolean,
+  bill_id: number = -1
+) {
   return sendJsonPostRequest("/print-queue", {
     student_id,
-    payment_ids,
+    payment_ids: payment_ids || [],
+    admission_payment: admissionPaid,
     bill_id,
   });
 }
