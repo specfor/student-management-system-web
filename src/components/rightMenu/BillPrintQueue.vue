@@ -142,21 +142,21 @@ function flipShowAllBills() {
   showingAllBills.value = !showingAllBills.value;
 }
 
-function showRemovePayment(paymentId: number) {
-  bills.value.forEach((bill) => {
-    let p = bill.paymentData.find((payment) => payment.paymentId == paymentId);
-    if (p) {
-      selectedPaymentToRemove.value = {
-        id: p.paymentId,
-        billId: bill.id,
-        amount: p.amount,
-        course: p.courseName,
-        student: bill.studentName,
-      };
-      showBillPaymentManager.value = true;
-      return;
-    }
-  });
+function showRemovePayment(paymentId: number, billId: number) {
+  let bill = bills.value.find((bill) => bill.id == billId);
+  if (!bill) return;
+
+  let p = bill.paymentData.find((payment) => payment.paymentId == paymentId);
+  if (!p) return;
+
+  selectedPaymentToRemove.value = {
+    id: p.paymentId,
+    billId: bill.id,
+    amount: p.amount,
+    course: p.courseName,
+    student: bill.studentName,
+  };
+  showBillPaymentManager.value = true;
 }
 
 function resetFilters() {
@@ -165,7 +165,7 @@ function resetFilters() {
 </script>
 
 <template>
-  <div class="w-full h-full max-h-screen p-4">
+  <div class="w-full h-full max-h-[95%] p-4 mb-4">
     <h1 class="font-semibold text-xl text-center mb-5">Receipt Queue</h1>
 
     <div class="mb-3">

@@ -47,7 +47,8 @@ export function createBill(
 export function updateBillStatus(
   bill_id: number,
   status?: "cancelled" | "pending" | "printed",
-  remove_payment_ids?: number[]
+  remove_payment_ids?: number[],
+  remove_admission_payment?: boolean
 ) {
   const sendBody: { [key: string]: any } = {
     bill_id,
@@ -55,7 +56,7 @@ export function updateBillStatus(
 
   if (status) sendBody["status"] = status;
   if (remove_payment_ids) sendBody["remove_payment_ids"] = remove_payment_ids;
-
+  if (remove_admission_payment) sendBody["remove_admission_payment"] = remove_admission_payment;
   return sendJsonPatchRequest(`/print-queue`, sendBody);
 }
 
