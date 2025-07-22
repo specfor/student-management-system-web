@@ -33,7 +33,11 @@ function close(refreshBills = false) {
 async function justRemovePaymentFromBill() {
   buttonsDisabled.value = true;
 
-  let resp = await updateBillStatus(props.payment.billId, "pending", [props.payment.id]);
+  let resp;
+  // Payment id is -1 when it is an admission payment
+  if (props.payment.id == -1) resp = await updateBillStatus(props.payment.billId, "pending", undefined, true);
+  else resp = await updateBillStatus(props.payment.billId, "pending", [props.payment.id]);
+
   if (resp.status == "success") close(true);
   else alertStore.insertAlert("Failed to Remove Payment", resp.message, "error");
 
@@ -46,6 +50,12 @@ async function refundAndRemovePayment() {
   if (refundReason.value.length == 0) {
     refundErrorMsg.value = "Reason to refund is needed.";
   } else {
+    // Payment id is -1 when it is an admission payment
+    if (props.payment.id == -1) {
+      alertStore.insertAlert("Refund Not Supported", "Admission fee payments cannot be refunded.", "error");
+      return;
+    }
+
     let resp = await refundStudentPayment(props.payment.id, refundReason.value);
     if (resp.status == "success") close(true);
     else alertStore.insertAlert("Failed to Refund Payment", resp.message, "error");
