@@ -1,14 +1,14 @@
 <!-- eslint-disable no-constant-condition -->
 <script setup lang="ts">
 import { createGrade, deleteGrade, getGrades, updateGrade } from '@/apiConnections/grades';
-import TableComponent, { type TableActionType } from '@/components/TableComponent.vue';
+import TableComponent, { type TableActionType, type TableColumns } from '@/components/TableComponent.vue';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
+import type { Grade } from '@/types/gradeTypes';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
 import { ref, type Ref } from 'vue';
-import PaginateComponent from '@/components/PaginateComponent.vue';
 
 
 const confirmationForm = useConfirmationFormsStore()
@@ -20,13 +20,39 @@ let gradeData: Grade[] = []
 const tableActions: TableActionType[] = [
     { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
+const tableColumns: TableColumns[] = [{ label: 'ID', sortable: true }, { label: 'Name', sortable: true },]
 
 
 const limitLoadGrades = 30
 const countTotGrades = ref(0)
 
-async function loadGrades(startIndex = 0) {
-    let resp = await getGrades(startIndex, limitLoadGrades)
+
+let lastLoadSettings = { lastUsedIndex: 0, orderBy: '', orderDirec: 'asc' }
+
+function setSorting(column: string, direction: 'asc' | 'desc') {
+    switch (column) {
+        case 'ID':
+            lastLoadSettings.orderBy = 'id'
+            break;
+        case 'Name':
+            lastLoadSettings.orderBy = 'name'
+            break;
+        default:
+            break;
+    }
+    lastLoadSettings.orderDirec = direction
+}
+
+async function loadGrades(startIndex?: number) {
+    if (startIndex === undefined)
+        startIndex = lastLoadSettings.lastUsedIndex
+    else
+        lastLoadSettings.lastUsedIndex = startIndex
+
+    let opt: any = {}
+    opt.sort = { by: lastLoadSettings.orderBy, direction: lastLoadSettings.orderDirec }
+
+    let resp = await getGrades(startIndex, limitLoadGrades, opt)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
         return
@@ -69,7 +95,7 @@ async function addNewGrade() {
         } else {
             dataEntryForm.finishSubmission()
             alertStore.insertAlert('Action completed.', resp.message)
-            loadGrades()
+            loadGrades(0)
             break
         }
     }
@@ -133,13 +159,13 @@ async function delGrade(ids: number[]) {
             <h4 class="font-semibold text-3xl">Grades</h4>
             <NewItemButton text="New Grade" :on-click="addNewGrade" />
         </div>
-        <TableComponent :table-columns="['ID', 'Name']" :table-rows="gradeDataForTable" @edit-emit="editGrade"
-            :actions="tableActions" :refresh-func="async () => { await loadGrades(); return true }"
-            @delete-emit="delGrade" />
-
-        <div class="flex justify-center mt-4 mb-10">
-            <PaginateComponent :total-count="countTotGrades" :page-size="limitLoadGrades"
-                @load-page-emit="loadGrades" />
+        <div class="mb-10">
+            <TableComponent :table-columns="tableColumns" :table-rows="gradeDataForTable" @edit-emit="editGrade"
+                :actions="tableActions" :refresh-func="async () => { await loadGrades(); return true }"
+                @delete-emit="delGrade" @load-page-emit="loadGrades" :paginate-page-size="limitLoadGrades"
+                :paginate-total="countTotGrades" :current-sorting="{ column: 'ID', direc: 'asc' }" @sort-by="(col, dir) => {
+                    setSorting(col, dir); loadGrades();
+                }" />
         </div>
     </div>
 </template>

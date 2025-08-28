@@ -1,4 +1,4 @@
-type UserRole = {
+export type UserRole = {
   id: number;
   role_name: string;
   permissions: {

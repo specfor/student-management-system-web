@@ -4,72 +4,103 @@ import { storeToRefs } from 'pinia';
 import { RouterLink } from 'vue-router';
 import {
     BanknotesIcon, UsersIcon, Squares2X2Icon, AcademicCapIcon, UserGroupIcon, BookOpenIcon, RocketLaunchIcon, IdentificationIcon,
-    FolderOpenIcon, BookmarkIcon, DocumentChartBarIcon
+    FolderOpenIcon, BookmarkIcon, Cog8ToothIcon, Bars3Icon,
 } from '@heroicons/vue/24/outline';
+import MenuBarCollapse from './minorUiComponents/MenuBarCollapse.vue';
+import { ref, type FunctionalComponent } from 'vue';
 
 const authStore = useAuthStore()
 let { userPermissions } = storeToRefs(authStore)
+
+const expanded = ref(false)
+
+type link = { type: 'link', path: string, icon?: FunctionalComponent, text: string, permissions?: boolean }
+
+
+function checkPermissions(permission: string) {
+    let x = Object.keys(userPermissions.value).find((key) => {
+        if (key === permission) {
+            return userPermissions.value[key]
+        }
+        if (key === 'all') {
+            return userPermissions.value[key]
+        }
+    })
+    if (x !== undefined)
+        return true
+    return false
+}
+
+const routes: (
+    link | { type: 'seperator' } | { type: 'group', text: string, icon: FunctionalComponent, children: link[], permissions?: boolean })[] = [
+        { type: 'link', path: '/', icon: Squares2X2Icon, text: 'Dashboard' },
+        { type: 'seperator' },
+        { type: 'link', path: '/mark-attendance', text: 'Mark Attendance', icon: RocketLaunchIcon, permissions: checkPermissions('attendance') },
+        { type: 'link', path: '/enrollments', text: 'Enrollments', icon: BookmarkIcon, permissions: checkPermissions('enrollment') },
+        { type: 'link', path: '/students', text: 'Students', icon: IdentificationIcon, permissions: checkPermissions('students') },
+        { type: 'seperator' },
+        {
+            type: 'group', text: 'Payments', icon: BanknotesIcon, permissions: checkPermissions('payments') || checkPermissions('instructor_payments'), children: [
+                { type: 'link', path: '/payments/students', text: 'Student Payments', permissions: checkPermissions('payments') },
+                { type: 'link', path: '/payments/instructors', text: 'Instructor Payments', permissions: checkPermissions('instructor_payments') },
+                { type: 'link', path: '/expenses', text: 'Expenses', permissions: checkPermissions('expenses') }
+            ]
+        },
+        { type: 'link', path: '/courses', text: 'Courses', icon: BookOpenIcon, permissions: checkPermissions('courses') },
+        { type: 'link', path: '/instructors', text: 'Instructors', icon: AcademicCapIcon, permissions: checkPermissions('instructors') },
+        { type: 'link', path: '/grades', text: 'Grades', icon: FolderOpenIcon, permissions: checkPermissions('grades') },
+        { type: 'link', path: '/users', text: 'Users', icon: UsersIcon, permissions: checkPermissions('users') },
+        { type: 'link', path: '/user-roles', text: 'User Roles', icon: UserGroupIcon, permissions: checkPermissions('user-roles') },
+        { type: 'seperator' },
+        {
+            type: 'group', text: 'Settings', icon: Cog8ToothIcon, permissions: checkPermissions('system_config'), children: [
+                { type: 'link', path: '/settings/message-system', text: 'Message System', permissions: checkPermissions('system_config') },
+                { type: 'link', path: '/settings/lms-client', text: 'Client Software', permissions: checkPermissions('system_config') },
+                { type: 'link', path: '/settings/attendance-marker', text: 'Attendance Marker', permissions: checkPermissions('system_config') },
+            ]
+        },
+    ]
 </script>
 
 <template>
-    <div class="bg-blue-950 w-[200px] h-full pt-3">
-        <RouterLink to="/" class="flex items-center py-2 px-4 w-full text-white hover:bg-blue-700"
-            active-class="bg-blue-600">
-            <Squares2X2Icon class="h-6 w-6 mr-3" />
-            Dashboard
-        </RouterLink>
-        <div class="h-1 bg-blue-500 mx-2 rounded-xl my-5"></div>
-        <RouterLink v-if="userPermissions.all || userPermissions.attendance" to="/mark-attendance"
-            class="flex items-center py-2 px-4 w-full text-white hover:bg-blue-700" active-class="bg-blue-600">
-            <RocketLaunchIcon class="h-6 w-6 mr-3" />
-            Mark Attendance
-        </RouterLink>
-        <!-- <RouterLink v-if="userPermissions.all || userPermissions.attendance" to="/attendance"
-            class="flex items-center py-2 px-4 w-full text-white hover:bg-blue-700" active-class="bg-blue-600">
-            <DocumentChartBarIcon class="h-6 w-6 mr-3" />
-            Attendance
-        </RouterLink> -->
-        <RouterLink v-if="userPermissions.all || userPermissions.enrollment" to="/enrollments"
-            class="flex items-center py-2 px-4 w-full text-white hover:bg-blue-700" active-class="bg-blue-600">
-            <BookmarkIcon class="h-6 w-6 mr-3" />
-            Enrollments
-        </RouterLink>
-        <RouterLink v-if="userPermissions.all || userPermissions.students" to="/students"
-            class="flex items-center py-2 px-4 w-full text-white hover:bg-blue-700" active-class="bg-blue-600">
-            <IdentificationIcon class="h-6 w-6 mr-3" />
-            Students
-        </RouterLink>
-        <div class="h-1 bg-blue-500 mx-2 rounded-xl my-5"></div>
-        <RouterLink v-if="userPermissions.all || userPermissions.payments" to="/payments"
-            class="flex items-center py-2 px-4 w-full text-white hover:bg-blue-700" active-class="bg-blue-600">
-            <BanknotesIcon class="h-6 w-6 mr-3" />
-            Payments
-        </RouterLink>
-        <RouterLink v-if="userPermissions.all || userPermissions.courses" to="/courses"
-            class="flex items-center py-2 px-4 w-full text-white hover:bg-blue-700" active-class="bg-blue-600">
-            <BookOpenIcon class="h-6 w-6 mr-3" />
-            Courses
-        </RouterLink>
-        <RouterLink v-if="userPermissions.all || userPermissions.instructors" to="/instructors"
-            class="flex items-center py-2 px-4 w-full text-white hover:bg-blue-700" active-class="bg-blue-600">
-            <AcademicCapIcon class="h-6 w-6 mr-3" />
-            Instructors
-        </RouterLink>
-        <RouterLink v-if="userPermissions.all || userPermissions.grades" to="/grades"
-            class="flex items-center py-2 px-4 w-full text-white hover:bg-blue-700" active-class="bg-blue-600">
-            <FolderOpenIcon class="h-6 w-6 mr-3" />
-            Grades
-        </RouterLink>
-        <RouterLink v-if="userPermissions.all || userPermissions.users" to="/users"
-            class="flex items-center py-2 px-4 w-full text-white hover:bg-blue-700" active-class="bg-blue-600">
-            <UsersIcon class="h-6 w-6 mr-3" />
-            Users
-        </RouterLink>
-        <RouterLink v-if="userPermissions.all" to="/user-roles"
-            class="flex items-center py-2 px-4 w-full text-white hover:bg-blue-700" active-class="bg-blue-600">
-            <UserGroupIcon class="h-6 w-6 mr-3" />
-            User Roles
-        </RouterLink>
+    <div class="" :class="expanded ? 'w-[200px]' : 'w-[60px]'">
+        <div class="fixed top-14 bottom-0 h-full">
+            <div class="h-full overflow-x-hidden bg-blue-950" :class="expanded ? 'w-[200px]' : 'w-[60px]'">
+                <div class="h-fit overflow-y-auto mb-16">
+                    <div class="py-2 px-4 w-full text-white hover:bg-blue-700 flex mb-2 cursor-pointer"
+                        @click="expanded = !expanded">
+                        <Bars3Icon class="w-6 h-6" />
+                        <p v-show="expanded" class="ml-3">Collapse</p>
+                    </div>
+                    <template v-for="(route, index) in routes" :key="index">
+                        <RouterLink v-if="route.type === 'link'" :to="route.path!"
+                            class="flex items-center py-2 px-4 w-full text-white hover:bg-blue-700"
+                            active-class="bg-blue-600">
+                            <component :is="route.icon" class="h-6 w-6" />
+                            <p v-show="expanded" class="ml-3">{{ route.text }}</p>
+                        </RouterLink>
 
+                        <MenuBarCollapse v-else-if="route.type == 'group'" :key="route.text" @click="expanded = true"
+                            :options="{ hideExpandCollapseIcons: !expanded }">
+                            <template v-slot:header>
+                                <div class="py-2 px-4 w-full text-white hover:bg-blue-700 flex">
+                                    <component :is="route.icon" class="h-6 w-6" />
+                                    <p v-show="expanded" class="ml-3">{{ route.text }}</p>
+                                </div>
+                            </template>
+
+                            <template v-for="child in route.children" :key="child.path">
+                                <RouterLink :to="child.path!" class="flex py-2 px-4 w-full text-white hover:bg-blue-700"
+                                    active-class="bg-blue-600">
+                                    <p v-show="expanded">{{ child.text }}</p>
+                                </RouterLink>
+                            </template>
+                        </MenuBarCollapse>
+
+                        <div v-else-if="route.type == 'seperator'" class="h-1 bg-black mx-2 rounded-xl my-3"></div>
+                    </template>
+                </div>
+            </div>
+        </div>
     </div>
 </template>

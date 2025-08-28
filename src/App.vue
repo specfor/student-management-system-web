@@ -3,7 +3,7 @@ import { RouterView } from 'vue-router'
 import PageHeader from './components/PageHeader.vue';
 import SideMenu from './components/SideMenu.vue';
 import { useAuthStore } from './stores/authorization';
-import { onMounted, ref } from 'vue';
+import { ref } from 'vue';
 import router from './router';
 import { useSystemInfoStore } from './stores/systemInfo';
 import SideAlerts from './components/SideAlerts.vue';
@@ -11,12 +11,31 @@ import AddNewModal from './components/formComponents/AddNewModal.vue';
 import ConfirmationModal from './components/formComponents/ConfirmationModal.vue';
 import ExtendablePopUp from './components/formComponents/ExtendablePopUp.vue';
 import LoadingScreen from '@/views/LoadingScreen.vue'
+import RightMenu from './components/RightMenu.vue';
+import { useAlertsStore } from './stores/alerts';
 
 const authStore = useAuthStore()
+const alertStore = useAlertsStore()
 useSystemInfoStore()
 const loading = ref(true)
 
-onMounted(async () => {
+let lastAttendance: { marked_time: string, course: string, student: string, student_id: number, course_id: number } =
+  { marked_time: "", course: "", student: "", student_id: 0, course_id: 0 };
+
+async function checkAppUpdates() {
+  let resp = await fetch('/build')
+  let data = (await resp.text()).trim()
+
+  let cachedVal = localStorage.getItem('appBuild')
+  if (cachedVal === null || cachedVal !== data) {
+    localStorage.setItem('appBuild', data)
+  }
+  if (cachedVal !== data)
+    location.reload()
+}
+checkAppUpdates()
+
+async function checkLogged() {
   await authStore.checkLoggedIn()
   if (authStore.LoggedIn) {
     if (router.currentRoute.value['path'] === '/login')
@@ -25,32 +44,47 @@ onMounted(async () => {
     router.push('/login')
   }
   loading.value = false
-})
+}
+
+checkLogged()
+
+setInterval(() => {
+  const lastAttend = localStorage.getItem('last_attendance')
+  if (lastAttend) {
+    const attenData = JSON.parse(lastAttend)
+    if (lastAttendance.marked_time != "" && attenData.marked_time !== lastAttendance.marked_time) {
+      alertStore.insertAlert("Attendance Marked", `${attenData.student_id} - ${attenData.student} ---> ${attenData.course}`, "info", -1)
+    }
+    lastAttendance = attenData
+  }
+}, 1000)
 
 </script>
 
 <template>
   <LoadingScreen v-if="loading" />
 
-  <div class="TextNotCopy">
-    <div v-if="authStore.LoggedIn" class="h-dvh flex flex-col">
-      <header>
+  <div v-else>
+    <div v-if="authStore.LoggedIn && router.currentRoute.value.path !== '/client-general-ui'"
+      class="h-dvh flex flex-col">
+      <header class="TextNotCopy">
         <PageHeader />
       </header>
-      <div class="flex flex-1 mt-14">
-        <div class="relative w-[200px] h-full">
-          <SideMenu class="fixed" />
-        </div>
+      <div class=" h-full flex flex-1 mt-14">
+        <SideMenu class="TextNotCopy" />
         <RouterView class="pt-8" />
       </div>
+      <RightMenu />
     </div>
-    <div v-if="!authStore.LoggedIn">
+    <div v-if="!authStore.LoggedIn || router.currentRoute.value.path === '/client-general-ui'">
       <RouterView />
     </div>
-    <SideAlerts class="fixed right-4 top-14 z-30" />
-    <AddNewModal />
-    <ConfirmationModal />
-    <ExtendablePopUp />
+    <div v-if="router.currentRoute.value.path !== '/client-general-ui'">
+      <SideAlerts class=" fixed right-4 top-20 z-30" />
+      <AddNewModal />
+      <ConfirmationModal />
+      <ExtendablePopUp />
+    </div>
   </div>
 </template>
 

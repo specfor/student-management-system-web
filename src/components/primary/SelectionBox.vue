@@ -60,7 +60,7 @@ function moveSelection(direction: 'up' | 'down') {
         }" @keydown="searchBox.focus()">
         <Popper @open:popper="isOpen = true" @close:popper="isOpen = false" class="w-full" offsetDistance="0">
             <div tabindex="0" @click="() => { isOpen = !isOpen }"
-                class="border w-full min-h-9 border-gray-400 bg-white hover:bg-gray-100 rounded-md py-1 flex justify-between items-center">
+                class="border w-full min-h-9 border-gray-400 bg-white hover:bg-gray-100 rounded-md py-1 flex justify-between items-center cursor-pointer">
                 <h1 class="mx-5 overflow-hidden">{{ props.options.find(o => o['value'] == props.value) ?
                     props.options.find(o => o['value'] ==
                         props.value)!['text'] : '' }}</h1>
@@ -79,7 +79,7 @@ function moveSelection(direction: 'up' | 'down') {
                             placeholder="Search" ref="searchBox">
                     </div>
                     <div class="max-h-96 h-auto border overflow-y-auto">
-                        <h3 v-for="(option, index) in optionsRendered" :key="index" class="py-1 px-5"
+                        <h3 v-for="(option, index) in optionsRendered" :key="index" class="py-1 px-5 cursor-pointer"
                             :class="{ 'bg-slate-200': option['value'] == focusSelection }"
                             v-on:mouseover="() => { focusSelection = option['value'] }"
                             @click="() => { setSelected(option['value']); close() }">

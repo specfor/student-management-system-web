@@ -1,13 +1,37 @@
+import type { CourseFee, CourseSchedule } from "@/types/courseTypes";
 import {
   sendDeleteRequest,
   sendJsonPatchRequest,
   sendJsonPostRequest,
   sendGetRequest,
-} from "@/baseFunctions/requests";
+} from "@/utils/requests";
 
-export function getCourses(startIndex = 0, limit: null | number = null) {
+export function getCourses(
+  startIndex = 0,
+  limit: null | number = null,
+  options?: {
+    filters?: {
+      name?: string;
+      instructor_id?: number;
+      grade_id?: number;
+    };
+    sort?: {
+      by: "name" | "id";
+      direction: "asc" | "desc";
+    };
+  }
+) {
   const params: { [key: string]: any } = { start: startIndex };
   if (limit) params["size"] = limit;
+  if (options?.sort) {
+    params.sort = options.sort.by;
+    params.sort_dir = options.sort.direction;
+  }
+  if (options?.filters?.name) params.name = options.filters.name;
+  if (options?.filters?.instructor_id)
+    params.instructor_id = options.filters.instructor_id;
+  if (options?.filters?.grade_id) params.grade_id = options.filters.grade_id;
+
   return sendGetRequest("/courses", params);
 }
 
@@ -21,7 +45,9 @@ export function createCourse(
   venue: string,
   fee_type: CourseFee["type"],
   amount: number,
-  grade_id: number
+  instructor_fee_percent: number,
+  grade_id: number,
+  print_name: string
 ) {
   const t = `${start_time}-${end_time}`;
 
@@ -44,6 +70,8 @@ export function createCourse(
       type: fee_type,
       amount: amount,
     },
+    instructor_fee_percent,
+    print_name,
   });
 }
 
@@ -58,7 +86,9 @@ export function updateCourse(
   venue: string,
   fee_type: CourseFee["type"],
   amount: number,
-  grade_id: number
+  instructor_fee_percent: number,
+  grade_id: number,
+  print_name: string
 ) {
   const t = `${start_time}-${end_time}`;
 
@@ -81,6 +111,8 @@ export function updateCourse(
       type: fee_type,
       amount: amount,
     },
+    instructor_fee_percent,
+    print_name,
   });
 }
 

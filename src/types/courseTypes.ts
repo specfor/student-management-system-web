@@ -1,4 +1,7 @@
-type CourseSchedule = {
+import type { Grade } from "./gradeTypes";
+import type { Instructor } from "./InstructorTypes";
+
+export type CourseSchedule = {
   day:
     | "monday"
     | "tuesday"
@@ -12,12 +15,12 @@ type CourseSchedule = {
   venue: string;
 };
 
-type CourseFee = {
+export type CourseFee = {
   type: "monthly" | "onetime" | "daily";
   amount: string;
 };
 
-type Course = {
+export type Course = {
   id: number;
   name: string;
   schedule: CourseSchedule[];
@@ -26,6 +29,8 @@ type Course = {
   enrollment_open: boolean;
   grade_id: number;
   group_name: string | null;
-  instructor: Instructor;
+  instructor: Instructor | null;
   grade: null | Grade;
+  instructor_fee_percent: number;
+  print_name: string;
 };
