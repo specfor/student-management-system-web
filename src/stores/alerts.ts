@@ -5,7 +5,7 @@ const delayAutoRemoveAlert = 7000;
 
 type Alert = {
   id: number;
-  type: "success" | "error";
+  type: "success" | "error" | "info";
   title: string;
   message: string;
 };
@@ -14,10 +14,18 @@ export const useAlertsStore = defineStore("alerts", () => {
   const alerts = ref([] as Alert[]);
   const currentAlertId = ref(1);
 
+  /**
+   * Insert an alert into the store.
+   * @param title - The title of the alert.
+   * @param message - The message of the alert.
+   * @param alertType - The type of the alert (success, error, info).
+   * @param removeTimeout - The time in milliseconds after which the alert will be removed automatically. if -1, it won't be removed automatically.
+   */
   function insertAlert(
     title: string,
     message: string,
-    alertType: "success" | "error" = "success"
+    alertType: "success" | "error" | "info" = "success",
+    removeTimeout: number = delayAutoRemoveAlert
   ) {
     alerts.value.push({
       id: currentAlertId.value,
@@ -25,7 +33,9 @@ export const useAlertsStore = defineStore("alerts", () => {
       title: title,
       message: message,
     });
-    setTimeout(removeAlert, delayAutoRemoveAlert, currentAlertId.value);
+    if (removeTimeout !== -1) {
+      setTimeout(removeAlert, removeTimeout, currentAlertId.value);
+    }
     currentAlertId.value += 1;
   }
 

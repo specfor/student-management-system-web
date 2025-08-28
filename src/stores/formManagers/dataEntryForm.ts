@@ -128,7 +128,7 @@ export type InputField = InputTypes & {
   text?: string;
   name: string;
   required?: boolean;
-  validate?: Function;
+  validate?: (value: any) => string | null;
 };
 
 type InputTypes =
@@ -143,7 +143,8 @@ type InputTypes =
         | "date"
         | "month"
         | "time"
-        | "number";
+        | "number"
+        | "hidden";
       disabled?: boolean;
       value?: string | number | boolean | null;
       min?: number;

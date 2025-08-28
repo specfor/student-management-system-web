@@ -3,11 +3,24 @@ import {
   sendGetRequest,
   sendJsonPatchRequest,
   sendJsonPostRequest,
-} from "@/baseFunctions/requests";
+} from "@/utils/requests";
 
-export function getUserRoles(startIndex = 0, limit: null | number = null) {
+export function getUserRoles(
+  startIndex = 0,
+  limit: null | number = null,
+  options?: {
+    sort?: {
+      by: "role_name" | "id";
+      direction: "asc" | "desc";
+    };
+  }
+) {
   const params: { [key: string]: any } = { start: startIndex };
   if (limit) params["size"] = limit;
+  if (options?.sort) {
+    params.sort = options.sort.by;
+    params.sort_dir = options.sort.direction;
+  }
 
   return sendGetRequest("/user-groups", params);
 }

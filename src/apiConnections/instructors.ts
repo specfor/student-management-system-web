@@ -5,13 +5,39 @@ import {
   sendGetRequest,
   sendJsonPatchRequest,
   sendJsonPostRequest,
-} from "@/baseFunctions/requests";
+} from "@/utils/requests";
 
-export function getInstructors(startIndex = 0, limit: number | null = null) {
+export function getInstructors(
+  startIndex = 0,
+  limit: number | null = null,
+  options?: {
+    filters?: {
+      name?: string;
+      email?: string;
+      phone_number?: string;
+    };
+    sort?: {
+      by: "name" | "birthday" | "id" | "email";
+      direction: "asc" | "desc";
+    };
+  }
+) {
   const params: { [key: string]: any } = { start: startIndex };
   if (limit) params["size"] = limit;
+  if (options?.sort) {
+    params.sort = options.sort.by;
+    params.sort_dir = options.sort.direction;
+  }
+  if (options?.filters?.name) params.name = options.filters.name;
+  if (options?.filters?.email) params.email = options.filters.email;
+  if (options?.filters?.phone_number)
+    params.phone_number = options.filters.phone_number;
 
   return sendGetRequest("/instructors", params);
+}
+
+export function getInstructor(id: number) {
+  return sendGetRequest(`/instructors/${id}`);
 }
 
 export function createInstructor(

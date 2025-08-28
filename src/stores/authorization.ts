@@ -1,6 +1,6 @@
 import { ref, type Ref } from "vue";
 import { defineStore } from "pinia";
-import { sendGetRequest, sendJsonPostRequest } from "@/baseFunctions/requests";
+import { sendGetRequest, sendJsonPostRequest } from "@/utils/requests";
 import { useHeaderStore } from "./headers";
 
 export const useAuthStore = defineStore("auth", () => {

@@ -1,15 +1,22 @@
 <!-- eslint-disable no-constant-condition -->
 <script setup lang="ts">
-import { sendMarkAttendance } from '@/apiConnections/attendance';
+import { getAttendace, sendMarkAttendance } from '@/apiConnections/attendance';
 import { getCourses } from '@/apiConnections/courses';
-import { getStudentEnrollmentOfCourse } from '@/apiConnections/enrollments';
-import { createPayment } from '@/apiConnections/payments';
+import { getEnrollments, getStudentEnrollmentOfCourse } from '@/apiConnections/enrollments';
+import { createStudentPayment } from '@/apiConnections/payments';
 import { downloadStudentImage, getStudents } from '@/apiConnections/students';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { ref, watch, type Ref } from 'vue';
 import SelectionBox from '@/components/primary/SelectionBox.vue';
 import type { InputField, MessageField } from '@/stores/formManagers/dataEntryForm';
+import type { Enrollment } from '@/types/enrollmentTypes';
+import type { Course } from '@/types/courseTypes';
+import type { Student } from '@/types/studentTypes';
+import TableComponent, { type Filter, type TableActionType, type TableColumns, type tableRowItem } from '@/components/TableComponent.vue';
+import type { Attendance } from '@/types/attendanceTypes';
+import BillEnroller from '@/components/BillEnroller.vue';
+import LoadingCursor from '@/components/minorUiComponents/loadingCursor.vue';
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
@@ -19,6 +26,12 @@ let courseGroupOptionFields: Ref<{ text: string, value: any }[]> = ref([])
 let studentOptionFields: Ref<{ text: string, value: any }[]> = ref([])
 let courses: Course[] = []
 let students: Student[] = []
+let studentEnrolledCourses: Ref<Course[]> = ref([])
+const loadingStudentEnrolledCourses = ref(false)
+
+const showBillEnroller = ref(false)
+const billEnrollerStudentId = ref(0)
+const paymentIdForBillEnroller = ref(0)
 
 async function init() {
     enrollStatusText.value = 'Select a Course & a Student'
@@ -39,9 +52,6 @@ async function init() {
         return
 
     students = resp.data.students
-    students.forEach(student => {
-        studentOptionFields.value.push({ text: student.name, value: student.id })
-    })
 }
 
 const selectedCourseId = ref(0)
@@ -52,28 +62,50 @@ const selectedStudentId = ref(0)
 const selectedStudentData: Ref<Student | null> = ref(null)
 
 const studentImageUrl = ref("")
+const showAllStudentsForSelection = ref(false)
 
+const showOnlyActiveEnrollments = ref(true)
+
+watch(showOnlyActiveEnrollments, () => {
+    loadEnrolledCourses(selectedStudentId.value)
+})
+
+watch(showAllStudentsForSelection, (newVal) => {
+    if (newVal) {
+        studentOptionFields.value = []
+        students.forEach(student => {
+            studentOptionFields.value.push({ text: student.name, value: student.id })
+        })
+    } else {
+        if (selectedCourseId.value > 0)
+            loadStudentsOfCourse(selectedCourseId.value)
+    }
+})
 watch(selectedCourseGroup, async (gName) => {
     feeToPay.value = -1
     coursesOptionFields.value = []
-    let groups = courses.filter(c => c.name == gName)
-    if (groups.length === 1) {
-        selectedCourseId.value = groups[0].id
+    let coursesList = courses.filter(c => c.name == gName)
+    if (coursesList.length === 1) {
+        selectedCourseId.value = coursesList[0].id
     } else {
-        selectedCourseId.value = 0
         selectedCourseData.value = null
-        groups.forEach(group => {
-            coursesOptionFields.value.push({ value: group.id, text: group.group_name ? group.group_name : 'No Name' })
+        coursesList.forEach(course => {
+            coursesOptionFields.value.push({ value: course.id, text: course.group_name ? course.group_name : 'No Name' })
         })
     }
 })
 watch(selectedCourseId, async (courseId) => {
     if (courseId === 0) return
+
+    if (!showAllStudentsForSelection.value)
+        loadStudentsOfCourse(selectedCourseId.value)
+
     selectedCourseData.value = courses.find(c => c.id == courseId)!
     checkEnrolled()
 })
 watch(selectedStudentId, async (studentId) => {
     checkEnrolled()
+    loadEnrolledCourses(selectedStudentId.value)
     selectedStudentData.value = students.find(s => s.id == studentId)!
 
     studentImageUrl.value = ""
@@ -96,8 +128,54 @@ function checkEnrolled() {
     loadStudentEnrollmentOfCourse()
 }
 
-const enrollmentData: Ref<{ enrolled: boolean, enrollment: Enrollment | null } | null> = ref(null)
+const enrollmentData: Ref<{ enrolled: boolean, enrollment: Enrollment | null, paid: boolean } | null> = ref(null)
 const enrollmentLoading = ref(false)
+
+async function loadStudentsOfCourse(courseId: number) {
+    let resp = await getEnrollments(0, undefined, { filters: { course_id: courseId } })
+    if (resp.status === 'error') {
+        alertStore.insertAlert('An error occured.', resp.message, 'error')
+        return
+    }
+
+    studentOptionFields.value = [];
+
+    let selectedStudentFoundInList = false;
+    (resp.data.enrollments as Enrollment[]).forEach(enrollment => {
+        if (enrollment.student && enrollment.status[enrollment.status.length - 1].type === 'active') {
+            studentOptionFields.value.push({ text: enrollment.student.name, value: enrollment.student.id })
+            if (enrollment.student.id == selectedStudentId.value)
+                selectedStudentFoundInList = true
+        }
+    })
+    if (!selectedStudentFoundInList)
+        selectedStudentId.value = 0
+}
+
+async function loadEnrolledCourses(studentId: number) {
+    studentEnrolledCourses.value = [];
+    if (studentId == 0)
+        return
+
+    loadingStudentEnrolledCourses.value = true
+
+    let filters: { [key: string]: any } = { student_id: studentId }
+
+    if (showOnlyActiveEnrollments.value)
+        filters['status_is'] = 'active'
+
+    let resp = await getEnrollments(0, undefined, { filters: filters })
+    if (resp.status === 'error') {
+        alertStore.insertAlert('An error occured.', resp.message, 'error')
+        return
+    }
+
+    (resp.data.enrollments as Enrollment[]).forEach(enrollment => {
+        if (enrollment.course)
+            studentEnrolledCourses.value.push(enrollment.course)
+    })
+    loadingStudentEnrolledCourses.value = false
+}
 
 async function loadStudentEnrollmentOfCourse() {
     let resp = await getStudentEnrollmentOfCourse(selectedCourseId.value, selectedStudentId.value)
@@ -123,7 +201,7 @@ async function markPayment() {
 
     let timeP: InputField | MessageField = { name: 'time', type: 'month', text: 'Month', value: new Date().toJSON().slice(0, 7) }
     if (selectedCourseData.value!['fee']['type'] === 'daily')
-        timeP = { name: 'time', type: 'date', text: 'Day', value: new Date().toJSON().slice(0, 10) }
+        timeP = { name: 'time', type: 'date', text: 'Day', value: new Date().toLocaleDateString() }
     else if (selectedCourseData.value!['fee']['type'] === 'onetime')
         timeP = { type: 'message', text: 'Course fee is a one time fee.' }
 
@@ -132,23 +210,45 @@ async function markPayment() {
         { name: 'course', type: 'text', text: 'Course', value: cName, disabled: true },
         { name: 'student', type: 'text', text: 'Student', value: sName, disabled: true },
         { name: 'amount', type: 'text', text: 'Amount', value: feeToPay.value, disabled: true },
+        { type: 'heading', text: 'Custom Class Fee (Optional)' },
+        { name: 'custom_amount', type: 'number', text: 'Custom Amount' },
+        { name: 'reason', type: 'text', text: 'Reason' },
         { type: 'heading', text: 'Select the time period of the payment' },
         timeP
     ], { allowSubmit: true })
     let confirmed = await dataEntryForm.waitForSubmittedData()
+
     dataEntryForm.finishSubmission()
     if (!confirmed.submitted) {
         enrollActionsEnabled.value = true
         return
     }
 
-    let resp = await createPayment((enrollmentData.value!.enrollment as Enrollment).id, feeToPay.value)
+    let fee = feeToPay.value
+    if (confirmed.data.custom_amount != '')
+        fee = confirmed.data.custom_amount as number
+
+    let shouldShowBillEnroller = false
+    let resp;
+    if (selectedCourseData.value!['fee']['type'] === 'onetime')
+        resp = await createStudentPayment((enrollmentData.value!.enrollment as Enrollment).id, fee, 'onetime', confirmed.data.custom_amount != '', confirmed.data.reason as string)
+    else
+        resp = await createStudentPayment((enrollmentData.value!.enrollment as Enrollment).id, fee, confirmed.data.time as string, confirmed.data.custom_amount != '', confirmed.data.reason as string)
+
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
     } else {
+        paymentIdForBillEnroller.value = resp.data.payment.id
+        shouldShowBillEnroller = true
         alertStore.insertAlert('Action completed.', resp.message)
     }
+
+    if (shouldShowBillEnroller) {
+        billEnrollerStudentId.value = selectedStudentData.value!['id'];
+        showBillEnroller.value = true
+    }
     enrollActionsEnabled.value = true
+    checkEnrolled()
 }
 
 async function markAttendance() {
@@ -206,11 +306,78 @@ function calculateFee() {
 }
 
 init()
+
+
+function selectCourse(courseId: number) {
+    let course = courses.find(c => c.id == courseId)
+    if (course) {
+        selectedCourseGroup.value = course.name
+        selectedCourseId.value = course.id
+    }
+
+}
+
+// const dataForTable: Ref<any[]> = ref([])
+// const countTotAttendances = ref(0)
+
+// const tableActions: TableActionType[] = [
+//     { renderAsRouterLink: false, type: 'text', emit: 'Select', text: 'Select', css: 'fill-blue-600 w-5' },
+// ]
+// const tableColumns: TableColumns[] = [
+//     { label: 'ID' }, { label: 'Student' }, { label: 'Course' }, { label: 'Date' }, { label: 'Marked Automaticaly' },
+// ]
+// const tableFilters: Filter[] = [{ name: 'name', label: 'Name', type: 'text' }, { name: 'custom_id', label: 'Custom Id', type: 'text' },
+// { name: 'phone_number', type: 'text', label: 'Phone Number' }, { name: 'email', type: 'text', label: 'Email' },
+// { name: 'admission_paid', label: 'Admission Paid', type: 'select', options: [{ text: 'Paid', value: true }, { text: 'Not Paid', value: false }] }]
+
+// let attendanceData: Attendance[] = []
+
+// async function loadAttendances(startIndex?: number, filters?: any) {
+//     let resp = await getAttendace(startIndex, 20, { filters, sort: { by: "id", direction: 'desc' } })
+
+//     await new Promise(resolve => {
+//         const checkStudents = setInterval(() => {
+//             if (students.length > 0) {
+//                 clearInterval(checkStudents);
+//                 resolve(true);
+//             }
+//         }, 100);
+//     });
+//     if (resp.status == 'success') {
+//         countTotAttendances.value = resp.data.tot_count;
+//         attendanceData = resp.data.records
+//         dataForTable.value = [];
+//         (resp.data.records as Attendance[]).forEach(attend => {
+//             let studentName = students.find(s => s.id == attend.student_id)?.name
+//             let student = { type: 'textWithLink', text: studentName, url: `/students/${attend.student_id}/view` }
+//             let course = courses.find(c => c.id == attend.course_id)
+//             let courseName = course?.name
+//             let markedAuto: tableRowItem = {
+//                 type: 'colorTag', text: attend.marked_automatically ? 'Yes' : 'No',
+//                 css: attend.marked_automatically ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700'
+//             }
+
+//             if (course?.group_name) {
+//                 courseName += ' - ' + course.group_name
+//             }
+
+//             dataForTable.value.push([attend.id, student, courseName, attend.date, markedAuto])
+//         });
+//     }
+// }
+
+// loadAttendances()
+
+// function selectForMarking(attendId: number) {
+//     let attendance = attendanceData.find(a => a.id == attendId)
+//     selectedCourseId.value = attendance!.course_id
+//     selectedStudentId.value = attendance!.student_id
+// }
 </script>
 
 <template>
     <div class="container">
-        <div class="flex items-center">
+        <div class="flex items-center pt-10">
             <h4 class="mr-5 font-semibold">Select a Course</h4>
             <SelectionBox :options="courseGroupOptionFields" :value="selectedCourseGroup"
                 @input="(val) => { selectedCourseGroup = val }" class="w-[300px] mr-5" />
@@ -231,7 +398,8 @@ init()
                 </div>
                 <div class="grid grid-cols-2 ml-5">
                     <h4>Instructor</h4>
-                    <h4>{{ selectedCourseData ? selectedCourseData!.instructor.name : '' }}</h4>
+                    <h4>{{ selectedCourseData ? (selectedCourseData!.instructor ? selectedCourseData!.instructor.name
+                        : 'Deleted') : '' }}</h4>
                 </div>
                 <div class="grid grid-cols-2 ml-5">
                     <h4>Enrollment Open</h4>
@@ -266,68 +434,130 @@ init()
                 </div>
             </div>
         </div>
-        <div class="grid grid-cols-2 gap-x-10">
-            <div>
-                <div class="flex">
-                    <h4 class="mr-5 font-semibold">Select a Student</h4>
+        <div class="grid grid-cols-3 gap-x-10">
+            <div class="col-span-2 grid grid-cols-2 gap-x-10 border py-3 px-5 rounded-xl">
+                <div>
+                    <div class="flex items-center">
+                        <h4 class="mr-5 font-semibold">Select a Student</h4>
 
-                    <SelectionBox :options="studentOptionFields" :value="selectedStudentId"
-                        @input="(val) => { selectedStudentId = val }" class="w-[300px] mr-5" />
-                </div>
-                <div class="mb-10 border rounded-xl py-3 px-10 mt-4 text-slate-800">
-                    <h1 class="font-semibold text-lg">Basic Info</h1>
-                    <div class="grid grid-cols-2 ml-5">
-                        <h4>ID</h4>
-                        <h4>{{ selectedStudentData ? selectedStudentData!.id : '' }}</h4>
+                        <SelectionBox :options="studentOptionFields" :value="selectedStudentId"
+                            @input="(val) => { selectedStudentId = val }" class="w-[300px] mr-5" />
+
+                        <p class="mr-3">Show all Students</p>
+                        <input v-model="showAllStudentsForSelection" type="checkbox" class="w-6 h-6" />
                     </div>
-                    <div class="grid grid-cols-2 ml-5">
-                        <h4>Name</h4>
-                        <h4>{{ selectedStudentData ? selectedStudentData!.name : '' }}</h4>
-                    </div>
-                    <div class="grid grid-cols-2 ml-5">
-                        <h4>Grade</h4>
-                        <h4>{{ selectedStudentData ? (selectedStudentData!.grade ? selectedStudentData!.grade.name :
-                            'Deleted Grade') : '' }}</h4>
-                    </div>
-                    <div class="grid grid-cols-2 ml-5">
-                        <h4>School</h4>
-                        <h4>{{ selectedStudentData ? selectedStudentData!.school : '' }}</h4>
-                    </div>
-                    <div class="flex flex-col items-center mt-3">
-                        <div v-show="studentImageUrl === ''"
-                            class="flex items-center justify-center w-[300px] h-[300px]">
-                            <div v-show="selectedStudentId !== 0"
-                                class="animate-pulse bg-gray-300 w-full h-full rounded-lg flex items-center justify-center">
-                                <h4 class="text-2xl text-slate-700">Loading</h4>
+                    <div class="border-t-2 py-3 px-10 mt-4 text-slate-800">
+                        <h1 class="font-semibold text-lg">Basic Info</h1>
+                        <div class="grid grid-cols-2 ml-5">
+                            <h4>ID</h4>
+                            <h4>{{ selectedStudentData ? selectedStudentData!.id : '' }}</h4>
+                        </div>
+                        <div class="grid grid-cols-2 ml-5">
+                            <h4>Name</h4>
+                            <h4>{{ selectedStudentData ? selectedStudentData!.name : '' }}</h4>
+                        </div>
+                        <div class="grid grid-cols-2 ml-5">
+                            <h4>Grade</h4>
+                            <h4>{{ selectedStudentData ? (selectedStudentData!.grade ? selectedStudentData!.grade.name :
+                                'Deleted Grade') : '' }}</h4>
+                        </div>
+                        <div class="grid grid-cols-2 ml-5">
+                            <h4>School</h4>
+                            <h4>{{ selectedStudentData ? selectedStudentData!.school : '' }}</h4>
+                        </div>
+                        <div class="flex flex-col items-center mt-3">
+                            <div v-show="studentImageUrl === ''"
+                                class="flex items-center justify-center w-[300px] h-[300px]">
+                                <div v-show="selectedStudentId !== 0"
+                                    class="animate-pulse bg-gray-300 w-full h-full rounded-lg flex items-center justify-center">
+                                    <h4 class="text-2xl text-slate-700">Loading</h4>
+                                </div>
+                                <div v-show="selectedStudentId === 0"
+                                    class="bg-gray-300 w-full h-full rounded-lg flex items-center justify-center">
+                                    <h4 class="text-2xl text-slate-700">Select a Student</h4>
+                                </div>
                             </div>
-                            <div v-show="selectedStudentId === 0"
-                                class="bg-gray-300 w-full h-full rounded-lg flex items-center justify-center">
-                                <h4 class="text-2xl text-slate-700">Select a Student</h4>
+                            <div v-show="studentImageUrl !== ''" class="">
+                                <img :src="studentImageUrl" alt="student image"
+                                    class="object-contain w-[300px] h-[300px]">
                             </div>
                         </div>
-                        <div v-show="studentImageUrl !== ''" class="w-[300px]">
-                            <img :src="studentImageUrl" alt="student image">
+                    </div>
+                </div>
+                <div class="border-l-2 px-3 py-4">
+                    <h4 class="font-semibold text-lg text-center mb-5">Student Enrolled Courses</h4>
+
+                    <div class="flex gap-x-5 mb-5">
+                        <p>Show only active enrollments</p>
+                        <input type="checkbox" class="w-6 h-6" v-model="showOnlyActiveEnrollments" />
+                    </div>
+                    <div v-show="loadingStudentEnrolledCourses" class="mt-10">
+                        <LoadingCursor />
+                    </div>
+
+                    <div class="border rounded-xl bg-yellow-100 py-4 px-3 text-yellow-800"
+                        v-show="selectedStudentId == 0 && !loadingStudentEnrolledCourses">
+                        <p class="text-center">Select a Student to load Enrolled Courses</p>
+                    </div>
+
+                    <div class="border rounded-xl bg-yellow-100 py-4 px-3 text-yellow-800"
+                        v-show="selectedStudentId != 0 && studentEnrolledCourses.length == 0 && !loadingStudentEnrolledCourses">
+                        <p class="text-center">No Enrolled Courses Found</p>
+                    </div>
+
+                    <div class="text-blue-800 max-h-[450px] overflow-y-auto">
+                        <div class="flex justify-between items-center bg-blue-100 py-1 px-5 mt-1"
+                            v-for="course in studentEnrolledCourses" :key="course.id">
+                            <p>{{ course.name + (course.group_name ? ' - ' + course.group_name : '') }}</p>
+                            <button @click="() => { selectCourse(course.id) }"
+                                class="border bg-blue-300 hover:bg-blue-400 active:bg-blue-500 border-blue-400 rounded-lg px-2 py-1 text-sm">Select</button>
                         </div>
                     </div>
                 </div>
             </div>
+
             <div class="flex flex-col items-center">
                 <div class="py-3 w-full text-center text-xl"
                     :class="enrollmentLoading ? 'bg-slate-400' : (enrollActionsEnabled ? 'bg-blue-500' : 'bg-red-500')">
                     <h3 class="text-white font-bold">{{ enrollStatusText }}</h3>
                 </div>
-                <button :disabled="!enrollActionsEnabled" @click="markPayment"
-                    class="mt-10 border-2 rounded-xl w-[300px] bg-green-400 hover:bg-green-600 py-8 items-center disabled:bg-slate-200 flex flex-col shadow-lg">
-                    <h3 class="font-semibold text-2xl">Mark Payment</h3>
-                    <div class="gap-x-3 mt-3 text-lg font-bold text-white">
-                        <h5>{{ feeToPay !== -1 ? 'Rs. ' + feeToPay : '' }}</h5>
+                <div class="flex mt-10 items-center">
+                    <div v-show="enrollActionsEnabled" class="mr-5 border h-fit flex items-center rounded-xl pl-5">
+                        <p class="text-lg mr-2">Payment Status</p>
+                        <p class="text-xl font-semibold text-white rounded-r-xl py-3 px-5"
+                            :class="enrollmentData?.paid ? 'bg-green-500' : 'bg-red-500'">
+                            {{ enrollmentData?.paid ? "Paid" : "Not Paid" }}</p>
                     </div>
-                </button>
+                    <button :disabled="!enrollActionsEnabled" @click="markPayment"
+                        class="border-2 rounded-xl w-[250px] bg-green-400 hover:bg-green-600 py-4 items-center disabled:bg-slate-200 flex flex-col shadow-lg">
+                        <h3 class="font-semibold text-2xl">Mark Payment</h3>
+                        <div class="gap-x-3 mt-3 text-lg font-bold text-white">
+                            <h5>{{ feeToPay !== -1 ? 'Rs. ' + feeToPay : '' }}</h5>
+                        </div>
+                    </button>
+                </div>
                 <button :disabled="!enrollActionsEnabled" @click="markAttendance"
                     class="mt-10 border-2 rounded-xl w-[300px] bg-amber-400 hover:bg-amber-600 py-8 text-center disabled:bg-slate-200 shadow-lg">
                     <h3 class="font-semibold text-2xl">Mark Attendance</h3>
                 </button>
             </div>
         </div>
+        <!-- 
+        <h5 class="font-semibold text-xl mb-10">Marked Attendences</h5>
+
+        <TableComponent :table-columns="tableColumns" :table-rows="dataForTable" :actions="tableActions"
+            :refresh-func="async () => { await loadAttendances(); return true }" :paginate-total="countTotAttendances"
+            :paginate-page-size="20" @load-page-emit="loadAttendances" @select="selectForMarking" /> -->
+        <!--:filters="tableFilters" @filter-values="(val) => {
+                loadStudents(undefined, val)
+            }"  -->
+        <!-- @edit-emit="editStudent" @show-more="showMoreInfo"
+             @delete-emit="delStudent"
+            @courses-emit="showStudentCourses" @load-page-emit="loadStudents" :paginate-page-size="limitLoadStudents"
+            :paginate-total="countTotStudents" @sort-by="(col, dir) => {
+                setSorting(col, dir); loadStudents();
+            }" :current-sorting="{ column: 'Custom ID', direc: 'desc' }"  -->
     </div>
+    <BillEnroller :show="showBillEnroller" :student-id="billEnrollerStudentId" :payment-id="paymentIdForBillEnroller"
+        @close="showBillEnroller = false" />
 </template>
