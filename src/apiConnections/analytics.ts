@@ -1,7 +1,8 @@
 import { sendGetRequest } from "@/utils/requests";
 
-export function getStudentCount() {
-  return sendGetRequest("/analytics/students/count");
+export function getStudentCount(month?: string) {
+  const params = month ? { month } : {};
+  return sendGetRequest("/analytics/students/count", params);
 }
 
 export function getMonthlyFinancialSummary(year: number, month: number, byMarkedMonth: boolean) {
