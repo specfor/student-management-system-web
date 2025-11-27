@@ -137,6 +137,10 @@ async function addNewVideoBanner() {
       required: true,
     },
     {
+      type: "message",
+      text: "Note: Max file size is 50MB.",
+    },
+    {
       name: "video",
       type: "file",
       text: "Banner Video",
