@@ -158,7 +158,7 @@ async function addNewVideoBanner() {
       alertStore.insertAlert("Video upload error", "Unable to upload video.", "error");
       return;
     } else {
-      const videoId = uploadResp.data.video_id;
+      const videoId = uploadResp.data.video;
       const secondsToShow = results.data["seconds_to_show"];
       const createResp = await createBanner("video", videoId, secondsToShow as number);
       if (createResp.status == "error") {
