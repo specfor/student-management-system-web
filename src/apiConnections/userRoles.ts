@@ -29,27 +29,36 @@ export function getAllPermissions() {
   return sendGetRequest("/permissions");
 }
 
+export function getDashboardCards() {
+  return sendGetRequest("/dashboard-cards");
+}
+
 export function createUserRole(
   name: string,
-  permissions: { [key: string]: string[] }
+  permissions: { [key: string]: string[] },
+  dashboardCardVisibility: { [key: string]: boolean }
 ) {
   return sendJsonPostRequest("/user-groups", {
     name: name,
     permissions: permissions,
+    dashboard_card_visibility: dashboardCardVisibility,
   });
 }
 
 export function updateUserRole(
   id: number,
   name: string,
-  permissions: { [key: string]: string[] }
+  permissions: { [key: string]: string[] },
+  dashboardCardVisibility: { [key: string]: boolean }
 ) {
   return sendJsonPatchRequest(`/user-groups/${id}`, {
     name: name,
     permissions: permissions,
+    dashboard_card_visibility: dashboardCardVisibility,
   });
 }
 
 export function deleteUserRole(id: number) {
   return sendDeleteRequest(`/user-groups/${id}`);
 }
+

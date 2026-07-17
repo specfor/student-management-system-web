@@ -4,6 +4,10 @@ export function getStudentCount() {
   return sendGetRequest("/analytics/students/count");
 }
 
+export function getEnrollmentCount() {
+  return sendGetRequest("/analytics/enrollments/count");
+}
+
 export function getMonthlyFinancialSummary(year: number, month: number, byMarkedMonth: boolean) {
   return sendGetRequest("/analytics/summary/financial", {
     year,
@@ -44,3 +48,19 @@ export function getCourseCalendar(year: number, month: number) {
     month,
   });
 }
+
+/** Card B — Outstanding Payments */
+export function getOutstandingPayments() {
+  return sendGetRequest("/analytics/outstanding-payments");
+}
+
+/** Card C — Instructor Payment Status */
+export function getInstructorPaymentStatus() {
+  return sendGetRequest("/analytics/instructor-payment-status");
+}
+
+/** Card E — Attendance Rate Tracker */
+export function getAttendanceRate() {
+  return sendGetRequest("/analytics/attendance-rate");
+}
+

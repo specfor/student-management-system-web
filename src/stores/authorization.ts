@@ -7,6 +7,7 @@ export const useAuthStore = defineStore("auth", () => {
   const LoggedIn = ref(false);
   const authToken = ref("");
   const userPermissions: Ref<{ [key: string]: string[] }> = ref({});
+  const dashboardCardVisibility: Ref<{ [cardKey: string]: boolean }> = ref({});
 
   async function login(email: string, password: string) {
     const data = await sendJsonPostRequest("/login", {
@@ -15,6 +16,7 @@ export const useAuthStore = defineStore("auth", () => {
     });
     if (data.status === "success") {
       userPermissions.value = data.data.user.role.permissions;
+      dashboardCardVisibility.value = data.data.user.role.dashboard_card_visibility ?? {};
       await setAuthTokenInRequiredPlaces(data.data.token);
       LoggedIn.value = true;
       return { success: true, message: "Login Successful." };
@@ -30,6 +32,7 @@ export const useAuthStore = defineStore("auth", () => {
     localStorage.removeItem("authToken");
     headerStore.removeHeader("Authorization");
     LoggedIn.value = false;
+    dashboardCardVisibility.value = {};
   }
 
   async function checkLoggedIn() {
@@ -45,6 +48,7 @@ export const useAuthStore = defineStore("auth", () => {
     );
     if (data.status === "success") {
       userPermissions.value = data.data.user.role.permissions;
+      dashboardCardVisibility.value = data.data.user.role.dashboard_card_visibility ?? {};
       await setAuthTokenInRequiredPlaces(storedKey);
       return true;
     }
@@ -71,12 +75,24 @@ export const useAuthStore = defineStore("auth", () => {
     });
   }
 
+  /**
+   * Returns true if the logged-in user's role can see the given dashboard card.
+   * Defaults to true when the key is absent (safe default = visible).
+   */
+  function canSeeCard(cardKey: string): boolean {
+    if (Object.keys(dashboardCardVisibility.value).length === 0) return true;
+    return dashboardCardVisibility.value[cardKey] !== false;
+  }
+
   return {
     LoggedIn,
     userPermissions,
+    dashboardCardVisibility,
     checkLoggedIn,
     login,
     logout,
     getAuthToken,
+    canSeeCard,
   };
 });
+

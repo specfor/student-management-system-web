@@ -6,10 +6,10 @@ import TableComponent, { type TableActionType, type TableColumns } from '@/compo
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { useCacheStore } from '@/stores/cache';
-import { createUserRole, deleteUserRole, getAllPermissions, getUserRoles, updateUserRole } from '@/apiConnections/userRoles';
+import { createUserRole, deleteUserRole, getAllPermissions, getDashboardCards, getUserRoles, updateUserRole } from '@/apiConnections/userRoles';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
-import type { UserRole } from '@/types/userRoleTypes';
+import type { DashboardCard, UserRole } from '@/types/userRoleTypes';
 
 const confirmForm = useConfirmationFormsStore()
 const dataEntryForm = useDataEntryFormsStore()
@@ -68,6 +68,7 @@ async function loadUserRoles(startIndex?: number) {
 loadUserRoles()
 
 let permissions: UserRole['permissions'] | undefined = undefined
+let dashboardCards: DashboardCard[] = []
 
 async function loadPermissions() {
     if ('all-permissions' in cacheStore.caches) {
@@ -82,7 +83,21 @@ async function loadPermissions() {
         cacheStore.createNew('all-permissions', data.data.permissions, 1)
     }
 }
+
+async function loadDashboardCards() {
+    if ('all-dashboard-cards' in cacheStore.caches) {
+        dashboardCards = JSON.parse(cacheStore.caches['all-dashboard-cards'])
+        return
+    }
+    const data = await getDashboardCards()
+    if (data.status === 'success') {
+        dashboardCards = data.data.cards
+        cacheStore.createNew('all-dashboard-cards', data.data.cards, 5)
+    }
+}
+
 loadPermissions()
+loadDashboardCards()
 
 async function newUserRole() {
     let fields: any = [
@@ -97,6 +112,13 @@ async function newUserRole() {
         fields.push({ type: 'checkbox', text: createCategName(role), name: role, options: p })
     }
 
+    // Dashboard Card Visibility section
+    if (dashboardCards.length > 0) {
+        fields.push({ type: 'heading', text: 'Dashboard Card Visibility' })
+        const cardOptions = dashboardCards.map(card => ({ name: card.key, text: card.label, checked: true }))
+        fields.push({ type: 'checkbox', text: 'Visible Cards', name: '__dashboard_cards__', options: cardOptions })
+    }
+
     dataEntryForm.newDataEntryForm('Create New User Role', 'Create', fields)
 
     while (true) {
@@ -105,8 +127,9 @@ async function newUserRole() {
             return
 
         let permissionsToAdd = extractSelectedPermsFromAddNewFormData(results.data)
+        let dashboardVisibility = extractDashboardVisibility(results.data)
 
-        let resp = await createUserRole(results.data.role_name as string, permissionsToAdd)
+        let resp = await createUserRole(results.data.role_name as string, permissionsToAdd, dashboardVisibility)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
@@ -179,6 +202,18 @@ async function editRole(id: number) {
         fields.push({ type: 'checkbox', text: createCategName(categ), name: categ, options: p })
     }
 
+    // Dashboard Card Visibility section
+    if (dashboardCards.length > 0) {
+        fields.push({ type: 'heading', text: 'Dashboard Card Visibility' })
+        const roleVisibility = role['dashboard_card_visibility'] ?? {}
+        const cardOptions = dashboardCards.map(card => ({
+            name: card.key,
+            text: card.label,
+            checked: roleVisibility[card.key] !== false  // default = visible
+        }))
+        fields.push({ type: 'checkbox', text: 'Visible Cards', name: '__dashboard_cards__', options: cardOptions })
+    }
+
     dataEntryForm.newDataEntryForm('Update User Role', 'Update', fields)
 
     while (true) {
@@ -187,8 +222,9 @@ async function editRole(id: number) {
             return
 
         let permissionsToAdd = extractSelectedPermsFromAddNewFormData(results.data)
+        let dashboardVisibility = extractDashboardVisibility(results.data)
 
-        let resp = await updateUserRole(id, results.data.role_name as string, permissionsToAdd)
+        let resp = await updateUserRole(id, results.data.role_name as string, permissionsToAdd, dashboardVisibility)
         if (resp.status === 'error') {
             if (resp.data.type === 'user_error')
                 Object.entries(resp.data.messages).forEach(msg => {
@@ -215,6 +251,7 @@ function extractSelectedPermsFromAddNewFormData(data: any) {
     let permissionsToAdd: { [key: string]: string[] } = {}
 
     for (const [key, val] of Object.entries(data)) {
+        if (key === '__dashboard_cards__') continue  // skip visibility data
         if (val === null || typeof val !== 'object' || Array.isArray(val))
             continue
 
@@ -230,6 +267,24 @@ function extractSelectedPermsFromAddNewFormData(data: any) {
         permissionsToAdd[key] = selectedPermOptions
     }
     return permissionsToAdd
+}
+
+/**
+ * Extracts dashboard card visibility from form submission data.
+ * Returns a map of cardKey => boolean.
+ */
+function extractDashboardVisibility(data: any): { [key: string]: boolean } {
+    const visibility: { [key: string]: boolean } = {}
+    const cardSelections = data['__dashboard_cards__']
+    if (!cardSelections || typeof cardSelections !== 'object') {
+        // No dashboard section in form — default all to visible
+        dashboardCards.forEach(card => { visibility[card.key] = true })
+        return visibility
+    }
+    dashboardCards.forEach(card => {
+        visibility[card.key] = !!cardSelections[card.key]
+    })
+    return visibility
 }
 </script>
 
