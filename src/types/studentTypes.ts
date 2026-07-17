@@ -18,6 +18,14 @@ export type Student = {
   grade: Grade | null;
   admission_paid: boolean;
   fingerprint?: boolean;
+  trust_score?: number;
+  payment_week_tendency?: {
+    week_1: number;
+    week_2: number;
+    week_3: number;
+    week_4: number;
+    primary_week: string;
+  };
 };
 
 export type AdmissionFee = {
