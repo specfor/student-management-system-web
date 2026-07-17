@@ -20,7 +20,7 @@ export function getStudents(
       admission_paid?: boolean;
     };
     sort?: {
-      by: "name" | "id" | "birthday" | "email" | "grade_id" | "custom_id";
+      by: "name" | "id" | "birthday" | "email" | "grade_id" | "custom_id" | "trust_score";
       direction: "asc" | "desc";
     };
   }
