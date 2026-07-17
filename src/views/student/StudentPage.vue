@@ -52,6 +52,7 @@ const tableColumns: TableColumns[] = [
   { label: "Email", sortable: true },
   { label: "School" },
   { label: "Admission Paid" },
+  { label: "Trust Score", sortable: true },
 ];
 const tableFilters: Filter[] = [
   { name: "name", label: "Name", type: "text" },
@@ -117,6 +118,9 @@ function setSorting(column: string, direction: "asc" | "desc") {
     case "Birthday":
       lastLoadSettings.orderBy = "birthday";
       break;
+    case "Trust Score":
+      lastLoadSettings.orderBy = "trust_score";
+      break;
     default:
       break;
   }
@@ -143,6 +147,14 @@ async function loadStudents(startIndex?: number, filters?: any) {
   countTotStudents.value = resp.data.tot_count;
   studentDataForTable.value = [];
   studentData.forEach((student) => {
+    let score = student.trust_score !== undefined && student.trust_score !== null ? student.trust_score : 100;
+    let scoreCss = "text-green-800 bg-green-200";
+    if (score < 50) {
+      scoreCss = "text-red-800 bg-red-200";
+    } else if (score < 80) {
+      scoreCss = "text-amber-800 bg-amber-200";
+    }
+
     let row: tableRowItem[] = [
       student.id,
       student.custom_id,
@@ -153,6 +165,7 @@ async function loadStudents(startIndex?: number, filters?: any) {
       student.admission_paid
         ? { type: "colorTag", text: "Paid", css: "text-green-800 bg-green-200" }
         : { type: "colorTag", text: "Not Paid", css: "text-red-800 bg-red-200" },
+      { type: "colorTag", text: `${score}%`, css: scoreCss },
     ];
     studentDataForTable.value.push(row);
   });

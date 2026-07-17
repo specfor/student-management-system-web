@@ -536,8 +536,30 @@ function selectCourse(courseId: number) {
                         </div>
                     </button>
                 </div>
+
+                <div v-if="selectedStudentData !== null" class="mt-6 border-2 border-slate-300 rounded-xl bg-white px-6 py-4 shadow-md w-full max-w-xl">
+                    <div class="flex items-center justify-between border-b pb-2 mb-3">
+                        <span class="font-bold text-lg text-slate-700">Payment Trustworthiness</span>
+                        <span class="px-3 py-1 rounded-full font-bold text-sm text-white"
+                            :class="[
+                                (selectedStudentData.trust_score ?? 100) >= 80 ? 'bg-green-600' :
+                                (selectedStudentData.trust_score ?? 100) >= 50 ? 'bg-amber-500' : 'bg-red-600'
+                            ]">
+                            {{ selectedStudentData.trust_score ?? 100 }}% Trust Score
+                        </span>
+                    </div>
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center text-sm gap-2">
+                        <p class="text-slate-600">
+                            ⚡ Usual Tendency: <span class="font-semibold text-slate-800">{{ selectedStudentData.payment_week_tendency ? selectedStudentData.payment_week_tendency.primary_week : 'N/A' }}</span>
+                        </p>
+                        <p class="text-xs text-slate-500 italic">
+                            {{ (selectedStudentData.trust_score ?? 100) < 50 ? '⚠️ High risk of non-payment' : (selectedStudentData.trust_score ?? 100) < 80 ? '🔔 Occasionally delayed' : '✅ Reliable payer' }}
+                        </p>
+                    </div>
+                </div>
+
                 <button :disabled="!enrollActionsEnabled" @click="markAttendance"
-                    class="mt-10 border-2 rounded-xl w-[300px] bg-amber-400 hover:bg-amber-600 py-8 text-center disabled:bg-slate-200 shadow-lg">
+                    class="mt-6 border-2 rounded-xl w-[300px] bg-amber-400 hover:bg-amber-600 py-8 text-center disabled:bg-slate-200 shadow-lg">
                     <h3 class="font-semibold text-2xl">Mark Attendance</h3>
                 </button>
             </div>
