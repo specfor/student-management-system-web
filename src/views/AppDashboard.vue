@@ -14,15 +14,15 @@ import CollapseCard from "@/components/minorUiComponents/CollapseCard.vue";
 import SelectionBox from "@/components/primary/SelectionBox.vue";
 import { formatMoney } from "@/utils/money";
 import {
-    Chart as ChartJS,
-    ArcElement,
-    Tooltip,
-    Legend,
-    type ChartData,
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  type ChartData,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
 } from "chart.js";
 import { ref, watch, type Ref } from "vue";
 import { Doughnut, Line } from "vue-chartjs";
@@ -44,9 +44,13 @@ const months = [
 // ─── Existing card state ──────────────────────────────────────────────────────
 
 const selectedMonthForIncome = ref(
-    `${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, "0")}`
+  `${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, "0")}`
+);
+const selectedMonthForStudentCount = ref(
+  `${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, "0")}`
 );
 const paymentCalculateType: Ref<"marked" | "paid_to"> = ref("paid_to");
+const loadingStudentCount = ref(false);
 
 const studentCountData: Ref<ChartData<"doughnut">> = ref({
     labels: ["Active Not Paid", "Active Paid", "Inactive"],
@@ -63,26 +67,32 @@ const expenseDataForGraph: Ref<ChartData<"doughnut">> = ref({
 });
 
 const incomeData: Ref<{
-    total_income?: { amount: string; currency: string };
-    this_month_class_payments?: { amount: string; currency: string };
-    out_standing_class_payments?: { amount: string; currency: string };
-    admission_fees?: { amount: string; currency: string };
+  total_income?: { amount: string; currency: string };
+  this_month_class_payments?: { amount: string; currency: string };
+  out_standing_class_payments?: { amount: string; currency: string };
+  admission_fees?: { amount: string; currency: string };
 }> = ref({});
 const expenseData: Ref<{
-    total_expenses?: { amount: string; currency: string };
-    instructor_salaries?: { amount: string; currency: string };
-    other_expenses?: { [expenseCateg: string]: { amount: string; currency: string } };
+  total_expenses?: { amount: string; currency: string };
+  instructor_salaries?: { amount: string; currency: string };
+  other_expenses?: { [expenseCateg: string]: { amount: string; currency: string } };
 }> = ref({});
 const loadingMonthlyIncomeSummary = ref(false);
 
 async function loadStudentCount() {
-    let resp = await getStudentCount();
-    if (resp.status === "success") {
-        studentCountData.value.datasets[0].data = [
-            resp.data.active - resp.data["paid_student_count"],
-            resp.data["paid_student_count"],
-            resp.data.inactive,
-        ];
+  loadingStudentCount.value = true;
+  let resp = await getStudentCount(selectedMonthForStudentCount.value);
+  if (resp.status === "success") {
+    // Handle both current month (with real-time data) and previous months (cached data)
+    if (resp.data && typeof resp.data === "object" && Object.keys(resp.data).length > 0) {
+      studentCountData.value.datasets[0].data = [
+        (resp.data.active || 0) - (resp.data["paid_student_count"] || 0),
+        resp.data["paid_student_count"] || 0,
+        resp.data.inactive || 0,
+      ];
+    } else {
+      // If no data available (e.g., for previous months with no cached data)
+      studentCountData.value.datasets[0].data = [0, 0, 0];
     }
 }
 if (auth.canSeeCard("student_summary")) loadStudentCount();
@@ -147,7 +157,7 @@ if (auth.canSeeCard("financial_summary_12m")) loadFinanceSummaryForMonths();
 
 const studentPaymentSummary: Ref<AnalyticsStudentMonthlyPaymentSummary> = ref({ summary: [] });
 const selectedMonthForStudentPayment = ref(
-    `${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, "0")}`
+  `${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, "0")}`
 );
 const loadingStudentPaymentSummary = ref(false);
 
@@ -167,7 +177,7 @@ if (auth.canSeeCard("student_payment_summary")) loadPaymentSummary();
 watch(selectedMonthForStudentPayment, () => { loadPaymentSummary(); });
 
 const calendarData = ref<
-    { title: string; body: string; timeRange: string; date: string; status: string; notes: string; courseId: number }[]
+  { title: string; body: string; timeRange: string; date: string; status: string; notes: string; courseId: number }[]
 >([]);
 
 async function loadCourseCalendar(year: number, month: number) {

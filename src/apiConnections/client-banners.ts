@@ -34,9 +34,10 @@ export async function getClientBanners(
   return sendGetRequest("/banners", params);
 }
 
-export async function createBanner(imageId: string, seconds_to_show: number) {
+export async function createBanner(type: "image" | "video", media: string, seconds_to_show: number) {
   return sendJsonPostRequest("/banners", {
-    image: imageId,
+    type: type,
+    media: media,
     seconds_to_show: seconds_to_show,
   });
 }
@@ -56,6 +57,14 @@ export async function uploadBannerImage(file: Blob) {
   return sendFileUploadRequest("/banners/image", "image", file);
 }
 
+export async function uploadBannerVideo(file: Blob) {
+  return sendFileUploadRequest("/banners/video", "video", file);
+}
+
 export async function downloadBannerImage(bannerID: number) {
   return sendFileDownloadRequest(`/banners/${bannerID}/image`);
+}
+
+export async function downloadBannerVideo(bannerID: number) {
+  return sendFileDownloadRequest(`/banners/${bannerID}/video`);
 }

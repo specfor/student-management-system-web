@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getGeneratedBillData, sendBillPrintCommand, updateBillStatus } from "@/apiConnections/billPrint";
+import { getGeneratedBillData, sendBillPrintCommand, updateBillStatus, getBillImage } from "@/apiConnections/billPrint";
 import { useAlertsStore } from "@/stores/alerts";
 import { formatMoney } from "@/utils/money";
 import {
@@ -10,6 +10,7 @@ import {
   MinusCircleIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  ArrowDownTrayIcon,
 } from "@heroicons/vue/24/outline";
 import { ref } from "vue";
 
@@ -93,6 +94,49 @@ async function printBill(status: typeof props.status) {
 
   disableBtns.value = false;
 }
+
+async function downloadReceiptImage() {
+  disableBtns.value = true;
+
+  try {
+    const resp = await getBillImage(props.billId);
+
+    if (resp.status === "success") {
+      const imageData = resp.data.image;
+
+      // Create a blob from the base64 image data
+      const byteCharacters = atob(imageData.image_data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: imageData.mime_type });
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = imageData.filename || `receipt_${props.billId}.jpg`;
+
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Clean up
+      window.URL.revokeObjectURL(url);
+
+      alertStore.insertAlert("Download Successful", "Receipt image downloaded successfully.", "success");
+    } else {
+      alertStore.insertAlert("Download Failed", resp.message || "Failed to download receipt image.", "error");
+    }
+  } catch (error) {
+    alertStore.insertAlert("Download Error", "An error occurred while downloading the receipt image.", "error");
+  }
+
+  disableBtns.value = false;
+}
 </script>
 
 <template>
@@ -170,9 +214,17 @@ async function printBill(status: typeof props.status) {
           <ChevronDownIcon class="w-5 h-5" @click="expandPrint = !expandPrint" v-show="!expandPrint" />
           <ChevronUpIcon class="w-5 h-5" @click="expandPrint = !expandPrint" v-show="expandPrint" />
         </button>
-        <div class="absolute right-0 top-8" v-show="expandPrint">
+        <div class="absolute right-0 top-8 z-10 bg-white border border-gray-300 rounded shadow-lg" v-show="expandPrint">
           <button
-            class="w-fit flex items-center justify-center bg-green-600 active:bg-green-800 disabled:bg-green-300 disabled:hover:cursor-not-allowed px-5 py-2 cursor-pointer border-l border-t"
+            class="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 active:bg-green-800 disabled:bg-green-300 disabled:hover:cursor-not-allowed px-5 py-2 cursor-pointer text-white rounded-t"
+            :disabled="disableBtns"
+            @click="downloadReceiptImage"
+          >
+            <ArrowDownTrayIcon class="w-4 h-4" />
+            Download Receipt Image
+          </button>
+          <button
+            class="w-full flex items-center justify-center bg-green-600 hover:bg-green-700 active:bg-green-800 disabled:bg-green-300 disabled:hover:cursor-not-allowed px-5 py-2 cursor-pointer text-white rounded-b border-t border-green-400"
             :disabled="disableBtns"
             @click="
               () => {
