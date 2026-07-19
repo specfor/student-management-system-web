@@ -36,15 +36,29 @@ async function checkAppUpdates() {
 checkAppUpdates()
 
 async function checkLogged() {
+  await router.isReady()
   await authStore.checkLoggedIn()
+  const path = router.currentRoute.value.path
   if (authStore.LoggedIn) {
-    if (router.currentRoute.value['path'] === '/login')
+    if (path === '/login' || path.startsWith('/reset-password'))
       router.push('/')
   } else {
-    router.push('/login')
+    if (path !== '/login' && !path.startsWith('/reset-password') && path !== '/client-general-ui') {
+      router.push('/login')
+    }
   }
   loading.value = false
 }
+
+router.beforeEach((to, from, next) => {
+  if (!authStore.LoggedIn && to.path !== '/login' && !to.path.startsWith('/reset-password') && to.path !== '/client-general-ui') {
+    next('/login')
+  } else if (authStore.LoggedIn && (to.path === '/login' || to.path.startsWith('/reset-password'))) {
+    next('/')
+  } else {
+    next()
+  }
+})
 
 checkLogged()
 
