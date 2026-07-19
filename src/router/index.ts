@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import AppDashboard from "@/views/AppDashboard.vue";
 import UsersPage from "@/views/UsersPage.vue";
 import LoginPage from "@/views/LoginPage.vue";
+import ResetPasswordPage from "@/views/ResetPasswordPage.vue";
 import UserRolesPage from "@/views/UserRolesPage.vue";
 import GradesPage from "@/views/GradesPage.vue";
 import StudentPage from "@/views/student/StudentPage.vue";
@@ -40,6 +41,11 @@ const router = createRouter({
       path: "/login",
       name: "login",
       component: LoginPage,
+    },
+    {
+      path: "/reset-password",
+      name: "reset-password",
+      component: ResetPasswordPage,
     },
     {
       path: "/user-roles",
