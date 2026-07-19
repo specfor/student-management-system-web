@@ -67,3 +67,7 @@ export function getGeneratedBillData(billId: number) {
 export async function sendBillPrintCommand(jsonData: string) {
   return sendJsonPostRequest("http://127.0.0.1:9000/bill", jsonData, {}, false);
 }
+
+export function getBillImage(billId: number) {
+  return sendGetRequest("/print-queue/bill-image", { bill_id: billId });
+}
