@@ -20,7 +20,16 @@ import { useAlertsStore } from "@/stores/alerts";
 import { useConfirmationFormsStore } from "@/stores/formManagers/confirmationForm";
 import { useDataEntryFormsStore } from "@/stores/formManagers/dataEntryForm";
 import { ref, type Ref } from "vue";
-import { MagnifyingGlassIcon, PencilSquareIcon } from "@heroicons/vue/24/solid";
+import {
+  getTemporaryStudents,
+  createTemporaryStudent,
+  updateTemporaryStudent,
+  deleteTemporaryStudent,
+  convertTemporaryStudent,
+} from "@/apiConnections/temporaryStudents";
+import type { TemporaryStudent } from "@/types/studentTypes";
+import TemporaryStudentReceiptModal from "@/components/TemporaryStudentReceiptModal.vue";
+import { MagnifyingGlassIcon, PencilSquareIcon, PrinterIcon, UserPlusIcon } from "@heroicons/vue/24/solid";
 import { BookOpenIcon } from "@heroicons/vue/24/outline";
 import { setRoute } from "@/utils/routeHelpers";
 import { getStudentCount } from "@/apiConnections/analytics";
@@ -70,6 +79,73 @@ const tableFilters: Filter[] = [
     ],
   },
 ];
+
+const activeTab = ref<"regular" | "temporary">("regular");
+
+let tempStudentsData: TemporaryStudent[] = [];
+const tempStudentsForTable: Ref<any[]> = ref([]);
+const countTotTempStudents = ref(0);
+const showTempReceiptModal = ref(false);
+const selectedTempStudentIdForReceipt = ref(-1);
+
+const tempTableActions: TableActionType[] = [
+  { renderAsRouterLink: false, type: "icon", emit: "convertEmit", icon: UserPlusIcon, css: "fill-green-600 w-5" },
+  { renderAsRouterLink: false, type: "icon", emit: "receiptEmit", icon: PrinterIcon, css: "fill-blue-600 w-5" },
+  { renderAsRouterLink: false, type: "icon", emit: "editEmit", icon: PencilSquareIcon, css: "fill-amber-600 w-5" },
+];
+
+const tempTableColumns: TableColumns[] = [
+  { label: "ID", sortable: true },
+  { label: "Temp ID", sortable: true },
+  { label: "Name", sortable: true },
+  { label: "Grade" },
+  { label: "Phone Number" },
+  { label: "Fee (LKR)" },
+  { label: "Fee Paid" },
+  { label: "Notes" },
+];
+
+const tempTableFilters: Filter[] = [
+  { name: "name", label: "Name", type: "text" },
+  { name: "phone_number", type: "text", label: "Phone Number" },
+  { name: "grade_id", label: "Grade", type: "select", options: gradeOptions },
+  {
+    name: "fee_paid",
+    label: "Fee Paid",
+    type: "select",
+    options: [
+      { text: "Paid", value: true },
+      { text: "Not Paid", value: false },
+    ],
+  },
+];
+
+let lastTempLoadSettings: {
+  lastUsedIndex: number;
+  orderBy: "id" | "name" | "created_at" | "grade_id";
+  orderDirec: "asc" | "desc";
+  filters?: {
+    name?: string;
+    phone_number?: string;
+    grade_id?: number;
+    fee_paid?: boolean;
+  };
+} = { lastUsedIndex: 0, orderBy: "id", orderDirec: "desc" };
+
+function setTempSorting(column: string, direction: "asc" | "desc") {
+  lastTempLoadSettings.orderDirec = direction;
+  switch (column) {
+    case "Temp ID":
+      lastTempLoadSettings.orderBy = "id";
+      break;
+    case "Name":
+      lastTempLoadSettings.orderBy = "name";
+      break;
+    default:
+      lastTempLoadSettings.orderBy = "id";
+      break;
+  }
+}
 
 const showBillEnroller = ref(false);
 const billEnrollerStudentId = ref(-1);
@@ -171,10 +247,61 @@ async function loadStudents(startIndex?: number, filters?: any) {
   });
 }
 
+function cleanTempId(id: number | string): number {
+  if (typeof id === "string" && /^(?:TEMP|REG)-/i.test(id)) {
+    return parseInt(id.replace(/^(?:TEMP|REG)-/i, ""), 10);
+  }
+  return Number(id);
+}
+
+async function loadTemporaryStudents(
+  start?: number,
+  filters?: {
+    name?: string;
+    phone_number?: string;
+    grade_id?: number;
+    fee_paid?: boolean;
+  }
+) {
+  if (start !== undefined) lastTempLoadSettings.lastUsedIndex = start;
+  if (filters !== undefined) lastTempLoadSettings.filters = filters;
+
+  const resp = await getTemporaryStudents(lastTempLoadSettings.lastUsedIndex, limitLoadStudents, {
+    filters: lastTempLoadSettings.filters,
+    sort: { by: lastTempLoadSettings.orderBy, direction: lastTempLoadSettings.orderDirec },
+  });
+
+  if (resp.status === "error") {
+    alertStore.insertAlert("An error occurred.", resp.message, "error");
+    return;
+  }
+
+  tempStudentsData = resp.data.temporary_students;
+  countTotTempStudents.value = resp.data.tot_count;
+  tempStudentsForTable.value = [];
+
+  tempStudentsData.forEach((ts) => {
+    const row: tableRowItem[] = [
+      ts.id,
+      `TEMP-${String(ts.id).padStart(4, "0")}`,
+      ts.name,
+      ts.grade ? ts.grade.name : "N/A",
+      ts.phone_number || "N/A",
+      Number(ts.registration_fee).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      ts.fee_paid
+        ? { type: "colorTag", text: "Paid", css: "text-green-800 bg-green-200" }
+        : { type: "colorTag", text: "Not Paid", css: "text-red-800 bg-red-200" },
+      ts.notes ? (ts.notes.length > 30 ? ts.notes.substring(0, 30) + "..." : ts.notes) : "-",
+    ];
+    tempStudentsForTable.value.push(row);
+  });
+}
+
 let gradeData: Grade[] = [];
 
 async function init() {
   loadStudents(0);
+  loadTemporaryStudents(0);
   let resp = await getGrades();
   if (resp.status === "success") {
     gradeData = resp.data.grades;
@@ -193,6 +320,201 @@ async function loadStudentCount() {
   }
 }
 loadStudentCount();
+
+async function addNewTemporaryStudent() {
+  dataEntryForm.newDataEntryForm("New Temporary Registration", "Register", [
+    { name: "name", text: "Student Name", type: "text", required: true },
+    { name: "grade_id", text: "Select Grade", type: "select", required: true, options: gradeOptions },
+    { name: "phone_number", text: "Phone Number", type: "text" },
+    { name: "registration_fee", text: "Registration Fee (LKR)", type: "number", min: 0, required: true, value: 0 },
+    {
+      name: "fee_paid",
+      text: "Fee Paid",
+      type: "select",
+      required: true,
+      value: true,
+      options: [
+        { text: "Yes", value: true },
+        { text: "No", value: false },
+      ],
+    },
+    { name: "notes", text: "Quick Notes / Comments", type: "textarea" },
+  ]);
+
+  let results = await dataEntryForm.waitForSubmittedData();
+  if (!results.submitted) return;
+
+  const resp = await createTemporaryStudent(
+    results.data.name as string,
+    results.data.grade_id as number,
+    results.data.phone_number as string,
+    results.data.registration_fee as number,
+    Boolean(results.data.fee_paid),
+    results.data.notes as string
+  );
+
+  if (resp.status === "error") {
+    if (resp.data?.type === "user_error" && resp.data.messages) {
+      Object.entries(resp.data.messages).forEach(([field, msgs]) => {
+        let err = Array.isArray(msgs) ? msgs.join(", ") : String(msgs);
+        dataEntryForm.insertErrorMessage(field, err);
+      });
+    } else {
+      alertStore.insertAlert("An error occurred.", resp.message, "error");
+    }
+    return;
+  }
+
+  dataEntryForm.finishSubmission();
+  alertStore.insertAlert("Success", "Temporary registration created successfully.");
+  await loadTemporaryStudents(0);
+
+  let conf = await confirmationForm.newConfirmationForm(
+    "Issue Registration Receipt?",
+    `Do you want to issue/print the receipt for ${resp.data.temporary_student.name}?`
+  );
+  if (conf) {
+    showTempReceipt(resp.data.temporary_student.id);
+  }
+}
+
+async function editTemporaryStudent(rawId: number | string) {
+  const id = cleanTempId(rawId);
+  let ts = tempStudentsData.find((t) => t.id === id);
+  if (!ts) return;
+
+  dataEntryForm.newDataEntryForm("Update Temporary Registration", "Update", [
+    { name: "id", text: "Temp ID", type: "text", disabled: true, value: `TEMP-${String(ts.id).padStart(4, "0")}` },
+    { name: "name", text: "Student Name", type: "text", required: true, value: ts.name },
+    { name: "grade_id", text: "Select Grade", type: "select", required: true, value: ts.grade_id || "", options: gradeOptions },
+    { name: "phone_number", text: "Phone Number", type: "text", value: ts.phone_number || "" },
+    { name: "registration_fee", text: "Registration Fee (LKR)", type: "number", min: 0, required: true, value: ts.registration_fee },
+    {
+      name: "fee_paid",
+      text: "Fee Paid",
+      type: "select",
+      required: true,
+      value: ts.fee_paid,
+      options: [
+        { text: "Yes", value: true },
+        { text: "No", value: false },
+      ],
+    },
+    { name: "notes", text: "Quick Notes / Comments", type: "textarea", value: ts.notes || "" },
+  ]);
+
+  let results = await dataEntryForm.waitForSubmittedData();
+  if (!results.submitted) return;
+
+  const resp = await updateTemporaryStudent(id, {
+    name: results.data.name as string,
+    grade_id: results.data.grade_id as number,
+    phone_number: results.data.phone_number as string,
+    registration_fee: results.data.registration_fee as number,
+    fee_paid: Boolean(results.data.fee_paid),
+    notes: results.data.notes as string,
+  });
+
+  if (resp.status === "error") {
+    alertStore.insertAlert("An error occurred.", resp.message, "error");
+    return;
+  }
+
+  dataEntryForm.finishSubmission();
+  alertStore.insertAlert("Success", "Temporary registration updated successfully.");
+  loadTemporaryStudents();
+}
+
+async function delTemporaryStudent(ids: (number | string)[]) {
+  if (ids.length === 0) return;
+  let id = cleanTempId(ids[0]);
+  let ts = tempStudentsData.find((t) => t.id === id);
+  if (!ts) return;
+
+  let conf = await confirmationForm.newConfirmationForm(
+    "Delete Temporary Registration?",
+    `Are you sure you want to delete ${ts.name}? This action cannot be undone.`
+  );
+  if (!conf) return;
+
+  const resp = await deleteTemporaryStudent(id);
+  if (resp.status === "error") {
+    alertStore.insertAlert("An error occurred.", resp.message, "error");
+    return;
+  }
+
+  alertStore.insertAlert("Deleted", "Temporary student deleted successfully.");
+  loadTemporaryStudents();
+}
+
+async function convertTempStudent(rawId: number | string) {
+  const id = cleanTempId(rawId);
+  let ts = tempStudentsData.find((t) => t.id === id);
+  if (!ts) return;
+
+  dataEntryForm.newDataEntryForm("Convert to Regular Student", "Convert", [
+    { type: "message", text: `Converting temporary registration "${ts.name}" to a regular student profile. Enter the 5-character custom ID and optional full details.` },
+    {
+      name: "custom_id",
+      text: "Student ID (5 chars)",
+      type: "text",
+      required: true,
+      validate: (val) => {
+        let strVal = String(val);
+        if (strVal.length !== 5) return "Student ID must be exactly 5 characters long.";
+        else return null;
+      },
+    },
+    { name: "name", text: "Name", type: "text", required: true, value: ts.name },
+    { name: "full_name", text: "Full Name", type: "text" },
+    { name: "grade_id", text: "Select Grade", type: "select", required: true, value: ts.grade_id || "", options: gradeOptions },
+    { name: "phone_number", text: "Phone Number", type: "text", value: ts.phone_number || "" },
+    { name: "email", text: "Email", type: "text" },
+    { name: "birthday", text: "Birth Date", type: "date" },
+    { name: "school", text: "School", type: "text" },
+    { name: "parent_name", text: "Parent Name", type: "text" },
+    { name: "parent_phone_number", text: "Parent's Phone Number", type: "text" },
+  ]);
+
+  let results = await dataEntryForm.waitForSubmittedData();
+  if (!results.submitted) return;
+
+  const resp = await convertTemporaryStudent(id, {
+    custom_id: results.data.custom_id as string,
+    name: results.data.name as string,
+    full_name: results.data.full_name as string,
+    grade_id: results.data.grade_id as number,
+    phone_number: results.data.phone_number as string,
+    email: results.data.email as string,
+    birthday: results.data.birthday as string,
+    school: results.data.school as string,
+    parent_name: results.data.parent_name as string,
+    parent_phone_number: results.data.parent_phone_number as string,
+  });
+
+  if (resp.status === "error") {
+    if (resp.data?.type === "user_error" && resp.data.messages) {
+      Object.entries(resp.data.messages).forEach(([field, msgs]) => {
+        let err = Array.isArray(msgs) ? msgs.join(", ") : String(msgs);
+        dataEntryForm.insertErrorMessage(field, err);
+      });
+    } else {
+      alertStore.insertAlert("An error occurred.", resp.message, "error");
+    }
+    return;
+  }
+
+  dataEntryForm.finishSubmission();
+  alertStore.insertAlert("Converted!", `${ts.name} has been converted into a regular student.`);
+  loadTemporaryStudents();
+  loadStudents(0);
+  loadStudentCount();
+}
+
+function showTempReceipt(id: number | string) {
+  selectedTempStudentIdForReceipt.value = cleanTempId(id);
+  showTempReceiptModal.value = true;
+}
 
 async function addNewStudent() {
   dataEntryForm.newDataEntryForm("New Student", "Create", [
@@ -445,50 +767,121 @@ function showStudentCourses(id: number) {
 
 <template>
   <div class="container">
-    <div class="flex justify-between items-center mb-10 mt-10">
+    <div class="flex justify-between items-center mb-6 mt-10">
       <h4 class="font-semibold text-3xl">Students</h4>
-      <NewItemButton text="New Student" :on-click="addNewStudent" />
-    </div>
-    <div class="mb-16 flex border-b border-slate-300 text-lg justify-evenly">
-      <p>
-        Total -
-        {{ studentCountAnalytics.active ? studentCountAnalytics.active + studentCountAnalytics.inactive! : "" }}
-      </p>
-      <p>Active - {{ studentCountAnalytics.active ? studentCountAnalytics.active : "" }}</p>
-      <p>Inactive - {{ studentCountAnalytics.inactive ? studentCountAnalytics.inactive : "" }}</p>
-    </div>
-    <div class="mb-10">
-      <TableComponent
-        :table-columns="tableColumns"
-        :table-rows="studentDataForTable"
-        :actions="tableActions"
-        @edit-emit="editStudent"
-        @show-more="showMoreInfo"
-        :refresh-func="
-          async () => {
-            await loadStudents();
-            return true;
-          }
-        "
-        @delete-emit="delStudent"
-        @courses-emit="showStudentCourses"
-        @load-page-emit="loadStudents"
-        :paginate-page-size="limitLoadStudents"
-        :paginate-total="countTotStudents"
-        @sort-by="
-          (col: string, dir: 'asc' | 'desc') => {
-            setSorting(col, dir);
-            loadStudents();
-          }
-        "
-        :current-sorting="{ column: 'Custom ID', direc: 'desc' }"
-        :filters="tableFilters"
-        @filter-values="
-          (val: any) => {
-            loadStudents(undefined, val);
-          }
-        "
+      <NewItemButton
+        :text="activeTab === 'regular' ? 'New Student' : 'New Temp Registration'"
+        :on-click="activeTab === 'regular' ? addNewStudent : addNewTemporaryStudent"
       />
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex border-b border-slate-300 mb-8">
+      <button
+        @click="activeTab = 'regular'"
+        :class="[
+          'py-3 px-6 text-lg font-medium border-b-2 transition-colors duration-200 focus:outline-none -mb-[1px]',
+          activeTab === 'regular'
+            ? 'border-blue-600 text-blue-600 font-semibold'
+            : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+        ]"
+      >
+        Regular Students
+      </button>
+      <button
+        @click="activeTab = 'temporary'"
+        :class="[
+          'py-3 px-6 text-lg font-medium border-b-2 transition-colors duration-200 focus:outline-none -mb-[1px] flex items-center gap-2',
+          activeTab === 'temporary'
+            ? 'border-blue-600 text-blue-600 font-semibold'
+            : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+        ]"
+      >
+        <span>Temporary Registrations</span>
+        <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">{{ countTotTempStudents }}</span>
+      </button>
+    </div>
+
+    <!-- Regular Students Tab -->
+    <div v-show="activeTab === 'regular'">
+      <div class="mb-8 flex border-b border-slate-200 pb-4 text-lg justify-evenly text-slate-600">
+        <p>
+          Total -
+          <span class="font-semibold text-slate-800">{{ studentCountAnalytics.active ? studentCountAnalytics.active + studentCountAnalytics.inactive! : "" }}</span>
+        </p>
+        <p>Active - <span class="font-semibold text-green-600">{{ studentCountAnalytics.active ? studentCountAnalytics.active : "" }}</span></p>
+        <p>Inactive - <span class="font-semibold text-red-600">{{ studentCountAnalytics.inactive ? studentCountAnalytics.inactive : "" }}</span></p>
+      </div>
+      <div class="mb-10">
+        <TableComponent
+          :table-columns="tableColumns"
+          :table-rows="studentDataForTable"
+          :actions="tableActions"
+          @edit-emit="editStudent"
+          @show-more="showMoreInfo"
+          :refresh-func="
+            async () => {
+              await loadStudents();
+              return true;
+            }
+          "
+          @delete-emit="delStudent"
+          @courses-emit="showStudentCourses"
+          @load-page-emit="loadStudents"
+          :paginate-page-size="limitLoadStudents"
+          :paginate-total="countTotStudents"
+          @sort-by="
+            (col: string, dir: 'asc' | 'desc') => {
+              setSorting(col, dir);
+              loadStudents();
+            }
+          "
+          :current-sorting="{ column: 'Custom ID', direc: 'desc' }"
+          :filters="tableFilters"
+          @filter-values="
+            (val: any) => {
+              loadStudents(undefined, val);
+            }
+          "
+        />
+      </div>
+    </div>
+
+    <!-- Temporary Registrations Tab -->
+    <div v-show="activeTab === 'temporary'">
+      <div class="mb-10">
+        <TableComponent
+          :table-columns="tempTableColumns"
+          :table-rows="tempStudentsForTable"
+          :actions="tempTableActions"
+          @convert-emit="convertTempStudent"
+          @receipt-emit="showTempReceipt"
+          @edit-emit="editTemporaryStudent"
+          :refresh-func="
+            async () => {
+              await loadTemporaryStudents();
+              return true;
+            }
+          "
+          @delete-emit="delTemporaryStudent"
+          @load-page-emit="loadTemporaryStudents"
+          :paginate-page-size="limitLoadStudents"
+          :paginate-total="countTotTempStudents"
+          @sort-by="
+            (col: string, dir: 'asc' | 'desc') => {
+              setTempSorting(col, dir);
+              loadTemporaryStudents();
+            }
+          "
+          :current-sorting="{ column: 'Temp ID', direc: 'desc' }"
+          :filters="tempTableFilters"
+          @filter-values="
+            (val: any) => {
+              loadTemporaryStudents(undefined, val);
+            }
+          "
+        />
+      </div>
     </div>
   </div>
   <BillEnroller
@@ -497,7 +890,9 @@ function showStudentCourses(id: number) {
     :admission-paid="billEnrollerAdmissionPaid"
     @close="showBillEnroller = false"
   />
-  <!-- <div class="fixed w-full h-full" v-show="showFingerprintRegister">
-        <FingerprintRegister />
-    </div> -->
+  <TemporaryStudentReceiptModal
+    :show="showTempReceiptModal"
+    :temporary-student-id="selectedTempStudentIdForReceipt"
+    @close="showTempReceiptModal = false"
+  />
 </template>

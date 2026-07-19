@@ -37,3 +37,18 @@ export type AdmissionFee = {
   updated_at: string;
   reductions: null | string;
 };
+
+export type TemporaryStudent = {
+  id: number;
+  name: string;
+  phone_number: string | null;
+  grade_id: number | null;
+  grade: Grade | null;
+  registration_fee: string | number;
+  fee_paid: boolean;
+  notes: string | null;
+  converted: boolean;
+  converted_student_id: number | null;
+  created_at: string;
+  updated_at: string;
+};
