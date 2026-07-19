@@ -8,6 +8,7 @@ import { useAlertsStore } from '@/stores/alerts';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import type { ExpenseType } from '@/types/expenses';
+import { formatMoney } from '@/utils/money';
 import { CheckCircleIcon, MinusCircleIcon } from '@heroicons/vue/24/solid';
 import { ref, type Ref } from 'vue';
 
@@ -63,7 +64,7 @@ async function loadExpenses(startIndex?: number) {
 
     expenseDataForTable.value = []
     expenseData.forEach(expense => {
-        expenseDataForTable.value.push([expense.id, expense.type, expense.amount, expense.description, expense.month])
+        expenseDataForTable.value.push([expense.id, expense.type, `LKR ${formatMoney(String(expense.amount))}`, expense.description, expense.month])
     });
 }
 loadExpenses()
