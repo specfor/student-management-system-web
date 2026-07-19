@@ -94,6 +94,10 @@ async function loadStudentCount() {
       // If no data available (e.g., for previous months with no cached data)
       studentCountData.value.datasets[0].data = [0, 0, 0];
     }
+  } else {
+    studentCountData.value.datasets[0].data = [0, 0, 0];
+  }
+  loadingStudentCount.value = false;
 }
 if (auth.canSeeCard("student_summary")) loadStudentCount();
 
@@ -175,6 +179,7 @@ async function loadPaymentSummary() {
 if (auth.canSeeCard("student_payment_summary")) loadPaymentSummary();
 
 watch(selectedMonthForStudentPayment, () => { loadPaymentSummary(); });
+watch(selectedMonthForStudentCount, () => { loadStudentCount(); });
 
 const calendarData = ref<
   { title: string; body: string; timeRange: string; date: string; status: string; notes: string; courseId: number }[]
