@@ -73,14 +73,14 @@ const routes: (
                         <p v-show="expanded" class="ml-3">Collapse</p>
                     </div>
                     <template v-for="(route, index) in routes" :key="index">
-                        <RouterLink v-if="route.type === 'link'" :to="route.path!"
+                        <RouterLink v-if="route.type === 'link' && route.permissions !== false" :to="route.path!"
                             class="flex items-center py-2 px-4 w-full text-white hover:bg-blue-700"
                             active-class="bg-blue-600">
                             <component :is="route.icon" class="h-6 w-6" />
                             <p v-show="expanded" class="ml-3">{{ route.text }}</p>
                         </RouterLink>
 
-                        <MenuBarCollapse v-else-if="route.type == 'group'" :key="route.text" @click="expanded = true"
+                        <MenuBarCollapse v-else-if="route.type == 'group' && route.permissions !== false" :key="route.text" @click="expanded = true"
                             :options="{ hideExpandCollapseIcons: !expanded }">
                             <template v-slot:header>
                                 <div class="py-2 px-4 w-full text-white hover:bg-blue-700 flex">
@@ -90,7 +90,7 @@ const routes: (
                             </template>
 
                             <template v-for="child in route.children" :key="child.path">
-                                <RouterLink :to="child.path!" class="flex py-2 px-4 w-full text-white hover:bg-blue-700"
+                                <RouterLink v-if="child.permissions !== false" :to="child.path!" class="flex py-2 px-4 w-full text-white hover:bg-blue-700"
                                     active-class="bg-blue-600">
                                     <p v-show="expanded">{{ child.text }}</p>
                                 </RouterLink>

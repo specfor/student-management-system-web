@@ -8,7 +8,7 @@ import { useAlertsStore } from '@/stores/alerts';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { ref, type Ref } from 'vue';
-import { PencilSquareIcon } from '@heroicons/vue/24/solid';
+import { PencilSquareIcon, KeyIcon, TrashIcon } from '@heroicons/vue/24/solid';
 import type { User } from '@/types/userTypes';
 import type { UserRole } from '@/types/userRoleTypes';
 
@@ -18,7 +18,11 @@ const confirmForm = useConfirmationFormsStore()
 
 let userData: User[] = []
 let userDataForTable: Ref<any[][]> = ref([])
-const tableActions: TableActionType[] = [{ renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }]
+const tableActions: TableActionType[] = [
+    { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' },
+    { renderAsRouterLink: false, type: 'icon', emit: 'resetPasswordEmit', icon: KeyIcon, css: 'fill-yellow-600' },
+    { renderAsRouterLink: false, type: 'icon', emit: 'deleteEmit', icon: TrashIcon, css: 'fill-red-600' }
+]
 const tableColumns: TableColumns[] = [{ label: 'ID', sortable: true }, { label: 'Name', sortable: true }, { label: 'Email', sortable: true }, { label: 'Role' }]
 
 const limitLoadUsers = 30
@@ -142,6 +146,40 @@ async function editUser(id: number) {
     }
 }
 
+async function resetPasswordUser(id: number) {
+    let user = userData.find(u => u.id === id)!
+
+    dataEntryForm.newDataEntryForm(`Reset Password - ${user.name}`, 'Reset', [
+        { name: 'password', type: 'password', text: 'New Password', required: true }
+    ])
+
+    while (true) {
+        let results = await dataEntryForm.waitForSubmittedData()
+        if (!results.submitted)
+            return
+
+        let resp = await updateUser(id, null, null, results.data.password as string)
+        if (resp.status === 'error') {
+            if (resp.data.type === 'user_error')
+                Object.entries(resp.data.messages).forEach(msg => {
+                    let err = ""
+                    if (Array.isArray(msg[1]) && !msg[1] === null)
+                        err = msg[1].join(', ')
+                    else
+                        err = msg[1] as string
+                    dataEntryForm.insertErrorMessage(msg[0], err)
+                })
+            else
+                alertStore.insertAlert('An error occured.', resp.message, 'error')
+            continue
+        } else {
+            alertStore.insertAlert('Action completed.', resp.message)
+            dataEntryForm.finishSubmission()
+            return
+        }
+    }
+}
+
 async function delUser(ids: number[]) {
     let confirmed = await confirmForm.newConfirmationForm("Confirm Deletion", "Are you sure you want to delete these users with IDs: " + ids.join(', ') + "?")
     if (!confirmed)
@@ -173,7 +211,6 @@ async function init() {
 
 init()
 
-// Todo implement password reset option
 </script>
 
 <template>
@@ -184,7 +221,7 @@ init()
         </div>
         <div class="mb-10">
             <TableComponent :table-columns="tableColumns" :table-rows="userDataForTable" :actions="tableActions"
-                @edit-emit="editUser" :refresh-func="async () => { await loadUsers(); return true }"
+                @edit-emit="editUser" @reset-password-emit="resetPasswordUser" :refresh-func="async () => { await loadUsers(); return true }"
                 @delete-emit="delUser" @load-page-emit="loadUsers" :paginate-page-size="limitLoadUsers"
                 :paginate-total="countTotUsers" :current-sorting="{ column: 'ID', direc: 'asc' }" @sort-by="(col, dir) => {
                     setSorting(col, dir); loadUsers();
