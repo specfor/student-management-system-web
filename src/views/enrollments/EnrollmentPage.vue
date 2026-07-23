@@ -7,7 +7,8 @@ import TableComponent, { type Filter, type TableActionType, type TableColumns, t
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
-import { PencilSquareIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/solid';
+import { MagnifyingGlassIcon, PencilSquareIcon, TrashIcon } from '@heroicons/vue/24/solid';
+import { useAuthStore } from '@/stores/authorization';
 import { ref, watch, type Ref } from 'vue';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { getRouteQuery, setRoute, setRouteQuery } from '@/utils/routeHelpers';
@@ -24,6 +25,7 @@ import type { Instructor } from '@/types/InstructorTypes';
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
 const confirmationForm = useConfirmationFormsStore()
+const authStore = useAuthStore()
 
 const selectedCourseId = ref(0)
 const selectedStudentId = ref(0)
@@ -37,9 +39,14 @@ let enrollments: Enrollment[] = []
 const enrollmentsDataForTable: Ref<any[]> = ref([])
 
 const tableActions: TableActionType[] = [
-    { renderAsRouterLink: false, type: 'icon', emit: 'ShowMore', icon: MagnifyingGlassIcon, css: 'fill-blue-600 w-5' },
-    { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' },
+    { renderAsRouterLink: false, type: 'icon', emit: 'ShowMore', icon: MagnifyingGlassIcon, css: 'fill-blue-600 w-5' }
 ]
+if (authStore.hasPermission('enrollment', 'update')) {
+    tableActions.push({ renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' })
+}
+if (authStore.hasPermission('enrollment', 'delete')) {
+    tableActions.push({ renderAsRouterLink: false, type: 'icon', emit: 'deleteEmit', icon: TrashIcon, css: 'fill-red-600' })
+}
 const tableColumns: TableColumns[] = [
     { label: 'ID', sortable: false }, { label: 'Student Name' }, { label: 'Course Name' },
     { label: 'Price Concession' }, { label: 'Status' }, { label: 'This Month Payment' }, { label: 'This Month Attendance' }]
@@ -359,7 +366,7 @@ function showMoreInfo(id: number) {
     <div class="container">
         <div class="flex justify-between items-center mb-10">
             <h4 class="font-semibold text-3xl">Course Enrollments</h4>
-            <NewItemButton text="Enroll a Student" :on-click="addNewEnrollment" />
+            <NewItemButton v-if="authStore.hasPermission('enrollment', 'write')" text="Enroll a Student" :on-click="addNewEnrollment" />
         </div>
         <div class="mb-10">
             <TableComponent :table-columns="tableColumns" :table-rows="enrollmentsDataForTable"

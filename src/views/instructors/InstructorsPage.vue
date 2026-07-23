@@ -7,21 +7,28 @@ import { useAlertsStore } from '@/stores/alerts';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { ref, type Ref } from "vue"
-import { MagnifyingGlassIcon, PencilSquareIcon } from '@heroicons/vue/24/solid';
+import { MagnifyingGlassIcon, PencilSquareIcon, TrashIcon } from '@heroicons/vue/24/solid';
 import { setRoute } from '@/utils/routeHelpers';
 import type { Instructor } from '@/types/InstructorTypes';
+import { useAuthStore } from '@/stores/authorization';
 
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
 const confirmationForm = useConfirmationFormsStore()
+const authStore = useAuthStore()
 
 let instructorData: Instructor[] = []
 const instructorDataForTable: Ref<any[]> = ref([])
 const tableActions: TableActionType[] = [
-    { renderAsRouterLink: false, type: 'icon', emit: 'ShowMore', icon: MagnifyingGlassIcon, css: 'fill-blue-600 w-5' },
-    { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
+    { renderAsRouterLink: false, type: 'icon', emit: 'ShowMore', icon: MagnifyingGlassIcon, css: 'fill-blue-600 w-5' }
 ]
+if (authStore.hasPermission('instructors', 'update')) {
+    tableActions.push({ renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' })
+}
+if (authStore.hasPermission('instructors', 'delete')) {
+    tableActions.push({ renderAsRouterLink: false, type: 'icon', emit: 'deleteEmit', icon: TrashIcon, css: 'fill-red-600' })
+}
 const tableColumns: TableColumns[] = [
     { label: 'ID', sortable: true }, { label: 'Name', sortable: true }, { label: 'Email', sortable: true },
     { label: 'Phone Number' }, { label: 'Work Place' }]
@@ -218,7 +225,7 @@ function showMoreInfo(id: number) {
     <div class="container">
         <div class="flex justify-between items-center mb-16">
             <h4 class="font-semibold text-3xl">Instructors</h4>
-            <NewItemButton text="New Instructor" :on-click="addNewInstructor" />
+            <NewItemButton v-if="authStore.hasPermission('instructors', 'write')" text="New Instructor" :on-click="addNewInstructor" />
         </div>
         <div class="mb-10">
             <TableComponent :table-columns="tableColumns" :table-rows="instructorDataForTable" :actions="tableActions"

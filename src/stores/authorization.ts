@@ -84,6 +84,14 @@ export const useAuthStore = defineStore("auth", () => {
     return dashboardCardVisibility.value[cardKey] !== false;
   }
 
+  function hasPermission(module: string, permission: 'read' | 'write' | 'update' | 'delete'): boolean {
+    if (userPermissions.value['all']) return true;
+    if (userPermissions.value[module]) {
+        return userPermissions.value[module].includes(permission);
+    }
+    return false;
+  }
+
   return {
     LoggedIn,
     userPermissions,
@@ -93,6 +101,7 @@ export const useAuthStore = defineStore("auth", () => {
     logout,
     getAuthToken,
     canSeeCard,
+    hasPermission,
   };
 });
 

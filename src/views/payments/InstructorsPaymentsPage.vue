@@ -4,7 +4,7 @@ import { deleteInstructorPayment, getInstructorPayments, getInstructorPaymentSum
 import TableComponent, { type Filter, type TableActionType, type TableColumns, type tableRowItem } from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
-import { MagnifyingGlassIcon } from '@heroicons/vue/24/solid';
+import { MagnifyingGlassIcon, TrashIcon } from '@heroicons/vue/24/solid';
 import { onMounted, ref, watch, type Ref } from 'vue';
 import { getRouteQuery, setRoute, setRouteQuery } from '@/utils/routeHelpers';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
@@ -12,11 +12,13 @@ import { getInstructors } from '@/apiConnections/instructors';
 import type { InstructorPayment, InstructorPaymentSummary } from '@/types/paymentTypes';
 import type { Instructor } from '@/types/InstructorTypes';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
+import { useAuthStore } from '@/stores/authorization';
 import { formatMoney } from '@/utils/money';
 
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
 const confirmationForm = useConfirmationFormsStore()
+const authStore = useAuthStore()
 
 let payments: InstructorPayment[]
 const paymentData: Ref<any[]> = ref([])
@@ -24,6 +26,9 @@ const paymentData: Ref<any[]> = ref([])
 const tableActions: TableActionType[] = [
     { renderAsRouterLink: false, type: 'icon', emit: 'moreInfoEmit', icon: MagnifyingGlassIcon, css: 'fill-blue-600' }
 ]
+if (authStore.hasPermission('instructor_payments', 'delete')) {
+    tableActions.push({ renderAsRouterLink: false, type: 'icon', emit: 'deleteEmit', icon: TrashIcon, css: 'fill-red-600' })
+}
 const tableColumns: TableColumns[] = [
     { label: 'ID', sortable: true }, { label: 'Payment For', sortable: true }, { label: 'Instructor' }, { label: 'Total Amount' }, { label: 'Pending Payments' },
     { label: 'Resolved' }, { label: 'Paid at', sortable: true }]
@@ -240,7 +245,7 @@ function moreInfoSummaryTable(id: number) {
     <div class="container">
         <div class="flex justify-between items-center mb-10">
             <h4 class="font-semibold text-3xl">Payment Summary</h4>
-            <NewItemButton text="Mark Payment" :on-click="newPayment" />
+            <NewItemButton v-if="authStore.hasPermission('instructor_payments', 'write')" text="Mark Payment" :on-click="newPayment" />
         </div>
 
         <div class="">

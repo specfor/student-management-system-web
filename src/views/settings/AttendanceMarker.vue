@@ -20,9 +20,11 @@ import { useDataEntryFormsStore } from "@/stores/formManagers/dataEntryForm";
 import type { ClientBanner } from "@/types/client-banners";
 import { getBannerMediaId, getBannerMediaType, isBannerMediaAvailable } from "@/utils/bannerUtils";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/vue/24/solid";
+import { useAuthStore } from "@/stores/authorization";
 import { ref, type Ref } from "vue";
 
 const alertStore = useAlertsStore();
+const authStore = useAuthStore();
 const dataEntryForm = useDataEntryFormsStore();
 const confirmationForm = useConfirmationFormsStore();
 
@@ -248,7 +250,7 @@ fetchBanners();
     <div class="container my-10">
       <CollapseCard header="Banner Slideshow" header-text-css="text-2xl font-semibold" header-css="my-2 mx-2">
         <p>These are the images and videos shown on the student attendance marking system monitor as a slide show.</p>
-        <div class="flex justify-end mb-10 gap-3">
+        <div class="flex gap-x-5" v-if="authStore.hasPermission('system_config', 'write')">
           <NewItemButton @click="addNewImageBanner" text="Add Image Banner" />
           <NewItemButton @click="addNewVideoBanner" text="Add Video Banner" />
         </div>
@@ -301,6 +303,7 @@ fetchBanners();
               </div>
               <div class="flex justify-end mt-2 mr-5">
                 <PencilSquareIcon
+                  v-if="authStore.hasPermission('system_config', 'update')"
                   class="h-6 w-6 fill-blue-500 active:fill-blue-700 mr-2 hover:cursor-pointer"
                   @click="
                     () => {
@@ -309,6 +312,7 @@ fetchBanners();
                   "
                 />
                 <TrashIcon
+                  v-if="authStore.hasPermission('system_config', 'delete')"
                   class="h-6 w-6 fill-red-500 active:fill-red-700 hover:cursor-pointer"
                   @click="
                     () => {

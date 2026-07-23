@@ -8,19 +8,25 @@ import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { useCacheStore } from '@/stores/cache';
 import { createUserRole, deleteUserRole, getAllPermissions, getDashboardCards, getUserRoles, updateUserRole } from '@/apiConnections/userRoles';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
-import { PencilSquareIcon } from '@heroicons/vue/24/solid';
+import { PencilSquareIcon, TrashIcon } from '@heroicons/vue/24/solid';
+import { useAuthStore } from '@/stores/authorization';
 import type { DashboardCard, UserRole } from '@/types/userRoleTypes';
 
 const confirmForm = useConfirmationFormsStore()
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
 const cacheStore = useCacheStore()
+const authStore = useAuthStore()
 
 let roleData: UserRole[] = []
 let roleDataForTable: Ref<any> = ref([])
-const tableActions: TableActionType[] = [
-    { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
-]
+const tableActions: TableActionType[] = []
+if (authStore.hasPermission('user_groups', 'update')) {
+    tableActions.push({ renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' })
+}
+if (authStore.hasPermission('user_groups', 'delete')) {
+    tableActions.push({ renderAsRouterLink: false, type: 'icon', emit: 'deleteEmit', icon: TrashIcon, css: 'fill-red-600' })
+}
 const tableColumns: TableColumns[] = [{ label: 'ID', sortable: true }, { label: 'Role Name', sortable: true }, { label: 'Permissions' }]
 
 
@@ -292,7 +298,7 @@ function extractDashboardVisibility(data: any): { [key: string]: boolean } {
     <div class="container">
         <div class="flex justify-between items-center mb-16">
             <h4 class="font-semibold text-3xl">User Roles</h4>
-            <NewItemButton text="New Role" :on-click="newUserRole" />
+            <NewItemButton v-if="authStore.hasPermission('user_groups', 'write')" text="New Role" :on-click="newUserRole" />
         </div>
         <div class="mb-10">
             <TableComponent :table-columns="tableColumns" :table-rows="roleDataForTable" :actions="tableActions"

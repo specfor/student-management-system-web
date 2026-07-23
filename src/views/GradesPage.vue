@@ -7,19 +7,25 @@ import { useAlertsStore } from '@/stores/alerts';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import type { Grade } from '@/types/gradeTypes';
-import { PencilSquareIcon } from '@heroicons/vue/24/solid';
+import { PencilSquareIcon, TrashIcon } from '@heroicons/vue/24/solid';
+import { useAuthStore } from '@/stores/authorization';
 import { ref, type Ref } from 'vue';
 
 
 const confirmationForm = useConfirmationFormsStore()
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
+const authStore = useAuthStore()
 
 const gradeDataForTable: Ref<any[]> = ref([])
 let gradeData: Grade[] = []
-const tableActions: TableActionType[] = [
-    { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
-]
+const tableActions: TableActionType[] = []
+if (authStore.hasPermission('grades', 'update')) {
+    tableActions.push({ renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' })
+}
+if (authStore.hasPermission('grades', 'delete')) {
+    tableActions.push({ renderAsRouterLink: false, type: 'icon', emit: 'deleteEmit', icon: TrashIcon, css: 'fill-red-600' })
+}
 const tableColumns: TableColumns[] = [{ label: 'ID', sortable: true }, { label: 'Name', sortable: true },]
 
 
@@ -157,7 +163,7 @@ async function delGrade(ids: number[]) {
     <div class="container">
         <div class="flex justify-between items-center mb-16">
             <h4 class="font-semibold text-3xl">Grades</h4>
-            <NewItemButton text="New Grade" :on-click="addNewGrade" />
+            <NewItemButton v-if="authStore.hasPermission('grades', 'write')" text="New Grade" :on-click="addNewGrade" />
         </div>
         <div class="mb-10">
             <TableComponent :table-columns="tableColumns" :table-rows="gradeDataForTable" @edit-emit="editGrade"

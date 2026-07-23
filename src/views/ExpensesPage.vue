@@ -5,6 +5,7 @@ import PopUpPlaceholder from '@/components/popUpPlaceholder.vue';
 import type { TableColumns } from '@/components/TableComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
+import { useAuthStore } from '@/stores/authorization';
 import { useConfirmationFormsStore } from '@/stores/formManagers/confirmationForm';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import type { ExpenseType } from '@/types/expenses';
@@ -17,6 +18,7 @@ import { ref, type Ref } from 'vue';
 const confirmationForm = useConfirmationFormsStore()
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
+const authStore = useAuthStore()
 
 const expenseDataForTable: Ref<any[]> = ref([])
 let expenseData: ExpenseType[] = []
@@ -181,7 +183,7 @@ async function addExpenseCateg() {
     <div class="container">
         <div class="flex justify-between items-center mt-10 mb-16">
             <h4 class="font-semibold text-3xl">Expenses</h4>
-            <div class="flex gap-x-10">
+            <div class="flex gap-x-10" v-if="authStore.hasPermission('expenses', 'write')">
                 <NewItemButton text="Expense Category"
                     :on-click="() => { newCategName = ''; showManageExpenseCategs = !showManageExpenseCategs }" />
                 <NewItemButton text="New Expense" :on-click="addNewExpense" />

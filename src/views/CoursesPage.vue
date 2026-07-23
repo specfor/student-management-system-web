@@ -11,13 +11,15 @@ import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import type { Instructor } from '@/types/InstructorTypes';
 import type { Course, CourseFee, CourseSchedule } from '@/types/courseTypes';
 import type { Grade } from '@/types/gradeTypes';
-import { PencilSquareIcon } from '@heroicons/vue/24/solid';
+import { PencilSquareIcon, TrashIcon } from '@heroicons/vue/24/solid';
+import { useAuthStore } from '@/stores/authorization';
 import { ref, type Ref } from 'vue';
 
 
 const confirmationForm = useConfirmationFormsStore()
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
+const authStore = useAuthStore()
 
 const coursesDataForTable: Ref<any[]> = ref([])
 let coursesData: Course[] = []
@@ -26,9 +28,13 @@ let instructorOptionFields: { text: string, value: number }[] = []
 let gradeOptionFields: { text: string, value: number }[] = []
 
 
-const tableActions: TableActionType[] = [
-    { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
-]
+const tableActions: TableActionType[] = []
+if (authStore.hasPermission('courses', 'update')) {
+    tableActions.push({ renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' })
+}
+if (authStore.hasPermission('courses', 'delete')) {
+    tableActions.push({ renderAsRouterLink: false, type: 'icon', emit: 'deleteEmit', icon: TrashIcon, css: 'fill-red-600' })
+}
 const tableColumns: TableColumns[] = [
     { label: 'ID', sortable: false }, { label: 'Group', sortable: false }, { label: 'Grade' },
     { label: 'Course Day' }, { label: 'Time' }, { label: 'Fee' }, { label: 'Payment Cycle' }, { label: 'Instructor' }]
@@ -287,7 +293,7 @@ async function delCourse(ids: number[]) {
     <div class="container">
         <div class="flex justify-between items-center mb-16">
             <h4 class="font-semibold text-3xl">Courses</h4>
-            <NewItemButton text="New Course" :on-click="addNewCourse" />
+            <NewItemButton v-if="authStore.hasPermission('courses', 'write')" text="New Course" :on-click="addNewCourse" />
         </div>
         <div class="mb-10">
             <TableComponent :table-columns="tableColumns" :table-rows="coursesDataForTable" @edit-emit="editCourse"

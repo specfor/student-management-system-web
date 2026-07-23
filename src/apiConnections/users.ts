@@ -44,10 +44,9 @@ export function updateUser(
   role_id: number | null = null,
   password: string | null = null
 ) {
-  const sendBody: { [key: string]: any } = {
-    name: name,
-    role_id: role_id,
-  };
+  const sendBody: { [key: string]: any } = {};
+  if (name !== null) sendBody["name"] = name;
+  if (role_id !== null) sendBody["role_id"] = role_id;
   if (password !== null) sendBody["password"] = password;
 
   return sendJsonPatchRequest(`/users/${id}`, sendBody);

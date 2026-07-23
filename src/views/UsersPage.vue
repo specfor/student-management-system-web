@@ -1,6 +1,7 @@
 <!-- eslint-disable no-constant-condition -->
 <script setup lang="ts">
 import { getUserRoles } from '@/apiConnections/userRoles';
+import { useAuthStore } from '@/stores/authorization';
 import { createUser, deleteUser, getUsers, updateUser } from '@/apiConnections/users';
 import NewItemButton from '@/components/minorUiComponents/NewItemButton.vue';
 import TableComponent, { type TableActionType, type TableColumns } from '@/components/TableComponent.vue';
@@ -15,14 +16,18 @@ import type { UserRole } from '@/types/userRoleTypes';
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
 const confirmForm = useConfirmationFormsStore()
+const authStore = useAuthStore()
 
 let userData: User[] = []
 let userDataForTable: Ref<any[][]> = ref([])
-const tableActions: TableActionType[] = [
-    { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' },
-    { renderAsRouterLink: false, type: 'icon', emit: 'resetPasswordEmit', icon: KeyIcon, css: 'fill-yellow-600' },
-    { renderAsRouterLink: false, type: 'icon', emit: 'deleteEmit', icon: TrashIcon, css: 'fill-red-600' }
-]
+const tableActions: TableActionType[] = []
+if (authStore.hasPermission('users', 'update')) {
+    tableActions.push({ renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' })
+    tableActions.push({ renderAsRouterLink: false, type: 'icon', emit: 'resetPasswordEmit', icon: KeyIcon, css: 'fill-yellow-600' })
+}
+if (authStore.hasPermission('users', 'delete')) {
+    tableActions.push({ renderAsRouterLink: false, type: 'icon', emit: 'deleteEmit', icon: TrashIcon, css: 'fill-red-600' })
+}
 const tableColumns: TableColumns[] = [{ label: 'ID', sortable: true }, { label: 'Name', sortable: true }, { label: 'Email', sortable: true }, { label: 'Role' }]
 
 const limitLoadUsers = 30
@@ -217,7 +222,7 @@ init()
     <div class="container">
         <div class="flex justify-between items-center mb-16">
             <h4 class="font-semibold text-3xl">Users</h4>
-            <NewItemButton text="New User" :on-click="addNewUser" />
+            <NewItemButton v-if="authStore.hasPermission('users', 'write')" text="New User" :on-click="addNewUser" />
         </div>
         <div class="mb-10">
             <TableComponent :table-columns="tableColumns" :table-rows="userDataForTable" :actions="tableActions"

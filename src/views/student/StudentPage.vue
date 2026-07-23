@@ -38,21 +38,25 @@ import type { Student } from "@/types/studentTypes";
 import { useExtendablePopUpStore } from "@/stores/formManagers/extendablePopUp";
 import FingerprintRegister from "@/components/dataSelectors/FingerprintRegister.vue";
 import BillEnroller from "@/components/BillEnroller.vue";
+import { useAuthStore } from "@/stores/authorization";
 
 const alertStore = useAlertsStore();
 const dataEntryForm = useDataEntryFormsStore();
 const confirmationForm = useConfirmationFormsStore();
 const extendablePopUp = useExtendablePopUpStore();
+const authStore = useAuthStore();
 
 let studentData: Student[] = [];
 const studentDataForTable: Ref<any[]> = ref([]);
 let gradeOptions: { value: number; text: string }[] = [];
 
 const tableActions: TableActionType[] = [
-  { renderAsRouterLink: false, type: "icon", emit: "ShowMore", icon: MagnifyingGlassIcon, css: "fill-blue-600 w-5" },
-  { renderAsRouterLink: false, type: "icon", emit: "editEmit", icon: PencilSquareIcon, css: "fill-blue-600" },
-  { renderAsRouterLink: false, type: "icon", emit: "coursesEmit", icon: BookOpenIcon, css: "stroke-blue-600" },
+  { renderAsRouterLink: false, type: "icon", emit: "ShowMore", icon: MagnifyingGlassIcon, css: "fill-blue-600 w-5" }
 ];
+if (authStore.hasPermission('students', 'update')) {
+    tableActions.push({ renderAsRouterLink: false, type: "icon", emit: "editEmit", icon: PencilSquareIcon, css: "fill-blue-600" })
+}
+tableActions.push({ renderAsRouterLink: false, type: "icon", emit: "coursesEmit", icon: BookOpenIcon, css: "stroke-blue-600" });
 const tableColumns: TableColumns[] = [
   { label: "ID", sortable: true },
   { label: "Custom ID", sortable: true },
@@ -89,10 +93,14 @@ const showTempReceiptModal = ref(false);
 const selectedTempStudentIdForReceipt = ref(-1);
 
 const tempTableActions: TableActionType[] = [
-  { renderAsRouterLink: false, type: "icon", emit: "convertEmit", icon: UserPlusIcon, css: "fill-green-600 w-5" },
-  { renderAsRouterLink: false, type: "icon", emit: "receiptEmit", icon: PrinterIcon, css: "fill-blue-600 w-5" },
-  { renderAsRouterLink: false, type: "icon", emit: "editEmit", icon: PencilSquareIcon, css: "fill-amber-600 w-5" },
+  { renderAsRouterLink: false, type: "icon", emit: "receiptEmit", icon: PrinterIcon, css: "fill-blue-600 w-5" }
 ];
+if (authStore.hasPermission('students', 'write')) {
+    tempTableActions.push({ renderAsRouterLink: false, type: "icon", emit: "convertEmit", icon: UserPlusIcon, css: "fill-green-600 w-5" })
+}
+if (authStore.hasPermission('students', 'update')) {
+    tempTableActions.push({ renderAsRouterLink: false, type: "icon", emit: "editEmit", icon: PencilSquareIcon, css: "fill-amber-600 w-5" })
+}
 
 const tempTableColumns: TableColumns[] = [
   { label: "ID", sortable: true },
@@ -770,6 +778,7 @@ function showStudentCourses(id: number) {
     <div class="flex justify-between items-center mb-6 mt-10">
       <h4 class="font-semibold text-3xl">Students</h4>
       <NewItemButton
+        v-if="authStore.hasPermission('students', 'write')"
         :text="activeTab === 'regular' ? 'New Student' : 'New Temp Registration'"
         :on-click="activeTab === 'regular' ? addNewStudent : addNewTemporaryStudent"
       />
