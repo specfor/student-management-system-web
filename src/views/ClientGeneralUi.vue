@@ -6,7 +6,8 @@ import type { ClientBanner } from "@/types/client-banners";
 import type { Student } from "@/types/studentTypes";
 import { mediaCache } from "@/utils/mediaCache";
 import { getBannerMediaId, getBannerMediaType, isBannerMediaAvailable } from "@/utils/bannerUtils";
-import { ref, type Ref, onUnmounted } from "vue";
+import { ref, type Ref, onUnmounted, onMounted } from "vue";
+import { echo } from "@/echo";
 
 const bannerData: Ref<ClientBanner[]> = ref([]);
 const bannerMediaUrls: Ref<Map<string, string>> = ref(new Map());
@@ -23,9 +24,10 @@ const lastAttendance: Ref<{
 
 const student: Ref<Student | null> = ref(null);
 
+const scanLogResult: Ref<any> = ref(null);
 let markedAttendanceShowStartTime = 0;
 
-const regStatusMsg = ref("Place your finger on the sensor.");
+const regStatusMsg = ref("Place your RFID card on the scanner.");
 const regStatusStyles = ref("bg-yellow-200 text-yellow-700");
 
 let currentBannerIndex = 0;
@@ -100,21 +102,32 @@ function setBannerMedia() {
 
 fetchBanners();
 
-async function getStatus() {
-  const resp = await getGeneralClientStatus();
-  if (resp.status == "error") {
-    return;
+async function getStatus(providedData?: any) {
+  let data = providedData;
+  if (!data) {
+    const resp = await getGeneralClientStatus();
+    if (resp.status == "error") {
+      return;
+    }
+    data = resp.data;
   }
 
-  if (mode.value == "register" && resp.data.fingerprint.mode == "read-mark-attendance") {
-    regStatusStyles.value = "bg-green-200 text-green-700";
-    regStatusMsg.value = "You did it. Fingerprint registration successful.";
+  if (mode.value == "register" && data.fingerprint.mode == "read-mark-attendance") {
+    if (data.fingerprint.reg_status && data.fingerprint.reg_status.status == 'completed') {
+      regStatusStyles.value = "bg-green-200 text-green-700";
+      regStatusMsg.value = "Registration successful.";
 
-    setTimeout(() => {
+      setTimeout(() => {
+        mode.value = "home";
+        student.value = null;
+      }, 5000);
+      return;
+    } else {
+      // If cancelled or closed
       mode.value = "home";
       student.value = null;
-    }, 5000);
-    return;
+      return;
+    }
   }
 
   if (markedAttendanceShowStartTime != 0 && Date.now() - markedAttendanceShowStartTime < 4000) {
@@ -122,44 +135,55 @@ async function getStatus() {
   }
 
   if (
-    resp.data.fingerprint.mode == "read-mark-attendance" &&
-    resp.data.last_attendance != null &&
-    lastAttendance.value.marked_time != resp.data.last_attendance.marked_time
+    data.fingerprint.mode == "read-mark-attendance" &&
+    data.last_attendance != null &&
+    lastAttendance.value.marked_time != data.last_attendance.marked_time
   ) {
     if (lastAttendance.value.marked_time != "") mode.value = "mark-attendance";
 
-    localStorage.setItem("last_attendance", JSON.stringify(resp.data.last_attendance));
-    lastAttendance.value = resp.data.last_attendance;
+    localStorage.setItem("last_attendance", JSON.stringify(data.last_attendance));
+    lastAttendance.value = data.last_attendance;
     markedAttendanceShowStartTime = Date.now();
-  } else if (resp.data.fingerprint.mode == "read-mark-attendance") mode.value = "home";
-  else if (resp.data.fingerprint.mode == "register") {
+  } else if (data.fingerprint.mode == "read-mark-attendance" || data.fingerprint.mode == "verify") {
+    mode.value = "home";
+  }
+  else if (data.fingerprint.mode == "register-rfid") {
     mode.value = "register";
-    student.value = resp.data.student;
+    student.value = data.student;
+    
+    regStatusStyles.value = "bg-yellow-200 text-yellow-700";
+    regStatusMsg.value = "Place your RFID card on the scanner to register.";
+  }
+  else if (data.fingerprint.mode == "register") {
+    mode.value = "register";
+    student.value = data.student;
 
-    const fingerprintStatus = resp.data.fingerprint.reg_status;
+    const fingerprintStatus = data.fingerprint.reg_status;
 
     regStatusStyles.value = "bg-yellow-200 text-yellow-700";
-    if (fingerprintStatus.status == "pending") regStatusMsg.value = "Place your finger on the sensor.";
+    if (fingerprintStatus.status == "pending") regStatusMsg.value = "Place your finger on the scanner.";
     else if (fingerprintStatus.status == "ongoing") {
       const stepsLeft = 3 - Number(fingerprintStatus.msg.split(" ")[1]);
       let promoteText = "Let's do this. ";
       if (stepsLeft == 1) promoteText = "Just one more time. ";
       else if (stepsLeft == 2) promoteText = "Almost there. ";
       regStatusMsg.value = promoteText + "Press finger on sensor " + stepsLeft + " more times.";
-    } else if (fingerprintStatus.status == "error")
-      if (fingerprintStatus.status == "error") {
-        regStatusStyles.value = "bg-red-200 text-red-700";
-        if (fingerprintStatus.msg == "already-registered") regStatusMsg.value = "Fingerprint is already registered.";
-        else if (fingerprintStatus.msg == "not-same-finger") {
-          regStatusMsg.value = "Place the same finger. Try again";
-        }
+    } else if (fingerprintStatus.status == "error") {
+      regStatusStyles.value = "bg-red-200 text-red-700";
+      if (fingerprintStatus.msg == "already-registered") regStatusMsg.value = "Fingerprint is already registered.";
+      else if (fingerprintStatus.msg == "not-same-finger") {
+        regStatusMsg.value = "Place the same finger. Try again";
       }
+    }
   }
 }
 
-setInterval(() => {
-  getStatus();
-}, 1000);
+onMounted(() => {
+  getStatus(); // Initial fetch
+  echo.channel("general-ui").listen("GeneralUIStatusUpdated", (e: any) => {
+    getStatus(e.uiData);
+  });
+});
 
 const date = ref("");
 const time = ref("");
@@ -221,12 +245,12 @@ onUnmounted(() => {
         <div class="flex flex-col items-center" v-show="mode === 'home'">
           <img src="/logo.png" alt="Logo" class="w-[200px] h-[200px] object-contain my-10" />
           <p class="px-5 text-3xl text-center">
-            Place your finger to mark attendance. If you are not a registered student go to the counter
+            Place your RFID card on the scanner to mark attendance. If you are not a registered student go to the counter
           </p>
         </div>
 
         <div v-show="mode === 'action-pending'" class="flex flex-col items-center justify-center pt-10 px-5 h-full">
-          <p class="text-3xl bg-green-400 text-green-800 px-6 py-4">Found a matching fingerprint.</p>
+          <p class="text-3xl bg-green-400 text-green-800 px-6 py-4">Found a matching RFID.</p>
           <p class="text-2xl mt-5">Looking for enrolled courses...</p>
           <LoadingCursor class="h-[400px]" />
         </div>
@@ -236,13 +260,13 @@ onUnmounted(() => {
           class="flex flex-col items-center justify-center pt-10 px-5 h-full"
         >
           <p class="text-3xl font-bold text-center bg-red-300 text-red-800 px-6 py-4">
-            Fingerprint Not Matched. Try Again....
+            RFID Not Matched. Try Again....
           </p>
-          <p class="mt-20 text-xl">Please go to the counter if this issue persists or to register your fingerprint.</p>
+          <p class="mt-20 text-xl">Please go to the counter if this issue persists or to register your RFID.</p>
         </div>
 
         <div v-show="mode === 'register'" class="flex flex-col items-center justify-center pt-10 px-5 h-full">
-          <p class="text-3xl font-bold text-center">Register Student Fingerprint</p>
+          <p class="text-3xl font-bold text-center">Register Student RFID</p>
 
           <div class="grid grid-cols-3 mt-20 gap-3 w-full text-xl max-w-lg">
             <p class="font-semibold">Student Id</p>
@@ -253,23 +277,44 @@ onUnmounted(() => {
             <p class="col-span-2">{{ student?.grade ?? "-" }}</p>
           </div>
 
-          <p class="mt-20 text-lg">Hi, it's just few steps. Let's add your fingerprint.</p>
+          <p class="mt-20 text-lg">Hi, it's just a few steps. Let's add your RFID.</p>
           <p class="mt-10 text-2xl text-center p-4" :class="regStatusStyles">{{ regStatusMsg }}</p>
         </div>
 
-        <div class="pt-10 px-5 flex flex-col items-center justify-center" v-show="mode === 'mark-attendance'">
-          <p class="text-3xl font-bold text-center">Mark Attendance</p>
+        <div class="pt-10 px-5 flex flex-col items-center justify-center h-full w-full" v-if="mode === 'mark-attendance' && scanLogResult">
+          <div class="w-full max-w-xl bg-white shadow-2xl rounded-2xl overflow-hidden border-4"
+               :class="scanLogResult.status === 'success' ? 'border-green-400' : 'border-red-400'">
+            
+            <div class="text-center p-6 text-white" :class="scanLogResult.status === 'success' ? 'bg-green-500' : 'bg-red-500'">
+              <h1 class="text-4xl font-bold mb-2">{{ scanLogResult.status === 'success' ? 'Attendance Marked!' : 'Scan Failed' }}</h1>
+              <p class="text-xl opacity-90">{{ scanLogResult.message }}</p>
+            </div>
+            
+            <div class="p-8">
+              <div class="grid grid-cols-3 gap-y-4 text-xl">
+                <p class="font-semibold text-gray-500">Student</p>
+                <p class="col-span-2 font-bold text-gray-800">{{ scanLogResult.student?.name || 'Unknown' }} ({{ scanLogResult.student?.custom_id || '-' }})</p>
+                
+                <p class="font-semibold text-gray-500">Grade</p>
+                <p class="col-span-2 font-bold text-gray-800">{{ scanLogResult.student?.grade?.name || '-' }}</p>
+              </div>
 
-          <div class="grid grid-cols-3 mt-20 gap-3 w-full text-xl max-w-lg">
-            <p class="font-semibold">Student Id</p>
-            <p class="col-span-2">{{ lastAttendance.student_id }}</p>
-            <p class="font-semibold">Name</p>
-            <p class="col-span-2">{{ lastAttendance.student }}</p>
-            <p class="font-semibold">Course</p>
-            <p class="col-span-2">{{ lastAttendance.course }}</p>
+              <div class="mt-8 border-t pt-6">
+                <p class="font-semibold text-gray-500 mb-3 text-lg">Today's Classes</p>
+                <div v-if="!scanLogResult.available_classes_today || scanLogResult.available_classes_today.length === 0" 
+                     class="bg-gray-100 p-4 rounded-lg text-gray-600 text-center font-semibold">
+                  No classes scheduled for today.
+                </div>
+                <div v-else class="space-y-3">
+                  <div v-for="cls in scanLogResult.available_classes_today" :key="cls.course_name" 
+                       class="flex justify-between items-center bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <span class="font-semibold text-blue-900 text-lg">{{ cls.course_name }}</span>
+                    <span class="bg-blue-200 text-blue-800 px-3 py-1 rounded-full text-sm font-bold">{{ cls.time }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-
-          <p class="text-2xl mt-20 bg-green-500 text-white px-5 py-5">Your Attendance is Marked</p>
         </div>
 
         <div class="bg-slate-200">

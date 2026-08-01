@@ -5,6 +5,10 @@ import { ref } from 'vue'; ``
 import HeaderProfileIconDropdown from './HeaderProfileIconDropdown.vue'
 import { storeToRefs } from 'pinia';
 import { checkClientSoftwareStatus } from '@/apiConnections/client-software';
+import { sendMarkAttendanceRfid } from '@/apiConnections/attendance';
+import { useAlertsStore } from '@/stores/alerts';
+import { onMounted, onUnmounted } from 'vue';
+import { echo } from '@/echo';
 
 const systemInfoStore = useSystemInfoStore()
 let { sysInfo } = storeToRefs(systemInfoStore)
@@ -12,18 +16,38 @@ const showProfileDropdown = ref(false)
 
 const fingerprintConnected = ref(false)
 
-setInterval(async () => {
-    let resp = await checkClientSoftwareStatus()
-    if (resp.status == 'success') {
-        let data: { software: number, fingerprint: "connected" | "disconnected" } = resp.data
+let fingerprintTimeout: ReturnType<typeof setTimeout> | null = null;
 
-        fingerprintConnected.value = data.fingerprint == "connected"
-    }
-}, 4000);
+onMounted(() => {
+    // Initial status check
+    checkClientSoftwareStatus().then(resp => {
+        if (resp.status == 'success') {
+            fingerprintConnected.value = resp.data.fingerprint == "connected";
+        }
+    });
+
+    // Listen for real-time status updates from the C# client via Pusher
+    echo.channel("general-ui").listen("ClientSoftwareStatusUpdated", (e: any) => {
+        fingerprintConnected.value = e.statusData.fingerprint == "connected";
+        
+        // Reset the timeout. The C# client pings every 30 seconds.
+        // If we don't receive an update in 35 seconds, assume disconnected.
+        if (fingerprintTimeout) clearTimeout(fingerprintTimeout);
+        fingerprintTimeout = setTimeout(() => {
+            fingerprintConnected.value = false;
+        }, 35000);
+});
+});
+
+onUnmounted(() => {
+    if (fingerprintTimeout) clearTimeout(fingerprintTimeout);
+})
 
 function openClientUI() {
     window.open("/client-general-ui", "_blank", "toolbar=no,location=no,directories=no,status=no,menubar=no,resizable=yes,width=" + (screen.width) + ",height=" + (screen.height) + ",top=0,left=0");
 }
+
+const alertStore = useAlertsStore()
 </script>
 
 <template>

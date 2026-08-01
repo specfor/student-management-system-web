@@ -18,6 +18,7 @@ export type Student = {
   grade: Grade | null;
   admission_paid: boolean;
   fingerprint?: boolean;
+  rfid?: string;
   trust_score?: number;
   payment_week_tendency?: {
     week_1: number;

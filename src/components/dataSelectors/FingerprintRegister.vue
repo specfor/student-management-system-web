@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { getFingerprintRegStatus, setFingerprintMode } from '@/apiConnections/fingerprint';
 import type { getFingerprintRegStatusResponse } from '@/types/fingerprint';
-import { onBeforeUnmount, onUnmounted, ref } from 'vue';
+import { echo } from '@/echo';
+import { onUnmounted, ref } from 'vue';
 
 let finImage = ref("")
 let finRegSuccess = ref(false)
@@ -10,39 +11,45 @@ let errorMsg = ref("")
 
 let { args } = defineProps<{ args: any }>()
 let studentId = args
-let checkerId = 0
+
+async function checkStatus() {
+    let resp = await getFingerprintRegStatus()
+    if (resp.status == 'success') {
+        let data: getFingerprintRegStatusResponse = resp.data
+        if (data.status == 'completed') {
+            finRegSuccess.value = true
+            finImage.value = URL.createObjectURL(base64ToBlob(data.image, 'image/octet-stream'))
+            echo.channel("general-ui").stopListening("GeneralUIStatusUpdated")
+        }
+        if (data.status == 'ongoing') {
+            errorMsg.value = ""
+            actionText.value = "Press finger on sensor " + (3 - Number(data.msg.split(' ')[1])) + " more times."
+        }
+        if (data.status == 'error') {
+            if (data.msg == 'already-registered')
+                errorMsg.value = "Fingerprint is already registered."
+            else if (data.msg == 'not-same-finger') {
+                errorMsg.value = "Place the same finger."
+            }
+        }
+    }
+}
 
 async function setToRegMode() {
     let resp = await setFingerprintMode('register', studentId)
-    if (resp.status == 'success')
-        checkerId = setInterval(async () => {
-            let resp = await getFingerprintRegStatus()
-            if (resp.status == 'success') {
-                let data: getFingerprintRegStatusResponse = resp.data
-                if (data.status == 'completed') {
-                    finRegSuccess.value = true
-                    finImage.value = URL.createObjectURL(base64ToBlob(data.image, 'image/octet-stream'))
-                    clearInterval(checkerId)
-                }
-                if (data.status == 'ongoing') {
-                    errorMsg.value = ""
-                    actionText.value = "Press finger on sensor " + (3 - Number(data.msg.split(' ')[1])) + " more times."
-                }
-                if (data.status == 'error') {
-                    if (data.msg == 'already-registered')
-                        errorMsg.value = "Fingerprint is already registered."
-                    else if (data.msg == 'not-same-finger') {
-                        errorMsg.value = "Place the same finger."
-                    }
-                }
-            }
-        }, 600)
+    if (resp.status == 'success') {
+        echo.channel("general-ui").listen("GeneralUIStatusUpdated", checkStatus)
+        // Check once initially in case the state was immediately ready
+        checkStatus()
+    }
 }
 setToRegMode()
 
 onUnmounted(() => {
+    echo.channel("general-ui").stopListening("GeneralUIStatusUpdated")
     setFingerprintMode('verify')
 })
+
 function base64ToBlob(base64: string, contentType = '', sliceSize = 512) {
     const byteCharacters = atob(base64);
     const byteArrays = [];
@@ -60,11 +67,6 @@ function base64ToBlob(base64: string, contentType = '', sliceSize = 512) {
     const blob = new Blob(byteArrays, { type: contentType });
     return blob;
 }
-
-
-onBeforeUnmount(() => {
-    clearInterval(checkerId)
-})
 </script>
 
 <template>

@@ -539,6 +539,7 @@ async function addNewStudent() {
     },
     { name: "name", text: "Name", type: "text", required: true },
     { name: "full_name", text: "Full Name", type: "text" },
+    { name: "rfid", text: "RFID Code (Optional)", type: "text" },
     { name: "grade_id", text: "Select Grade", type: "select", required: true, options: gradeOptions },
     { name: "email", text: "Email", type: "text" },
     { name: "birthday", text: "Birth Date", type: "date" },
@@ -566,7 +567,8 @@ async function addNewStudent() {
       results.data["address"] as string,
       results.data["school"] as string,
       results.data["parent_name"] as string,
-      results.data["parent_phone_number"] as string
+      results.data["parent_phone_number"] as string,
+      results.data["rfid"] as string
     );
     if (resp.status === "error") {
       if (resp.data.type === "user_error")
@@ -688,6 +690,7 @@ async function editStudent(id: number) {
     },
     { name: "name", text: "Name", type: "text", required: true, value: student.name },
     { name: "full_name", text: "Full Name", type: "text", value: student.full_name },
+    { name: "rfid", text: "RFID Code", type: "text", value: student.rfid ?? "" },
     {
       name: "grade_id",
       text: "Select Grade",
@@ -726,7 +729,8 @@ async function editStudent(id: number) {
       results.data["address"] as string,
       results.data["school"] as string,
       results.data["parent_name"] as string,
-      results.data["parent_phone_number"] as string
+      results.data["parent_phone_number"] as string,
+      results.data["rfid"] as string
     );
     if (resp.status === "error") {
       if (resp.data.type === "user_error")

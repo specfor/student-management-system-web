@@ -5,8 +5,12 @@ export function getFingerprintRegStatus() {
 }
 
 export function setFingerprintMode(
-  mode: "verify" | "register",
-  student_id?: number
+  mode: "register" | "register-rfid" | "verify",
+  student_id: number | null = null
 ) {
   return sendJsonPostRequest("/fingerprint-client/mode", { mode, student_id });
+}
+
+export function forceAssignRfid() {
+  return sendJsonPostRequest("/fingerprint-client/force-assign-rfid", {});
 }

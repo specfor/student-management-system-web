@@ -6,8 +6,10 @@ import {
   markAdmissionFee,
   updateAdmissionFee,
   updateStudentImage,
+  updateStudent
 } from "@/apiConnections/students";
 import BillEnroller from "@/components/BillEnroller.vue";
+import RfidRegister from "@/components/dataSelectors/RfidRegister.vue";
 import FingerprintRegister from "@/components/dataSelectors/FingerprintRegister.vue";
 import { useAlertsStore } from "@/stores/alerts";
 import { useDataEntryFormsStore } from "@/stores/formManagers/dataEntryForm";
@@ -151,6 +153,10 @@ async function uploadStudentImage(studentId: number) {
 function showFingerprintReg() {
   extendablePopUpStore.showComponent(FingerprintRegister, studentId);
 }
+
+function updateRfid() {
+  extendablePopUpStore.showComponent(RfidRegister, studentId);
+}
 </script>
 
 <template>
@@ -260,6 +266,10 @@ function showFingerprintReg() {
               <div v-if="student.fingerprint" class="border bg-green-200 text-green-800 text-center">Added</div>
               <div v-else class="border bg-red-200 text-red-800 text-center">Not Added</div>
             </div>
+            <div class="grid grid-cols-3 mt-3 items-center">
+              <h4>RFID Code</h4>
+              <p class="col-span-2 border-b border-slate-300">{{ student.rfid ?? "None" }}</p>
+            </div>
           </div>
         </div>
 
@@ -344,6 +354,12 @@ function showFingerprintReg() {
           "
         >
           Update Fingerprint
+        </button>
+        <button
+          class="border bg-blue-500 py-2 px-5 rounded-md mb-3 w-full font-medium text-white shadow-sm hover:bg-blue-600 transition-colors"
+          @click="updateRfid"
+        >
+          Update RFID
         </button>
       </div>
     </div>

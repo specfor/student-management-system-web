@@ -68,6 +68,8 @@ export function sendMarkAttendance(courseId: number, studentId: number) {
   });
 }
 
+
+
 export function deleteAttendance(id: number) {
   return sendDeleteRequest(`/attendance/${id}`);
 }

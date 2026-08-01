@@ -4,6 +4,7 @@ import type { Course } from "@/types/courseTypes";
 import type { Student } from "@/types/studentTypes";
 import { defineStore } from "pinia";
 import { ref, type Ref } from "vue";
+import { echo } from "@/echo";
 
 export const useglobalDataStore = defineStore("globalDataStore", () => {
   const students: Ref<Array<Student>> = ref([]);
@@ -22,11 +23,6 @@ export const useglobalDataStore = defineStore("globalDataStore", () => {
     }
   }
 
-  if (!fetchedStudents)
-    setInterval(() => {
-      loadStudents();
-    }, 10000);
-
   async function loadCourses() {
     const resp = await getCourses(0, 1000, {
       sort: { by: "id", direction: "desc" },
@@ -37,10 +33,17 @@ export const useglobalDataStore = defineStore("globalDataStore", () => {
     }
   }
 
-  if (!fetchedCourses)
-    setInterval(() => {
+  if (!fetchedStudents) loadStudents();
+  if (!fetchedCourses) loadCourses();
+
+  // Listen to data-updates channel for real-time changes
+  echo.channel("data-updates").listen("SystemDataChanged", (e: any) => {
+    if (e.dataType === "students") {
+      loadStudents();
+    } else if (e.dataType === "courses") {
       loadCourses();
-    }, 10000);
+    }
+  });
 
   async function findStudent(id: number) {
     if (!fetchedStudents) await loadStudents();

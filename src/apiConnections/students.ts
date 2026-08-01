@@ -56,7 +56,8 @@ export function createStudent(
   address: string,
   school: string,
   parent_name: string,
-  parent_phone_number: string
+  parent_phone_number: string,
+  rfid?: string
 ) {
   return sendJsonPostRequest("/students", {
     custom_id: custom_id,
@@ -70,6 +71,7 @@ export function createStudent(
     phone_number: phone_number,
     parent_name: parent_name,
     parent_phone_number: parent_phone_number,
+    rfid: rfid,
   });
 }
 
@@ -85,7 +87,8 @@ export function updateStudent(
   address: string,
   school: string,
   parent_name: string,
-  parent_phone_number: string
+  parent_phone_number: string,
+  rfid?: string
 ) {
   return sendJsonPatchRequest(`/students/${id}`, {
     custom_id: custom_id,
@@ -99,6 +102,7 @@ export function updateStudent(
     phone_number: phone_number,
     parent_name: parent_name,
     parent_phone_number: parent_phone_number,
+    rfid: rfid,
   });
 }
 
