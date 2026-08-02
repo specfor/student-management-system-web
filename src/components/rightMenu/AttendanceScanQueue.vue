@@ -59,6 +59,11 @@ function fetchScanLogs(loadMore = false) {
     }
 
     let url = loadMore ? nextPageUrl.value : `/scan-logs?status=${filterStatus.value}&date=${filterDate.value}`;
+    
+    if (loadMore && url) {
+        url += `&status=${filterStatus.value}&date=${filterDate.value}`;
+    }
+
     sendGetRequest(url, null, {}, !loadMore).then((resp: any) => {
         if (resp.status === 'success') {
             if (loadMore) {
