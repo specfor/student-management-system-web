@@ -8,6 +8,7 @@ import { downloadStudentImage, getStudents } from '@/apiConnections/students';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { ref, watch, type Ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import SelectionBox from '@/components/primary/SelectionBox.vue';
 import type { InputField, MessageField } from '@/stores/formManagers/dataEntryForm';
 import type { Enrollment } from '@/types/enrollmentTypes';
@@ -20,6 +21,8 @@ import LoadingCursor from '@/components/minorUiComponents/loadingCursor.vue';
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
+const route = useRoute()
+const router = useRouter()
 
 let coursesOptionFields: Ref<{ text: string, value: any }[]> = ref([])
 let courseGroupOptionFields: Ref<{ text: string, value: any }[]> = ref([])
@@ -52,6 +55,27 @@ async function init() {
         return
 
     students = resp.data.students
+    
+    // Check if we have a student pre-selected in URL
+    if (route.query.student_id) {
+        let presetStudentId = parseInt(route.query.student_id as string)
+        if (!isNaN(presetStudentId)) {
+            showAllStudentsForSelection.value = true
+            
+            // Explicitly populate the list
+            studentOptionFields.value = []
+            students.forEach(student => {
+                studentOptionFields.value.push({ text: student.name, value: student.id })
+            })
+            
+            // Wait a tick for UI update, then select
+            setTimeout(() => {
+                selectedStudentId.value = presetStudentId
+                // Remove from URL so refreshing doesn't stick
+                router.replace({ query: {} })
+            }, 100)
+        }
+    }
 }
 
 const selectedCourseId = ref(0)
