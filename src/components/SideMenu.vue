@@ -57,6 +57,7 @@ const routes: (
                 { type: 'link', path: '/settings/message-system', text: 'Message System', permissions: checkPermissions('system_config') },
                 { type: 'link', path: '/settings/lms-client', text: 'Client Software', permissions: checkPermissions('system_config') },
                 { type: 'link', path: '/settings/attendance-marker', text: 'Attendance Marker', permissions: checkPermissions('system_config') },
+                { type: 'link', path: '/settings/system-policies', text: 'System Policies', permissions: checkPermissions('system_config') },
             ]
         },
     ]

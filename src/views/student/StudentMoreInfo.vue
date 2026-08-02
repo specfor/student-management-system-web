@@ -6,7 +6,8 @@ import {
   markAdmissionFee,
   updateAdmissionFee,
   updateStudentImage,
-  updateStudent
+  updateStudent,
+  updateStudentFields
 } from "@/apiConnections/students";
 import BillEnroller from "@/components/BillEnroller.vue";
 import RfidRegister from "@/components/dataSelectors/RfidRegister.vue";
@@ -157,6 +158,47 @@ function showFingerprintReg() {
 function updateRfid() {
   extendablePopUpStore.showComponent(RfidRegister, studentId);
 }
+
+async function updatePaymentOverrideWeek() {
+  dataEntryForm.newDataEntryForm("Payment Override Week", "Update", [
+    { type: "message", text: "This setting will reset to the default value after 4 months." },
+    { 
+      name: "payment_override_week", 
+      type: "number", 
+      min: 1, 
+      max: 5, 
+      text: "Override Week (1-5, leave blank to reset)", 
+      value: student.value?.payment_override_week,
+      required: false
+    },
+  ]);
+  
+  let results = await dataEntryForm.waitForSubmittedData();
+  if (!results.submitted) return;
+
+  let val = results.data.payment_override_week;
+  if (val === "") val = null;
+
+  let res = await updateStudentFields(student.value?.id!, { payment_override_week: val });
+  if (res.status === "error") {
+    if (res.data.type === "user_error") {
+      Object.entries(res.data.messages).forEach((msg) => {
+        let err = "";
+        if (Array.isArray(msg[1]) && !msg[1] === null) err = msg[1].join(", ");
+        else err = msg[1] as string;
+        dataEntryForm.insertErrorMessage(msg[0], err);
+      });
+    } else {
+      alertStore.insertAlert("An error occurred.", res.message, "error");
+    }
+    dataEntryForm.finishSubmission();
+    return;
+  }
+  
+  dataEntryForm.finishSubmission();
+  loadStudent(student.value?.id!);
+  alertStore.insertAlert("Success", "Payment override updated successfully.");
+}
 </script>
 
 <template>
@@ -270,6 +312,15 @@ function updateRfid() {
               <h4>RFID Code</h4>
               <p class="col-span-2 border-b border-slate-300">{{ student.rfid ?? "None" }}</p>
             </div>
+            <div class="grid grid-cols-3 mt-3 items-center">
+              <h4>Payment Deadline Override</h4>
+              <p class="col-span-2 border-b border-slate-300">
+                <span v-if="student.payment_override_week">
+                  Week {{ student.payment_override_week }} (Expires: {{ student.payment_override_expires_at ? new Date(student.payment_override_expires_at).toLocaleDateString() : 'Never' }})
+                </span>
+                <span v-else>None</span>
+              </p>
+            </div>
           </div>
         </div>
 
@@ -360,6 +411,12 @@ function updateRfid() {
           @click="updateRfid"
         >
           Update RFID
+        </button>
+        <button
+          class="border bg-blue-500 py-2 px-5 rounded-md mb-3 w-full font-medium text-white shadow-sm hover:bg-blue-600 transition-colors"
+          @click="updatePaymentOverrideWeek"
+        >
+          Payment Override
         </button>
       </div>
     </div>

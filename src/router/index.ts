@@ -22,6 +22,7 @@ import WhatsappSettings from "@/views/settings/WhatsappSettings.vue";
 import LmsClientSettings from "@/views/settings/LmsClientSettings.vue";
 import ExpensesPage from "@/views/ExpensesPage.vue";
 import AttendanceMarker from "@/views/settings/AttendanceMarker.vue";
+import SystemPolicies from "@/views/settings/SystemPolicies.vue";
 import ClientGeneralUi from "@/views/ClientGeneralUi.vue";
 
 const router = createRouter({
@@ -136,6 +137,11 @@ const router = createRouter({
       path: "/settings/lms-client",
       name: "lms-client-settings",
       component: LmsClientSettings,
+    },
+    {
+      path: "/settings/system-policies",
+      name: "system-policies",
+      component: SystemPolicies,
     },
     {
       path: "/expenses",

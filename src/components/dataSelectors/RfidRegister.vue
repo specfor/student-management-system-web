@@ -35,7 +35,7 @@ async function checkStatus() {
                 let otherId = parseInt(data.msg.split(':')[1])
                 let stResp = await getStudentById(otherId)
                 if (stResp.status == 'success') {
-                    conflictStudent.value = stResp.data
+                    conflictStudent.value = stResp.data.student
                     isConflict.value = true
                 }
             }
@@ -70,8 +70,9 @@ async function handleForceAssign() {
     let resp = await forceAssignRfid()
     if (resp.status == 'success') {
         isConflict.value = false
-        // Start listening again to wait for the completed status
+        // Start listening again in case it hasn't completed yet, but also check immediately
         echo.channel("general-ui").listen("GeneralUIStatusUpdated", checkStatus)
+        checkStatus()
         startTimer()
     } else {
         errorMsg.value = "Failed to forcefully reassign RFID."

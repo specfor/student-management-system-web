@@ -110,6 +110,10 @@ export function deleteStudent(id: number) {
   return sendDeleteRequest(`/students/${id}`);
 }
 
+export function updateStudentFields(id: number, params: { [key: string]: any }) {
+  return sendJsonPatchRequest(`/students/${id}`, params);
+}
+
 export function downloadStudentImage(id: number) {
   return sendFileDownloadRequest(`/students/${id}/image`);
 }

@@ -27,41 +27,15 @@ const student: Ref<Student | null> = ref(null);
 const scanLogResult: Ref<any> = ref(null);
 let markedAttendanceShowStartTime = 0;
 
-const successSoundUrl = import.meta.env.VITE_SUCCESS_SOUND_URL || '';
-const errorSoundUrl = import.meta.env.VITE_ERROR_SOUND_URL || '';
-
-function playTone(frequency: number, type: OscillatorType, duration: number, startTime: number, audioCtx: AudioContext) {
-  const oscillator = audioCtx.createOscillator();
-  const gainNode = audioCtx.createGain();
-  oscillator.type = type;
-  oscillator.frequency.setValueAtTime(frequency, startTime);
-  gainNode.gain.setValueAtTime(0.1, startTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-  oscillator.connect(gainNode);
-  gainNode.connect(audioCtx.destination);
-  oscillator.start(startTime);
-  oscillator.stop(startTime + duration);
-}
-
 function playSound(type: 'success' | 'error') {
-  if (type === 'success' && successSoundUrl) {
-    new Audio(successSoundUrl).play().catch(() => {});
-    return;
-  }
-  if (type === 'error' && errorSoundUrl) {
-    new Audio(errorSoundUrl).play().catch(() => {});
-    return;
-  }
-
-  // Fallback synthesized sounds
-  const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-  const now = audioCtx.currentTime;
   if (type === 'success') {
-    playTone(600, 'sine', 0.1, now, audioCtx);
-    playTone(800, 'sine', 0.2, now + 0.1, audioCtx);
+    new Audio('/success-sound.mp3').play().catch(() => {
+      // Fallback if needed
+    });
   } else {
-    playTone(300, 'square', 0.2, now, audioCtx);
-    playTone(200, 'square', 0.3, now + 0.2, audioCtx);
+    new Audio('/failure-sound.mp3').play().catch(() => {
+      // Fallback if needed
+    });
   }
 }
 
@@ -324,11 +298,11 @@ onUnmounted(() => {
 
         <div class="pt-10 px-5 flex flex-col items-center justify-center h-full w-full" v-if="mode === 'mark-attendance' && scanLogResult">
           <div class="w-full max-w-xl bg-white shadow-2xl rounded-2xl overflow-hidden border-4"
-               :class="scanLogResult.status === 'success' ? 'border-green-400' : 'border-red-400'">
+               :class="scanLogResult.status === 'success' ? 'border-green-400' : (scanLogResult.status === 'warning-payment' ? 'border-yellow-500' : 'border-red-400')">
             
-            <div class="text-center p-6 text-white" :class="scanLogResult.status === 'success' ? 'bg-green-500' : 'bg-red-500'">
-              <h1 class="text-4xl font-bold mb-2">{{ scanLogResult.status === 'success' ? 'Attendance Marked!' : 'Scan Failed' }}</h1>
-              <p class="text-xl opacity-90">{{ scanLogResult.message }}</p>
+            <div class="text-center p-6 text-white" :class="scanLogResult.status === 'success' ? 'bg-green-500' : (scanLogResult.status === 'warning-payment' ? 'bg-yellow-500 text-gray-900' : 'bg-red-500')">
+              <h1 class="text-4xl font-bold mb-2">{{ (scanLogResult.status === 'success' || scanLogResult.status === 'warning-payment') ? 'Attendance Marked!' : 'Scan Failed' }}</h1>
+              <p class="text-xl font-medium opacity-90">{{ scanLogResult.message }}</p>
             </div>
             
             <div class="p-8">
