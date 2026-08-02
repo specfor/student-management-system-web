@@ -64,8 +64,18 @@ export function getGeneratedBillData(billId: number) {
   return sendGetRequest("/print-queue/bill", { bill_id: billId });
 }
 
-export async function sendBillPrintCommand(jsonData: string) {
-  return sendJsonPostRequest("http://127.0.0.1:9000/bill", jsonData, {}, false);
+export async function sendBillPrintCommand(jsonData: any) {
+  try {
+    let resp = await sendJsonPostRequest("http://127.0.0.1:9000/bill", jsonData, {}, false);
+    if (resp.status == 'error') {
+        throw new Error('Local print failed');
+    }
+    return resp;
+  } catch (error) {
+    // If local fetch fails (e.g., printer is on another machine), fallback to remote print
+    await sendJsonPostRequest("/print-queue/remote-print", jsonData);
+    return { status: 'success', data: { code: 0 }, remote: true, message: 'Trying remote printing...' };
+  }
 }
 
 export function getBillImage(billId: number) {

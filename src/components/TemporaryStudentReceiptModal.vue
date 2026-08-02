@@ -72,7 +72,11 @@ async function printReceipt() {
           error.header = "Error printing receipt";
           error.body = pResp.data.message;
         } else {
-          alertStore.insertAlert("Printed", "Receipt sent to printer successfully.", "success");
+          if ((pResp as any).remote) {
+            alertStore.insertAlert("Remote Printing", "Trying to print remotely via the front-desk printer...", "info");
+          } else {
+            alertStore.insertAlert("Printed", "Receipt sent to printer successfully.", "success");
+          }
         }
       } else {
         error.occurred = true;

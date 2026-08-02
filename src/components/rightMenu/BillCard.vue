@@ -72,6 +72,8 @@ async function printBill(status: typeof props.status) {
           error.occured = true;
           error.header = "Error printing receipt";
           error.body = pResp.data.message;
+        } else if ((pResp as any).remote) {
+          alertStore.insertAlert("Remote Printing", "Trying to print remotely via the front-desk printer...", "info");
         }
       } else {
         error.occured = true;

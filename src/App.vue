@@ -13,6 +13,7 @@ import ExtendablePopUp from './components/formComponents/ExtendablePopUp.vue';
 import LoadingScreen from '@/views/LoadingScreen.vue'
 import RightMenu from './components/RightMenu.vue';
 import { useAlertsStore } from './stores/alerts';
+import { echo } from '@/echo';
 
 const authStore = useAuthStore()
 const alertStore = useAlertsStore()
@@ -72,6 +73,14 @@ setInterval(() => {
     lastAttendance = attenData
   }
 }, 1000)
+
+echo.channel("system-notifications").listen("RemotePrintStatus", (e: any) => {
+  if (e.status === 'success') {
+    alertStore.insertAlert("Remote Print", e.message, "success", -1);
+  } else {
+    alertStore.insertAlert("Remote Print Failed", e.message, "error", -1);
+  }
+});
 
 </script>
 

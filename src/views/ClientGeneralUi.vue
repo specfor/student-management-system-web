@@ -198,6 +198,48 @@ onMounted(() => {
       }
     }, 4000);
   });
+
+  echo.channel("general-ui").listen("RemotePrintRequested", (e: any) => {
+    if (e.printData) {
+      try {
+        const payload = JSON.parse(e.printData);
+        // Directly fetch the local print server to avoid the fallback loop
+        fetch("http://127.0.0.1:9000/bill", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload),
+          credentials: "same-origin"
+        }).then((response) => {
+          return response.json();
+        }).then((data) => {
+          if (data.code === 0) {
+            fetch("/api/print-queue/remote-print-status", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ status: "success", message: "Remote print completed successfully." })
+            });
+          } else {
+            fetch("/api/print-queue/remote-print-status", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ status: "error", message: data.message || "Failed to print remotely." })
+            });
+          }
+        }).catch((err) => {
+          console.error("Local print via proxy failed:", err);
+          fetch("/api/print-queue/remote-print-status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "error", message: "Network error when reaching the printer proxy." })
+          });
+        });
+      } catch (err) {
+        console.error("Failed to parse remote print payload:", err);
+      }
+    }
+  });
 });
 
 const date = ref("");
