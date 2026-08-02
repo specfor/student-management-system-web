@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useSystemInfoStore } from '@/stores/systemInfo';
-import { UserCircleIcon } from '@heroicons/vue/24/solid'
+import { UserCircleIcon, BellIcon } from '@heroicons/vue/24/solid'
 import { ref } from 'vue'; ``
 import HeaderProfileIconDropdown from './HeaderProfileIconDropdown.vue'
+import HeaderNotificationDropdown from './HeaderNotificationDropdown.vue'
 import { storeToRefs } from 'pinia';
 import { checkClientSoftwareStatus } from '@/apiConnections/client-software';
 import { sendMarkAttendanceRfid } from '@/apiConnections/attendance';
@@ -13,6 +14,8 @@ import { echo } from '@/echo';
 const systemInfoStore = useSystemInfoStore()
 let { sysInfo } = storeToRefs(systemInfoStore)
 const showProfileDropdown = ref(false)
+const showNotificationDropdown = ref(false)
+const unreadNotificationCount = ref(0)
 
 const fingerprintConnected = ref(false)
 
@@ -65,6 +68,22 @@ const alertStore = useAlertsStore()
                     <h6 v-show="fingerprintConnected" class="bg-green-200 text-green-700 py-1 px-5">Connected</h6>
                     <h6 v-show="!fingerprintConnected" class="bg-red-200 text-red-700 py-1 px-5">Disconnected</h6>
                 </div>
+                
+                <Popper>
+                    <div class="relative cursor-pointer mr-6 flex items-center justify-center mt-1">
+                        <BellIcon class="h-8 w-8 text-white hover:text-gray-300" 
+                            @click="showNotificationDropdown = !showNotificationDropdown" />
+                        <span v-if="unreadNotificationCount > 0" 
+                              class="absolute top-0 right-0 -mt-1 -mr-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                            {{ unreadNotificationCount > 99 ? '99+' : unreadNotificationCount }}
+                        </span>
+                    </div>
+
+                    <template #content>
+                        <HeaderNotificationDropdown @update-count="(count) => unreadNotificationCount = count" />
+                    </template>
+                </Popper>
+
                 <Popper>
                     <UserCircleIcon class="h-10 w-10 hover:bg-white rounded-md cursor-pointer"
                         @click="showProfileDropdown = !showProfileDropdown" />

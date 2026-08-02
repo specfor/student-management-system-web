@@ -27,6 +27,44 @@ const student: Ref<Student | null> = ref(null);
 const scanLogResult: Ref<any> = ref(null);
 let markedAttendanceShowStartTime = 0;
 
+const successSoundUrl = import.meta.env.VITE_SUCCESS_SOUND_URL || '';
+const errorSoundUrl = import.meta.env.VITE_ERROR_SOUND_URL || '';
+
+function playTone(frequency: number, type: OscillatorType, duration: number, startTime: number, audioCtx: AudioContext) {
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, startTime);
+  gainNode.gain.setValueAtTime(0.1, startTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  oscillator.start(startTime);
+  oscillator.stop(startTime + duration);
+}
+
+function playSound(type: 'success' | 'error') {
+  if (type === 'success' && successSoundUrl) {
+    new Audio(successSoundUrl).play().catch(() => {});
+    return;
+  }
+  if (type === 'error' && errorSoundUrl) {
+    new Audio(errorSoundUrl).play().catch(() => {});
+    return;
+  }
+
+  // Fallback synthesized sounds
+  const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  const now = audioCtx.currentTime;
+  if (type === 'success') {
+    playTone(600, 'sine', 0.1, now, audioCtx);
+    playTone(800, 'sine', 0.2, now + 0.1, audioCtx);
+  } else {
+    playTone(300, 'square', 0.2, now, audioCtx);
+    playTone(200, 'square', 0.3, now + 0.2, audioCtx);
+  }
+}
+
 const regStatusMsg = ref("Place your RFID card on the scanner.");
 const regStatusStyles = ref("bg-yellow-200 text-yellow-700");
 
@@ -134,17 +172,7 @@ async function getStatus(providedData?: any) {
     return;
   }
 
-  if (
-    data.fingerprint.mode == "read-mark-attendance" &&
-    data.last_attendance != null &&
-    lastAttendance.value.marked_time != data.last_attendance.marked_time
-  ) {
-    if (lastAttendance.value.marked_time != "") mode.value = "mark-attendance";
-
-    localStorage.setItem("last_attendance", JSON.stringify(data.last_attendance));
-    lastAttendance.value = data.last_attendance;
-    markedAttendanceShowStartTime = Date.now();
-  } else if (data.fingerprint.mode == "read-mark-attendance" || data.fingerprint.mode == "verify") {
+  if (data.fingerprint.mode == "read-mark-attendance" || data.fingerprint.mode == "verify") {
     mode.value = "home";
   }
   else if (data.fingerprint.mode == "register-rfid") {
@@ -182,6 +210,19 @@ onMounted(() => {
   getStatus(); // Initial fetch
   echo.channel("general-ui").listen("GeneralUIStatusUpdated", (e: any) => {
     getStatus(e.uiData);
+  });
+  
+  echo.channel("general-ui").listen("ScanLogCreated", (e: any) => {
+    scanLogResult.value = e.scanLog;
+    mode.value = "mark-attendance";
+    markedAttendanceShowStartTime = Date.now();
+    playSound(e.scanLog.status === 'success' ? 'success' : 'error');
+    
+    setTimeout(() => {
+      if (mode.value === "mark-attendance") {
+        mode.value = "home";
+      }
+    }, 4000);
   });
 });
 

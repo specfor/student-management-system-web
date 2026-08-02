@@ -3,7 +3,9 @@ import { ref, computed, onMounted, onUnmounted, reactive } from 'vue';
 import { sendGetRequest } from '@/utils/requests';
 import { CheckCircleIcon, XCircleIcon, ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/solid';
 import { echo } from '@/echo';
+import { useAlertsStore } from '@/stores/alerts';
 
+const alertStore = useAlertsStore();
 const scanLogs = ref<any[]>([]);
 const isLoading = ref(true);
 const filterStatus = ref<'success' | 'failed'>('success');
@@ -94,6 +96,11 @@ onMounted(() => {
             if (scanLogs.value.length > 50 && !nextPageUrl.value) {
                 scanLogs.value.pop();
             }
+        }
+
+        // Notify admin via toast
+        if (e.scanLog.status === 'failed') {
+            alertStore.insertAlert('Attendance Error', e.scanLog.message + (e.scanLog.student ? ` (${e.scanLog.student.name})` : ''), 'error');
         }
         
         // Update counts
