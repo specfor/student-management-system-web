@@ -26,28 +26,27 @@ function toggleGroup(groupId: string|number) {
 }
 
 const groupedScanLogs = computed(() => {
-    const grouped = [];
-    if (scanLogs.value.length === 0) return grouped;
+    const groups = new Map();
     
-    let currentGroup = { ...scanLogs.value[0], count: 1, grouped_logs: [scanLogs.value[0]] };
+    const sorted = [...scanLogs.value].sort((a, b) => new Date(b.scanned_at || b.created_at).getTime() - new Date(a.scanned_at || a.created_at).getTime());
     
-    for (let i = 1; i < scanLogs.value.length; i++) {
-        const log = scanLogs.value[i];
+    for (const log of sorted) {
+        const key = `${log.student_id}|${log.course_id}|${log.status}|${log.message}`;
         
-        if (
-            log.student_id === currentGroup.student_id &&
-            log.status === currentGroup.status &&
-            log.course_id === currentGroup.course_id
-        ) {
+        if (!groups.has(key)) {
+            groups.set(key, { 
+                ...log, 
+                count: 1, 
+                grouped_logs: [log] 
+            });
+        } else {
+            const currentGroup = groups.get(key);
             currentGroup.count++;
             currentGroup.grouped_logs.push(log);
-        } else {
-            grouped.push(currentGroup);
-            currentGroup = { ...log, count: 1, grouped_logs: [log] };
         }
     }
-    grouped.push(currentGroup);
-    return grouped;
+    
+    return Array.from(groups.values()).sort((a, b) => new Date(b.scanned_at || b.created_at).getTime() - new Date(a.scanned_at || a.created_at).getTime());
 });
 
 function fetchScanLogs(loadMore = false) {
