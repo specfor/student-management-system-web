@@ -18,7 +18,7 @@ async function checkStatus() {
         let data: getFingerprintRegStatusResponse = resp.data
         if (data.status == 'completed') {
             finRegSuccess.value = true
-            finImage.value = URL.createObjectURL(base64ToBlob(data.image, 'image/octet-stream'))
+            finImage.value = URL.createObjectURL(base64ToBlob(data.image as string, 'image/octet-stream'))
             echo.channel("general-ui").stopListening("GeneralUIStatusUpdated")
         }
         if (data.status == 'ongoing') {

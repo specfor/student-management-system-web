@@ -176,7 +176,7 @@ async function updatePaymentOverrideWeek() {
   let results = await dataEntryForm.waitForSubmittedData();
   if (!results.submitted) return;
 
-  let val = results.data.payment_override_week;
+  let val: any = results.data.payment_override_week;
   if (val === "") val = null;
 
   let res = await updateStudentFields(student.value?.id!, { payment_override_week: val });

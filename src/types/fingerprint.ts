@@ -1,7 +1,8 @@
 export type getFingerprintRegStatusResponse =
   | {
       status: "completed";
-      image: string;
+      image?: string;
+      msg?: string;
     }
   | {
       status: "error" | "ongoing";

@@ -6,7 +6,7 @@ import HeaderProfileIconDropdown from './HeaderProfileIconDropdown.vue'
 import HeaderNotificationDropdown from './HeaderNotificationDropdown.vue'
 import { storeToRefs } from 'pinia';
 import { checkClientSoftwareStatus } from '@/apiConnections/client-software';
-import { sendMarkAttendanceRfid } from '@/apiConnections/attendance';
+
 import { useAlertsStore } from '@/stores/alerts';
 import { onMounted, onUnmounted } from 'vue';
 import { echo } from '@/echo';

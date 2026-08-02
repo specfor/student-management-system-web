@@ -64,7 +64,7 @@ function fetchScanLogs(loadMore = false) {
         url += `&status=${filterStatus.value}&date=${filterDate.value}`;
     }
 
-    sendGetRequest(url, null, {}, !loadMore).then((resp: any) => {
+    sendGetRequest(url as string, {}, {}, !loadMore).then((resp: any) => {
         if (resp.status === 'success') {
             if (loadMore) {
                 scanLogs.value.push(...resp.data.scan_logs.data);
@@ -97,7 +97,7 @@ onMounted(() => {
         // If the new log matches the current filter, prepend it
         if (e.scanLog.status === filterStatus.value && logDate === filterDate.value) {
             scanLogs.value.unshift(e.scanLog);
-            if (scanLogs.value.length > 50 && !nextPageUrl.value) {
+            if (scanLogs.value.length > 100 && !nextPageUrl.value) {
                 scanLogs.value.pop();
             }
         }
