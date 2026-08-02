@@ -782,9 +782,9 @@ function showStudentCourses(id: number) {
     <div class="flex justify-between items-center mb-6 mt-10">
       <h4 class="font-semibold text-3xl">Students</h4>
       <NewItemButton
-        v-if="authStore.hasPermission('students', 'write')"
-        :text="activeTab === 'regular' ? 'New Student' : 'New Temp Registration'"
-        :on-click="activeTab === 'regular' ? addNewStudent : addNewTemporaryStudent"
+        v-if="authStore.hasPermission('students', 'write') && activeTab === 'temporary'"
+        text="New Temp Registration"
+        :on-click="addNewTemporaryStudent"
       />
     </div>
 
