@@ -200,7 +200,7 @@ const formatTime = (datetime: string) => {
                             
                             <router-link 
                                 v-if="log.student"
-                                :to="`/mark-attendance?student_id=${log.student.id}`"
+                                :to="`/mark-attendance?student_id=${log.student.id}${log.course_id ? '&course_id=' + log.course_id : '&clear_course=true'}`"
                                 title="Mark Attendance"
                                 class="text-gray-400 hover:text-blue-600 transition-colors cursor-pointer">
                                 <ArrowTopRightOnSquareIcon class="w-5 h-5" />

@@ -55,7 +55,10 @@ async function init() {
         return
 
     students = resp.data.students
-    
+    handleQueryParams()
+}
+
+function handleQueryParams() {
     // Check if we have a student pre-selected in URL
     if (route.query.student_id) {
         let presetStudentId = parseInt(route.query.student_id as string)
@@ -71,12 +74,35 @@ async function init() {
             // Wait a tick for UI update, then select
             setTimeout(() => {
                 selectedStudentId.value = presetStudentId
+                
+                if (route.query.course_id) {
+                    let presetCourseId = parseInt(route.query.course_id as string)
+                    if (!isNaN(presetCourseId)) {
+                        const course = courses.find(c => c.id === presetCourseId)
+                        if (course) {
+                            selectedCourseGroup.value = course.name
+                            setTimeout(() => {
+                                selectedCourseId.value = presetCourseId
+                            }, 50)
+                        }
+                    }
+                } else {
+                    selectedCourseGroup.value = ''
+                    selectedCourseId.value = 0
+                }
+
                 // Remove from URL so refreshing doesn't stick
                 router.replace({ query: {} })
             }, 100)
         }
     }
 }
+
+watch(() => route.query, () => {
+    if (students.length > 0) {
+        handleQueryParams()
+    }
+})
 
 const selectedCourseId = ref(0)
 const selectedCourseGroup = ref('')
