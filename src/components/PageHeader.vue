@@ -46,8 +46,40 @@ onUnmounted(() => {
     if (fingerprintTimeout) clearTimeout(fingerprintTimeout);
 })
 
-function openClientUI() {
-    window.open("/client-general-ui", "_blank", "toolbar=no,location=no,directories=no,status=no,menubar=no,resizable=yes,width=" + (screen.width) + ",height=" + (screen.height) + ",top=0,left=0");
+const showMonitorSelection = ref(false);
+const availableScreens = ref<any[]>([]);
+
+async function openClientUI() {
+    if ('getScreenDetails' in window) {
+        try {
+            const screenDetails = await (window as any).getScreenDetails();
+            if (screenDetails.screens.length > 1) {
+                availableScreens.value = screenDetails.screens;
+                showMonitorSelection.value = true;
+                return;
+            }
+        } catch (e) {
+            console.warn("Failed to get screen details. Using default.", e);
+        }
+    }
+    
+    // Fallback or single screen
+    openClientUIOnScreen(null);
+}
+
+function openClientUIOnScreen(screenObj: any | null) {
+    showMonitorSelection.value = false;
+    let windowFeatures = "toolbar=no,location=no,directories=no,status=no,menubar=no,resizable=yes";
+    let url = "/client-general-ui";
+    
+    if (screenObj) {
+        windowFeatures += `,width=${screenObj.width},height=${screenObj.height},top=${screenObj.top},left=${screenObj.left}`;
+        url += "?auto_fullscreen=true";
+    } else {
+        windowFeatures += `,width=${screen.width},height=${screen.height},top=0,left=0`;
+    }
+    
+    window.open(url, "_blank", windowFeatures);
 }
 
 const alertStore = useAlertsStore()
@@ -92,6 +124,35 @@ const alertStore = useAlertsStore()
                         <HeaderProfileIconDropdown />
                     </template>
                 </Popper>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monitor Selection Modal -->
+    <div v-if="showMonitorSelection" class="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-96 max-w-[90vw]">
+            <h3 class="text-xl font-bold mb-4 text-gray-800">Select Monitor for Client UI</h3>
+            <p class="text-sm text-gray-600 mb-4">Multiple displays detected. Where would you like to open the Client UI?</p>
+            
+            <div class="space-y-3">
+                <button 
+                    v-for="(screen, index) in availableScreens" 
+                    :key="index"
+                    @click="openClientUIOnScreen(screen)"
+                    class="w-full text-left px-4 py-3 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-md transition-colors flex flex-col"
+                >
+                    <span class="font-semibold text-gray-800">{{ screen.label || `Display ${index + 1}` }}</span>
+                    <span class="text-xs text-gray-500">{{ screen.width }}x{{ screen.height }} {{ screen.isPrimary ? '(Primary)' : '' }}</span>
+                </button>
+            </div>
+            
+            <div class="mt-6 flex justify-end">
+                <button 
+                    @click="showMonitorSelection = false" 
+                    class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+                >
+                    Cancel
+                </button>
             </div>
         </div>
     </div>

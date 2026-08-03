@@ -8,7 +8,9 @@ import { mediaCache } from "@/utils/mediaCache";
 import { getBannerMediaId, getBannerMediaType, isBannerMediaAvailable } from "@/utils/bannerUtils";
 import { ref, type Ref, onUnmounted, onMounted } from "vue";
 import { echo } from "@/echo";
+import { useRoute } from "vue-router";
 
+const route = useRoute();
 const bannerData: Ref<ClientBanner[]> = ref([]);
 const bannerMediaUrls: Ref<Map<string, string>> = ref(new Map());
 const currentBannerUrl = ref("");
@@ -237,6 +239,33 @@ onMounted(() => {
         });
       } catch (err) {
         console.error("Failed to parse remote print payload:", err);
+      }
+    }
+  });
+
+  // Auto-fullscreen logic
+  if (route.query.auto_fullscreen === 'true') {
+    // Browsers might block this without user gesture, but we try
+    setTimeout(() => {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.warn("Auto fullscreen prevented by browser. User must press 'f' manually.", err);
+      });
+    }, 500);
+  }
+
+  // Fullscreen keyboard shortcuts
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "f" || e.key === "F") {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch((err) => {
+          console.warn("Error attempting to enable full-screen mode:", err);
+        });
+      }
+    } else if (e.key === "Escape") {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch((err) => {
+          console.warn("Error attempting to exit full-screen mode:", err);
+        });
       }
     }
   });
