@@ -222,7 +222,7 @@ async function loadPaymentSummary() {
         countInstructors.value = resp.data.summary.length;
         (resp.data.summary as InstructorPaymentSummary).forEach((instructorPayment) => {
             let solved: tableRowItem = { type: 'colorTag', text: 'Unpaid', css: 'bg-red-300 text-red-700' }
-            if (instructorPayment.total_payable.amount == '0') {
+            if (Number(instructorPayment.total_payable.amount) === 0) {
                 solved = { type: 'colorTag', text: 'Paid', css: 'bg-green-300 text-green-700' }
             }
             let row: tableRowItem[] = [instructorPayment.id, instructorPayment.name,
