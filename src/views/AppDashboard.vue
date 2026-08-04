@@ -75,7 +75,7 @@ function openStudentDrilldown(filter: 'active' | 'inactive' | 'paid' | 'active_n
     openDrilldown(
         title,
         (page) => getStudentDetails(globalSelectedMonth.value, filter, page).then(res => res.data),
-        (item: any) => [item.id, { type: 'textWithLink', text: item.name, url: `/students/${item.id}` }, item.phone_number],
+        (item: any) => [item.id, { type: 'textWithLink', text: item.name, url: `/students/${item.id}/view` }, item.phone_number],
         [{ name: 'ID' }, { name: 'Name' }, { name: 'Phone' }]
     );
 }
@@ -84,7 +84,7 @@ function openEnrollmentDrilldown(status: 'active' | 'pending' | 'completed' | 'd
     openDrilldown(
         `Enrollments (${status})`,
         (page) => getEnrollmentDetails(globalSelectedMonth.value, status, page).then(res => res.data),
-        (item: any) => [item.id, { type: 'textWithLink', text: item.student?.name, url: `/students/${item.student?.id}` }, item.course?.name],
+        (item: any) => [item.id, { type: 'textWithLink', text: item.student?.name, url: `/students/${item.student?.id}/view` }, item.course?.name],
         [{ name: 'ID' }, { name: 'Student Name' }, { name: 'Course Name' }]
     );
 }
@@ -93,7 +93,7 @@ function openOutstandingPaymentDrilldown(status: 'paid' | 'unpaid') {
     openDrilldown(
         `Outstanding Payments (${status})`,
         (page) => getOutstandingPaymentDetails(globalSelectedMonth.value, status, page).then(res => res.data),
-        (item: any) => [item.id, { type: 'textWithLink', text: item.name, url: `/students/${item.id}` }, item.phone_number],
+        (item: any) => [item.id, { type: 'textWithLink', text: item.name, url: `/students/${item.id}/view` }, item.phone_number],
         [{ name: 'ID' }, { name: 'Name' }, { name: 'Phone' }]
     );
 }
@@ -102,7 +102,7 @@ function openInstructorPaymentDrilldown(status: 'paid' | 'unpaid') {
     openDrilldown(
         `Instructor Payments (${status})`,
         (page) => getInstructorPaymentDetails(globalSelectedMonth.value, status, page).then(res => res.data),
-        (item: any) => [item.id, { type: 'textWithLink', text: item.name, url: `/instructors/${item.id}` }, item.phone_number],
+        (item: any) => [item.id, { type: 'textWithLink', text: item.name, url: `/instructors/${item.id}/view` }, item.phone_number],
         [{ name: 'ID' }, { name: 'Name' }, { name: 'Phone' }]
     );
 }
@@ -118,9 +118,9 @@ function openIncomeDrilldown(filter: 'this_month' | 'delayed' | 'admission') {
         (page) => getIncomeDetails(globalSelectedMonth.value, filter, paymentCalculateType.value === 'marked', page).then((res: any) => res.data),
         (item: any) => {
             if (filter === 'admission') {
-                return [item.id, { type: 'textWithLink', text: item.student?.name, url: `/students/${item.student?.id}` }, 'Admission Fee', item.amount, new Date(item.created_at).toLocaleDateString()];
+                return [item.id, { type: 'textWithLink', text: item.student?.name, url: `/students/${item.student?.id}/view` }, 'Admission Fee', item.amount, new Date(item.created_at).toLocaleDateString()];
             }
-            return [item.id, { type: 'textWithLink', text: item.enrollment?.student?.name, url: `/students/${item.enrollment?.student?.id}` }, item.enrollment?.course?.name, item.amount, new Date(item.created_at).toLocaleDateString()];
+            return [item.id, { type: 'textWithLink', text: item.enrollment?.student?.name, url: `/students/${item.enrollment?.student?.id}/view` }, item.enrollment?.course?.name, item.amount, new Date(item.created_at).toLocaleDateString()];
         },
         [{ name: 'ID' }, { name: 'Student Name' }, { name: 'Category / Course' }, { name: 'Amount' }, { name: 'Date' }]
     );
@@ -135,7 +135,7 @@ function openExpenseDrilldown(filter: string) {
         (page) => getExpenseDetails(globalSelectedMonth.value, filter, paymentCalculateType.value === 'marked', page).then((res: any) => res.data),
         (item: any) => {
             if (isInstructorSalary) {
-                return [item.id, { type: 'textWithLink', text: item.instructor?.name, url: `/instructors/${item.instructor?.id}` }, 'Salary', item.tot_amount, new Date(item.created_at).toLocaleDateString()];
+                return [item.id, { type: 'textWithLink', text: item.instructor?.name, url: `/instructors/${item.instructor?.id}/view` }, 'Salary', item.tot_amount, new Date(item.created_at).toLocaleDateString()];
             }
             return [item.id, item.description || '-', item.type, item.amount, new Date(item.created_at).toLocaleDateString()];
         },

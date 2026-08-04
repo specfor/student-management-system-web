@@ -17,7 +17,8 @@ import { useDataEntryFormsStore } from "@/stores/formManagers/dataEntryForm";
 import { useExtendablePopUpStore } from "@/stores/formManagers/extendablePopUp";
 import type { AdmissionFee, Student } from "@/types/studentTypes";
 import { getRouterParam, setRoute } from "@/utils/routeHelpers";
-import { ref, type Ref } from "vue";
+import { ref, watch, type Ref } from "vue";
+import { useRoute } from "vue-router";
 
 const alertStore = useAlertsStore();
 const dataEntryForm = useDataEntryFormsStore();
@@ -32,6 +33,19 @@ const admissionPayment: Ref<AdmissionFee | null> = ref(null);
 const showBillEnroller = ref(false);
 const billEnrollerStudentId = ref(Number(studentId));
 const billEnrollerAdmissionPaid = ref(false);
+
+const route = useRoute();
+watch(() => route.params.id, (newId) => {
+    if (newId) {
+        student.value = null;
+        admissionPayment.value = null;
+        imageUrl.value = null;
+        loadStudent(Number(newId));
+        loadAdmissionPayment(Number(newId));
+        loadImage(Number(newId));
+        billEnrollerStudentId.value = Number(newId);
+    }
+});
 
 loadStudent(Number(studentId));
 loadAdmissionPayment(Number(studentId));

@@ -3,7 +3,8 @@ import { getInstructor, getInstructorsImage } from '@/apiConnections/instructors
 import { useAlertsStore } from '@/stores/alerts';
 import type { Instructor } from '@/types/InstructorTypes';
 import { getRouterParam } from '@/utils/routeHelpers';
-import { ref, type Ref } from 'vue';
+import { ref, watch, type Ref } from 'vue';
+import { useRoute } from 'vue-router';
 
 const alertStore = useAlertsStore()
 
@@ -29,6 +30,17 @@ async function loadImage(instructorId: number) {
     }
     imageUrl.value = URL.createObjectURL(resp.data.file)
 }
+
+const route = useRoute();
+watch(() => route.params.id, (newId) => {
+    if (newId) {
+        instructor.value = null;
+        imageUrl.value = null;
+        loadInstructor(Number(newId));
+        loadImage(Number(newId));
+    }
+});
+
 loadInstructor(Number(instructorId))
 loadImage(Number(instructorId))
 </script>
