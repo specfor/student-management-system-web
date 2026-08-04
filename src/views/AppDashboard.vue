@@ -9,9 +9,15 @@ import {
     getAttendanceRate,
     getStudentCount,
     getStudentMonthlyPaymentSummary,
+    getStudentDetails,
+    getEnrollmentDetails,
+    getOutstandingPaymentDetails,
+    getInstructorPaymentDetails,
 } from "@/apiConnections/analytics";
 import CollapseCard from "@/components/minorUiComponents/CollapseCard.vue";
+import MetricDrilldownModal from "@/components/MetricDrilldownModal.vue";
 import SelectionBox from "@/components/primary/SelectionBox.vue";
+import type { TableColumns, tableRowItem } from "@/components/TableComponent.vue";
 import { formatMoney } from "@/utils/money";
 import {
   Chart as ChartJS,
@@ -43,10 +49,61 @@ const months = [
 
 // ─── Existing card state ──────────────────────────────────────────────────────
 
-const selectedMonthForIncome = ref(
-  `${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, "0")}`
-);
-const selectedMonthForStudentCount = ref(
+const drilldownState = ref({
+    visible: false,
+    title: '',
+    fetchData: async (page: number): Promise<any> => { return { data: [], total: 0 }; },
+    mapRow: (item: any): tableRowItem[] => [],
+    columns: [] as TableColumns[]
+});
+
+function openDrilldown(title: string, fetchFn: (page: number) => any, mapRowFn: (item: any) => any, cols: any) {
+    drilldownState.value = {
+        visible: true,
+        title,
+        fetchData: fetchFn,
+        mapRow: mapRowFn,
+        columns: cols
+    };
+}
+
+function openStudentDrilldown(filter: 'active' | 'inactive' | 'paid') {
+    openDrilldown(
+        `Students (${filter})`,
+        (page) => getStudentDetails(globalSelectedMonth.value, filter, page).then(res => res.data),
+        (item: any) => [item.id, { type: 'textWithLink', text: item.name, url: `/students/${item.id}` }, item.phone_number],
+        [{ name: 'ID' }, { name: 'Name' }, { name: 'Phone' }]
+    );
+}
+
+function openEnrollmentDrilldown(status: 'active' | 'pending' | 'completed' | 'discontinued') {
+    openDrilldown(
+        `Enrollments (${status})`,
+        (page) => getEnrollmentDetails(globalSelectedMonth.value, status, page).then(res => res.data),
+        (item: any) => [item.id, { type: 'textWithLink', text: item.student?.name, url: `/students/${item.student?.id}` }, item.course?.name],
+        [{ name: 'ID' }, { name: 'Student Name' }, { name: 'Course Name' }]
+    );
+}
+
+function openOutstandingPaymentDrilldown(status: 'paid' | 'unpaid') {
+    openDrilldown(
+        `Outstanding Payments (${status})`,
+        (page) => getOutstandingPaymentDetails(globalSelectedMonth.value, status, page).then(res => res.data),
+        (item: any) => [item.id, { type: 'textWithLink', text: item.name, url: `/students/${item.id}` }, item.phone_number],
+        [{ name: 'ID' }, { name: 'Name' }, { name: 'Phone' }]
+    );
+}
+
+function openInstructorPaymentDrilldown(status: 'paid' | 'unpaid') {
+    openDrilldown(
+        `Instructor Payments (${status})`,
+        (page) => getInstructorPaymentDetails(globalSelectedMonth.value, status, page).then(res => res.data),
+        (item: any) => [item.id, { type: 'textWithLink', text: item.name, url: `/instructors/${item.id}` }, item.phone_number],
+        [{ name: 'ID' }, { name: 'Name' }, { name: 'Phone' }]
+    );
+}
+
+const globalSelectedMonth = ref(
   `${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, "0")}`
 );
 const paymentCalculateType: Ref<"marked" | "paid_to"> = ref("paid_to");
@@ -81,7 +138,7 @@ const loadingMonthlyIncomeSummary = ref(false);
 
 async function loadStudentCount() {
   loadingStudentCount.value = true;
-  let resp = await getStudentCount(selectedMonthForStudentCount.value);
+  let resp = await getStudentCount(globalSelectedMonth.value);
   if (resp.status === "success") {
     // Handle both current month (with real-time data) and previous months (cached data)
     if (resp.data && typeof resp.data === "object" && Object.keys(resp.data).length > 0) {
@@ -105,8 +162,8 @@ async function loadMonthlyIncomeSummary() {
     loadingMonthlyIncomeSummary.value = true;
     let byMarkedMonth = paymentCalculateType.value == "marked";
     let resp = await getMonthlyFinancialSummary(
-        Number(selectedMonthForIncome.value.substring(0, 4)),
-        Number(selectedMonthForIncome.value.substring(5)),
+        Number(globalSelectedMonth.value.substring(0, 4)),
+        Number(globalSelectedMonth.value.substring(5)),
         byMarkedMonth
     );
     if (resp.status === "success") {
@@ -160,16 +217,13 @@ async function loadFinanceSummaryForMonths() {
 if (auth.canSeeCard("financial_summary_12m")) loadFinanceSummaryForMonths();
 
 const studentPaymentSummary: Ref<AnalyticsStudentMonthlyPaymentSummary> = ref({ summary: [] });
-const selectedMonthForStudentPayment = ref(
-  `${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, "0")}`
-);
 const loadingStudentPaymentSummary = ref(false);
 
 async function loadPaymentSummary() {
     loadingStudentPaymentSummary.value = true;
     const resp = await getStudentMonthlyPaymentSummary(
-        Number(selectedMonthForStudentPayment.value.substring(0, 4)),
-        Number(selectedMonthForStudentPayment.value.substring(5))
+        Number(globalSelectedMonth.value.substring(0, 4)),
+        Number(globalSelectedMonth.value.substring(5))
     );
     if (resp.status === "error") { loadingStudentPaymentSummary.value = false; return; }
     studentPaymentSummary.value = resp.data;
@@ -178,8 +232,15 @@ async function loadPaymentSummary() {
 }
 if (auth.canSeeCard("student_payment_summary")) loadPaymentSummary();
 
-watch(selectedMonthForStudentPayment, () => { loadPaymentSummary(); });
-watch(selectedMonthForStudentCount, () => { loadStudentCount(); });
+watch(globalSelectedMonth, () => {
+    if (auth.canSeeCard("student_summary")) loadStudentCount();
+    if (auth.canSeeCard("monthly_financial_report") || auth.canSeeCard("expense_summary")) loadMonthlyIncomeSummary();
+    if (auth.canSeeCard("student_payment_summary")) loadPaymentSummary();
+    if (auth.canSeeCard("enrollment_overview")) loadEnrollmentData();
+    if (auth.canSeeCard("outstanding_payments")) loadOutstandingPayments();
+    if (auth.canSeeCard("instructor_payment_status")) loadInstructorPaymentStatus();
+    if (auth.canSeeCard("attendance_rate")) loadAttendanceRate();
+});
 
 const calendarData = ref<
   { title: string; body: string; timeRange: string; date: string; status: string; notes: string; courseId: number }[]
@@ -215,7 +276,7 @@ if (!auth.canSeeCard("monthly_financial_report") && auth.canSeeCard("expense_sum
 // ─── Card A: Enrollment Overview ─────────────────────────────────────────────
 const enrollmentData = ref<{ active: number; discontinued: number; completed: number; pending: number } | null>(null);
 async function loadEnrollmentData() {
-    const resp = await getEnrollmentCount();
+    const resp = await getEnrollmentCount(globalSelectedMonth.value);
     if (resp.status === "success") enrollmentData.value = resp.data;
 }
 if (auth.canSeeCard("enrollment_overview")) loadEnrollmentData();
@@ -225,7 +286,7 @@ const outstandingPayments = ref<{ month: string; total_active: number; paid_coun
 const loadingOutstanding = ref(false);
 async function loadOutstandingPayments() {
     loadingOutstanding.value = true;
-    const resp = await getOutstandingPayments();
+    const resp = await getOutstandingPayments(globalSelectedMonth.value);
     if (resp.status === "success") outstandingPayments.value = resp.data;
     loadingOutstanding.value = false;
 }
@@ -239,7 +300,7 @@ const instructorPaymentStatus = ref<{
 const loadingInstructorStatus = ref(false);
 async function loadInstructorPaymentStatus() {
     loadingInstructorStatus.value = true;
-    const resp = await getInstructorPaymentStatus();
+    const resp = await getInstructorPaymentStatus(globalSelectedMonth.value);
     if (resp.status === "success") instructorPaymentStatus.value = resp.data;
     loadingInstructorStatus.value = false;
 }
@@ -257,7 +318,7 @@ const attendanceRate = ref<{
 const loadingAttendance = ref(false);
 async function loadAttendanceRate() {
     loadingAttendance.value = true;
-    const resp = await getAttendanceRate();
+    const resp = await getAttendanceRate(globalSelectedMonth.value);
     if (resp.status === "success") attendanceRate.value = resp.data;
     loadingAttendance.value = false;
 }
@@ -269,22 +330,32 @@ if (auth.canSeeCard("attendance_rate")) loadAttendanceRate();
 
 <template>
     <div class="bg-slate-200 w-full">
+        <MetricDrilldownModal
+            :visible="drilldownState.visible"
+            :title="drilldownState.title"
+            :fetch-data="drilldownState.fetchData"
+            :map-row="drilldownState.mapRow"
+            :columns="drilldownState.columns"
+            @close="drilldownState.visible = false"
+        />
         <div class="bg-slate-200 w-full h-max">
             <div class="container pb-20">
+                <div class="bg-white p-4 rounded-md shadow-md mb-5 flex items-center justify-between">
+                    <h2 class="text-xl font-bold">Dashboard Dashboard</h2>
+                    <div class="flex items-center gap-3">
+                        <h5 class="text-gray-700 font-medium">Viewing Month:</h5>
+                        <input type="month" class="border rounded-md px-3 py-1" v-model="globalSelectedMonth" />
+                    </div>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
 
                     <!-- ── Monthly Financial Report ── -->
                     <CollapseCard
                         v-if="auth.canSeeCard('monthly_financial_report')"
                         class="col-span-2"
-                        :header="'Monthly Financial Report - ' + months[Number(selectedMonthForIncome.substring(5)) - 1]"
+                        :header="'Monthly Financial Report - ' + months[Number(globalSelectedMonth.substring(5)) - 1]"
                     >
-                        <div class="grid grid-cols-2 justify-items-center mb-5 items-center">
-                            <div class="grid grid-cols-2 justify-items-center mb-5 items-center">
-                                <h5>Select Month</h5>
-                                <input type="month" class="w-full border rounded-md px-2 py-1"
-                                    v-model="selectedMonthForIncome" @change="loadMonthlyIncomeSummary" />
-                            </div>
+                        <div class="grid grid-cols-1 justify-items-center mb-5 items-center">
                             <div class="grid grid-cols-2 justify-items-center mb-5 items-center">
                                 <h5>Calculate By Payment</h5>
                                 <SelectionBox :value="paymentCalculateType"
@@ -337,15 +408,21 @@ if (auth.canSeeCard("attendance_rate")) loadAttendanceRate();
                                 :options="{ responsive: true, maintainAspectRatio: false }"
                                 v-if="studentCountData.datasets[0].data.length > 0" />
                         </div>
-                        <div class="flex justify-center gap-x-10 mt-8" v-if="studentCountData.datasets[0].data.length > 0">
+                        <div class="flex justify-center gap-x-10 mt-8 cursor-pointer hover:text-blue-600 transition-colors"
+                             v-if="studentCountData.datasets[0].data.length > 0"
+                             @click="openStudentDrilldown('active')">
                             <h5>Total Student Count</h5>
                             <p>{{ (studentCountData.datasets[0].data[0] as number) + (studentCountData.datasets[0].data[1] as number) + (studentCountData.datasets[0].data[2] as number) }}</p>
                         </div>
-                        <div class="flex justify-center gap-x-10 mt-2" v-if="studentCountData.datasets[0].data.length > 0">
+                        <div class="flex justify-center gap-x-10 mt-2 cursor-pointer hover:text-blue-600 transition-colors"
+                             v-if="studentCountData.datasets[0].data.length > 0"
+                             @click="openStudentDrilldown('active')">
                             <h5>Total Active Student Count</h5>
                             <p>{{ (studentCountData.datasets[0].data[0] as number) + (studentCountData.datasets[0].data[1] as number) }}</p>
                         </div>
-                        <div class="flex justify-center gap-x-10 mt-2" v-if="studentCountData.datasets[0].data.length > 0">
+                        <div class="flex justify-center gap-x-10 mt-2 cursor-pointer hover:text-blue-600 transition-colors"
+                             v-if="studentCountData.datasets[0].data.length > 0"
+                             @click="openStudentDrilldown('paid')">
                             <h5>Total Paid Student Count</h5>
                             <p>{{ studentCountData.datasets[0].data[1] }}</p>
                         </div>
@@ -357,19 +434,19 @@ if (auth.canSeeCard("attendance_rate")) loadAttendanceRate();
                             <LoadingCursor />
                         </div>
                         <div v-else class="grid grid-cols-2 gap-4 mt-2">
-                            <div class="bg-blue-100 rounded-lg p-4 text-center">
+                            <div class="bg-blue-100 rounded-lg p-4 text-center cursor-pointer hover:bg-blue-200 transition-colors" @click="openEnrollmentDrilldown('active')">
                                 <p class="text-2xl font-bold text-blue-700">{{ enrollmentData.active }}</p>
                                 <p class="text-sm text-blue-600 mt-1">Active</p>
                             </div>
-                            <div class="bg-yellow-100 rounded-lg p-4 text-center">
+                            <div class="bg-yellow-100 rounded-lg p-4 text-center cursor-pointer hover:bg-yellow-200 transition-colors" @click="openEnrollmentDrilldown('pending')">
                                 <p class="text-2xl font-bold text-yellow-700">{{ enrollmentData.pending }}</p>
                                 <p class="text-sm text-yellow-600 mt-1">Pending</p>
                             </div>
-                            <div class="bg-green-100 rounded-lg p-4 text-center">
+                            <div class="bg-green-100 rounded-lg p-4 text-center cursor-pointer hover:bg-green-200 transition-colors" @click="openEnrollmentDrilldown('completed')">
                                 <p class="text-2xl font-bold text-green-700">{{ enrollmentData.completed }}</p>
                                 <p class="text-sm text-green-600 mt-1">Completed</p>
                             </div>
-                            <div class="bg-red-100 rounded-lg p-4 text-center">
+                            <div class="bg-red-100 rounded-lg p-4 text-center cursor-pointer hover:bg-red-200 transition-colors" @click="openEnrollmentDrilldown('discontinued')">
                                 <p class="text-2xl font-bold text-red-700">{{ enrollmentData.discontinued }}</p>
                                 <p class="text-sm text-red-600 mt-1">Discontinued</p>
                             </div>
@@ -384,15 +461,15 @@ if (auth.canSeeCard("attendance_rate")) loadAttendanceRate();
                         <div v-else-if="outstandingPayments" class="mt-2">
                             <p class="text-sm text-slate-500 mb-3">{{ outstandingPayments.month }}</p>
                             <div class="grid grid-cols-3 gap-3">
-                                <div class="bg-slate-100 rounded-lg p-3 text-center">
+                                <div class="bg-slate-100 rounded-lg p-3 text-center cursor-pointer hover:bg-slate-200 transition-colors" @click="openStudentDrilldown('active')">
                                     <p class="text-2xl font-bold text-slate-700">{{ outstandingPayments.total_active }}</p>
                                     <p class="text-xs text-slate-500 mt-1">Total Active</p>
                                 </div>
-                                <div class="bg-green-100 rounded-lg p-3 text-center">
+                                <div class="bg-green-100 rounded-lg p-3 text-center cursor-pointer hover:bg-green-200 transition-colors" @click="openOutstandingPaymentDrilldown('paid')">
                                     <p class="text-2xl font-bold text-green-700">{{ outstandingPayments.paid_count }}</p>
                                     <p class="text-xs text-green-600 mt-1">Paid</p>
                                 </div>
-                                <div class="bg-orange-100 rounded-lg p-3 text-center">
+                                <div class="bg-orange-100 rounded-lg p-3 text-center cursor-pointer hover:bg-orange-200 transition-colors" @click="openOutstandingPaymentDrilldown('unpaid')">
                                     <p class="text-2xl font-bold text-orange-700">{{ outstandingPayments.unpaid_count }}</p>
                                     <p class="text-xs text-orange-600 mt-1">Unpaid</p>
                                 </div>
@@ -540,13 +617,8 @@ if (auth.canSeeCard("attendance_rate")) loadAttendanceRate();
                     <CollapseCard
                         v-if="auth.canSeeCard('student_payment_summary')"
                         class="col-span-3"
-                        :header="'Student Payment Summary - ' + months[Number(selectedMonthForStudentPayment.substring(5)) - 1]"
+                        :header="'Student Payment Summary - ' + months[Number(globalSelectedMonth.substring(5)) - 1]"
                     >
-                        <div class="grid grid-cols-2 justify-items-center mb-5 items-center w-[500px]">
-                            <h5>Select Month</h5>
-                            <input type="month" class="w-full border rounded-md px-2 py-1"
-                                v-model="selectedMonthForStudentPayment" @change="loadMonthlyIncomeSummary" />
-                        </div>
                         <div v-show="loadingStudentPaymentSummary">
                             <LoadingCursor class="w-full h-[300px] flex justify-center items-center" />
                         </div>

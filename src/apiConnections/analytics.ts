@@ -5,8 +5,9 @@ export function getStudentCount(month?: string) {
   return sendGetRequest("/analytics/students/count", params);
 }
 
-export function getEnrollmentCount() {
-  return sendGetRequest("/analytics/enrollments/count");
+export function getEnrollmentCount(month?: string) {
+  const params = month ? { month } : {};
+  return sendGetRequest("/analytics/enrollments/count", params);
 }
 
 export function getMonthlyFinancialSummary(year: number, month: number, byMarkedMonth: boolean) {
@@ -51,17 +52,38 @@ export function getCourseCalendar(year: number, month: number) {
 }
 
 /** Card B — Outstanding Payments */
-export function getOutstandingPayments() {
-  return sendGetRequest("/analytics/outstanding-payments");
+export function getOutstandingPayments(month?: string) {
+  const params = month ? { month } : {};
+  return sendGetRequest("/analytics/outstanding-payments", params);
 }
 
 /** Card C — Instructor Payment Status */
-export function getInstructorPaymentStatus() {
-  return sendGetRequest("/analytics/instructor-payment-status");
+export function getInstructorPaymentStatus(month?: string) {
+  const params = month ? { month } : {};
+  return sendGetRequest("/analytics/instructor-payment-status", params);
 }
 
 /** Card E — Attendance Rate Tracker */
-export function getAttendanceRate() {
-  return sendGetRequest("/analytics/attendance-rate");
+export function getAttendanceRate(month?: string) {
+  const params = month ? { month } : {};
+  return sendGetRequest("/analytics/attendance-rate", params);
+}
+
+// Drill-down Detail Endpoints
+
+export function getStudentDetails(month: string, filter: string, page: number = 1) {
+  return sendGetRequest("/analytics/details/students", { month, filter, page });
+}
+
+export function getEnrollmentDetails(month: string, status: string, page: number = 1) {
+  return sendGetRequest("/analytics/details/enrollments", { month, status, page });
+}
+
+export function getOutstandingPaymentDetails(month: string, status: string, page: number = 1) {
+  return sendGetRequest("/analytics/details/outstanding-payments", { month, status, page });
+}
+
+export function getInstructorPaymentDetails(month: string, status: string, page: number = 1) {
+  return sendGetRequest("/analytics/details/instructor-payments", { month, status, page });
 }
 
