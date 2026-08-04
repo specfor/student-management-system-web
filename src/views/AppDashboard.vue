@@ -15,6 +15,8 @@ import {
     getInstructorPaymentDetails,
     getIncomeDetails,
     getExpenseDetails,
+    getAdvancePaymentsSummary,
+    getAdvancePaymentDetails,
 } from "@/apiConnections/analytics";
 import CollapseCard from "@/components/minorUiComponents/CollapseCard.vue";
 import MetricDrilldownModal from "@/components/MetricDrilldownModal.vue";
@@ -104,6 +106,15 @@ function openInstructorPaymentDrilldown(status: 'paid' | 'unpaid') {
         (page) => getInstructorPaymentDetails(globalSelectedMonth.value, status, page).then(res => res.data),
         (item: any) => [item.id, { type: 'textWithLink', text: item.name, url: `/instructors/${item.id}/view` }, item.phone_number],
         [{ name: 'ID' }, { name: 'Name' }, { name: 'Phone' }]
+    );
+}
+
+function openAdvancePaymentDrilldown() {
+    openDrilldown(
+        `Unresolved Advance Payments (All Time)`,
+        (page) => getAdvancePaymentDetails(page).then(res => res.data),
+        (item: any) => [item.id, { type: 'textWithLink', text: item.student?.name, url: `/students/${item.student?.id}/view` }, item.course?.name],
+        [{ name: 'Enrollment ID' }, { name: 'Student Name' }, { name: 'Course Name' }]
     );
 }
 
@@ -396,6 +407,18 @@ if (auth.canSeeCard("attendance_rate")) loadAttendanceRate();
 
 // ─── Card F: Expense Summary (reuses monthly financial data) ─────────────────
 // expenseData is already populated by loadMonthlyIncomeSummary when visible
+
+// ─── Card G: Advance Payments Summary ─────────────────────────────────────────
+const advancePaymentsTotal = ref<APIMoney | null>(null);
+const loadingAdvancePayments = ref(false);
+async function loadAdvancePaymentsSummary() {
+    loadingAdvancePayments.value = true;
+    const resp = await getAdvancePaymentsSummary();
+    if (resp.status === "success") advancePaymentsTotal.value = resp.data.total_pending;
+    loadingAdvancePayments.value = false;
+}
+if (auth.canSeeCard("instructor_payments")) loadAdvancePaymentsSummary();
+
 </script>
 
 <template>
@@ -579,6 +602,32 @@ if (auth.canSeeCard("attendance_rate")) loadAttendanceRate();
                                         {{ instructor.paid ? '✓ Paid' : '⏳ Pending' }}
                                     </span>
                                 </div>
+                            </div>
+                        </div>
+                    </CollapseCard>
+
+                    <!-- ── Card: Unresolved Advance Payments ── -->
+                    <CollapseCard v-if="auth.canSeeCard('instructor_payments')" header="Unresolved Advance Payments (All Time)">
+                        <div v-if="loadingAdvancePayments" class="w-full h-[120px] flex justify-center items-center">
+                            <LoadingCursor />
+                        </div>
+                        <div v-else-if="advancePaymentsTotal" class="mt-2 flex flex-col h-[200px] justify-between">
+                            <div v-if="Number(advancePaymentsTotal.amount) > 0">
+                                <p class="text-sm text-slate-500 mb-3">Total amount paid to instructors in advance for students who haven't paid their course fees yet.</p>
+                                <div class="flex items-center gap-2 mb-2">
+                                    <h5 class="text-2xl font-bold text-red-600">
+                                        {{ advancePaymentsTotal.currency }} {{ formatMoney(advancePaymentsTotal.amount) }}
+                                    </h5>
+                                </div>
+                            </div>
+                            <div v-else class="flex flex-col items-center justify-center h-full">
+                                <p class="text-slate-500 text-sm mb-2 text-center">No unresolved advance payments</p>
+                                <p class="text-xs text-slate-400 text-center">All advance payments have been recovered.</p>
+                            </div>
+                            <div class="mt-auto pt-4 flex justify-end" v-if="Number(advancePaymentsTotal.amount) > 0">
+                                <button @click="openAdvancePaymentDrilldown()" class="text-blue-600 bg-blue-200 px-2 py-1 rounded hover:bg-blue-300 text-sm font-semibold flex items-center gap-1">
+                                    View Details <span>&rarr;</span>
+                                </button>
                             </div>
                         </div>
                     </CollapseCard>

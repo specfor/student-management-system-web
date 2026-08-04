@@ -95,3 +95,11 @@ export function getExpenseDetails(month: string, filter: string, useMarkedMonth:
   return sendGetRequest("/analytics/details/expenses", { month, filter, use_marked_month: useMarkedMonth, page });
 }
 
+export function getAdvancePaymentsSummary() {
+  return sendGetRequest("/analytics/advance-payments/summary", {});
+}
+
+export function getAdvancePaymentDetails(page: number = 1) {
+  return sendGetRequest("/analytics/advance-payments/details", { page });
+}
+
