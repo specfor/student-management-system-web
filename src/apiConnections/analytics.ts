@@ -87,3 +87,11 @@ export function getInstructorPaymentDetails(month: string, status: string, page:
   return sendGetRequest("/analytics/details/instructor-payments", { month, status, page });
 }
 
+export function getIncomeDetails(month: string, filter: string, useMarkedMonth: boolean, page: number = 1) {
+  return sendGetRequest("/analytics/details/income", { month, filter, use_marked_month: useMarkedMonth, page });
+}
+
+export function getExpenseDetails(month: string, filter: string, useMarkedMonth: boolean, page: number = 1) {
+  return sendGetRequest("/analytics/details/expenses", { month, filter, use_marked_month: useMarkedMonth, page });
+}
+

@@ -13,6 +13,8 @@ import {
     getEnrollmentDetails,
     getOutstandingPaymentDetails,
     getInstructorPaymentDetails,
+    getIncomeDetails,
+    getExpenseDetails,
 } from "@/apiConnections/analytics";
 import CollapseCard from "@/components/minorUiComponents/CollapseCard.vue";
 import MetricDrilldownModal from "@/components/MetricDrilldownModal.vue";
@@ -67,9 +69,11 @@ function openDrilldown(title: string, fetchFn: (page: number) => any, mapRowFn: 
     };
 }
 
-function openStudentDrilldown(filter: 'active' | 'inactive' | 'paid') {
+function openStudentDrilldown(filter: 'active' | 'inactive' | 'paid' | 'active_not_paid') {
+    let title = `Students (${filter})`;
+    if (filter === 'active_not_paid') title = 'Students (Active Not Paid)';
     openDrilldown(
-        `Students (${filter})`,
+        title,
         (page) => getStudentDetails(globalSelectedMonth.value, filter, page).then(res => res.data),
         (item: any) => [item.id, { type: 'textWithLink', text: item.name, url: `/students/${item.id}` }, item.phone_number],
         [{ name: 'ID' }, { name: 'Name' }, { name: 'Phone' }]
@@ -103,11 +107,56 @@ function openInstructorPaymentDrilldown(status: 'paid' | 'unpaid') {
     );
 }
 
+function openIncomeDrilldown(filter: 'this_month' | 'delayed' | 'admission') {
+    let title = 'Income';
+    if (filter === 'this_month') title = 'Income (This Month Class Fees)';
+    if (filter === 'delayed') title = 'Income (Delayed Payments)';
+    if (filter === 'admission') title = 'Income (Admission Fees)';
+
+    openDrilldown(
+        title,
+        (page) => getIncomeDetails(globalSelectedMonth.value, filter, paymentCalculateType.value === 'marked', page).then((res: any) => res.data),
+        (item: any) => {
+            if (filter === 'admission') {
+                return [item.id, { type: 'textWithLink', text: item.student?.name, url: `/students/${item.student?.id}` }, 'Admission Fee', item.amount, new Date(item.created_at).toLocaleDateString()];
+            }
+            return [item.id, { type: 'textWithLink', text: item.enrollment?.student?.name, url: `/students/${item.enrollment?.student?.id}` }, item.enrollment?.course?.name, item.amount, new Date(item.created_at).toLocaleDateString()];
+        },
+        [{ name: 'ID' }, { name: 'Student Name' }, { name: 'Category / Course' }, { name: 'Amount' }, { name: 'Date' }]
+    );
+}
+
+function openExpenseDrilldown(filter: string) {
+    const isInstructorSalary = filter === 'instructor_salaries';
+    const title = isInstructorSalary ? 'Expenses (Instructor Salaries)' : `Expenses (${filter})`;
+
+    openDrilldown(
+        title,
+        (page) => getExpenseDetails(globalSelectedMonth.value, filter, paymentCalculateType.value === 'marked', page).then((res: any) => res.data),
+        (item: any) => {
+            if (isInstructorSalary) {
+                return [item.id, { type: 'textWithLink', text: item.instructor?.name, url: `/instructors/${item.instructor?.id}` }, 'Salary', item.tot_amount, new Date(item.created_at).toLocaleDateString()];
+            }
+            return [item.id, item.description || '-', item.type, item.amount, new Date(item.created_at).toLocaleDateString()];
+        },
+        [{ name: 'ID' }, { name: 'Description / Name' }, { name: 'Type' }, { name: 'Amount' }, { name: 'Date' }]
+    );
+}
+
 const globalSelectedMonth = ref(
   `${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, "0")}`
 );
 const paymentCalculateType: Ref<"marked" | "paid_to"> = ref("paid_to");
 const loadingStudentCount = ref(false);
+
+function handleStudentChartClick(event: any, elements: any[]) {
+    if (elements.length > 0) {
+        const index = elements[0].index;
+        if (index === 0) openStudentDrilldown('active_not_paid');
+        else if (index === 1) openStudentDrilldown('paid');
+        else if (index === 2) openStudentDrilldown('inactive');
+    }
+}
 
 const studentCountData: Ref<ChartData<"doughnut">> = ref({
     labels: ["Active Not Paid", "Active Paid", "Inactive"],
@@ -135,6 +184,27 @@ const expenseData: Ref<{
   other_expenses?: { [expenseCateg: string]: { amount: string; currency: string } };
 }> = ref({});
 const loadingMonthlyIncomeSummary = ref(false);
+
+function handleIncomeChartClick(event: any, elements: any[]) {
+    if (elements.length > 0) {
+        const index = elements[0].index;
+        if (index === 0) openIncomeDrilldown('this_month');
+        else if (index === 1) openIncomeDrilldown('delayed');
+        else if (index === 2) openIncomeDrilldown('admission');
+    }
+}
+
+function handleExpenseChartClick(event: any, elements: any[], chart: any) {
+    if (elements.length > 0) {
+        const index = elements[0].index;
+        const label = chart.data.labels[index] as string;
+        if (index === 0) openExpenseDrilldown('instructor_salaries');
+        else {
+            // For other expenses, the label is the category name
+            openExpenseDrilldown(label);
+        }
+    }
+}
 
 async function loadStudentCount() {
   loadingStudentCount.value = true;
@@ -370,7 +440,7 @@ if (auth.canSeeCard("attendance_rate")) loadAttendanceRate();
                                 </div>
                                 <div v-else-if="incomeData.total_income?.amount != '0'" class="w-full h-[300px]">
                                     <Doughnut :data="incomeDataForGraph"
-                                        :options="{ responsive: true, maintainAspectRatio: false }"
+                                        :options="{ responsive: true, maintainAspectRatio: false, onClick: handleIncomeChartClick, plugins: { legend: { onClick: (e) => e.native?.stopPropagation() } } }"
                                         v-if="incomeDataForGraph.datasets[0].data.length > 0" />
                                 </div>
                                 <div v-else class="w-full h-[300px] flex justify-center items-center">
@@ -387,7 +457,7 @@ if (auth.canSeeCard("attendance_rate")) loadAttendanceRate();
                                 </div>
                                 <div v-else-if="expenseData.total_expenses?.amount != '0'" class="w-full h-[300px]">
                                     <Doughnut :data="expenseDataForGraph" :plugins="[autocolors]"
-                                        :options="{ responsive: true, maintainAspectRatio: false, plugins: { autocolors: { mode: 'data', enabled: true, offset: 6 } } }"
+                                        :options="{ responsive: true, maintainAspectRatio: false, onClick: handleExpenseChartClick, plugins: { autocolors: { mode: 'data', enabled: true, offset: 6 }, legend: { onClick: (e) => e.native?.stopPropagation() } } }"
                                         v-if="expenseDataForGraph.datasets[0].data.length > 0" />
                                 </div>
                                 <div v-else class="w-full h-[300px] flex justify-center items-center">
@@ -405,7 +475,7 @@ if (auth.canSeeCard("attendance_rate")) loadAttendanceRate();
                     <CollapseCard v-if="auth.canSeeCard('student_summary')" header="Student Summary">
                         <div class="w-full h-300px">
                             <Doughnut :data="studentCountData"
-                                :options="{ responsive: true, maintainAspectRatio: false }"
+                                :options="{ responsive: true, maintainAspectRatio: false, onClick: handleStudentChartClick, plugins: { legend: { onClick: (e) => e.native?.stopPropagation() } } }"
                                 v-if="studentCountData.datasets[0].data.length > 0" />
                         </div>
                         <div class="flex justify-center gap-x-10 mt-8 cursor-pointer hover:text-blue-600 transition-colors"
