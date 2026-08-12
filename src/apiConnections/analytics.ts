@@ -1,4 +1,4 @@
-import { sendGetRequest } from "@/utils/requests";
+import { sendGetRequest, sendJsonPostRequest } from "@/utils/requests";
 
 export function getStudentCount(month?: string) {
   const params = month ? { month } : {};
@@ -103,3 +103,18 @@ export function getAdvancePaymentDetails(page: number = 1) {
   return sendGetRequest("/analytics/advance-payments/details", { page });
 }
 
+export function getAttendedButUnpaidSummary() {
+  return sendGetRequest("/analytics/attended-unpaid/summary", {});
+}
+
+export function getAttendedButUnpaidDetails(page: number = 1) {
+  return sendGetRequest("/analytics/attended-unpaid/details", { page });
+}
+
+export function discardPayment(enrollmentId: number, month: string, type: string) {
+  return sendJsonPostRequest("/analytics/payments/discard", { enrollment_id: enrollmentId, month, type });
+}
+
+export function recoverPayment(enrollmentId: number, month: string, amount: number, className: string | null) {
+  return sendJsonPostRequest("/analytics/payments/recover", { enrollment_id: enrollmentId, month, amount, class_name: className });
+}

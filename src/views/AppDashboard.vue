@@ -17,8 +17,13 @@ import {
     getExpenseDetails,
     getAdvancePaymentsSummary,
     getAdvancePaymentDetails,
+    getAttendedButUnpaidSummary,
+    getAttendedButUnpaidDetails,
+    discardPayment,
+    recoverPayment
 } from "@/apiConnections/analytics";
 import CollapseCard from "@/components/minorUiComponents/CollapseCard.vue";
+import BillEnroller from "@/components/BillEnroller.vue";
 import MetricDrilldownModal from "@/components/MetricDrilldownModal.vue";
 import SelectionBox from "@/components/primary/SelectionBox.vue";
 import type { TableColumns, tableRowItem } from "@/components/TableComponent.vue";
@@ -58,16 +63,18 @@ const drilldownState = ref({
     title: '',
     fetchData: async (page: number): Promise<any> => { return { data: [], total: 0 }; },
     mapRow: (item: any): tableRowItem[] => [],
-    columns: [] as TableColumns[]
+    columns: [] as TableColumns[],
+    actions: undefined as any[] | undefined
 });
 
-function openDrilldown(title: string, fetchFn: (page: number) => any, mapRowFn: (item: any) => any, cols: any) {
+function openDrilldown(title: string, fetchFn: (page: number) => any, mapRowFn: (item: any) => any, cols: any, actions: any[] | undefined = undefined) {
     drilldownState.value = {
         visible: true,
         title,
         fetchData: fetchFn,
         mapRow: mapRowFn,
-        columns: cols
+        columns: cols,
+        actions: actions
     };
 }
 
@@ -110,11 +117,50 @@ function openInstructorPaymentDrilldown(status: 'paid' | 'unpaid') {
 }
 
 function openAdvancePaymentDrilldown() {
+    const actions = [
+        { text: 'Discard', emit: 'discard', css: 'bg-red-600 hover:bg-red-700' },
+        { text: 'Mark Payment', emit: 'recover', css: 'bg-green-600 hover:bg-green-700' }
+    ];
     openDrilldown(
-        `Unresolved Advance Payments (All Time)`,
+        `Advance Payments Unresolved`,
         (page) => getAdvancePaymentDetails(page).then(res => res.data),
-        (item: any) => [item.id, { type: 'textWithLink', text: item.student?.name, url: `/students/${item.student?.id}/view` }, item.course?.name],
-        [{ name: 'Enrollment ID' }, { name: 'Student Name' }, { name: 'Course Name' }]
+        (item: any) => [
+            {
+                type: 'html',
+                html: `<span>${item.id}</span>`,
+                meta: { id: item.id, month: item.month, type: 'advance_payment' },
+                toString: function() { return `${this.meta.id}_${this.meta.month}_${this.meta.type}`; }
+            },
+            { type: 'textWithLink', text: item.student?.name, url: `/students/${item.student?.id}/view` }, 
+            item.course?.name,
+            item.month
+        ],
+        [{ name: 'Enrollment ID' }, { name: 'Student Name' }, { name: 'Course Name' }, { name: 'Month' }],
+        actions
+    );
+}
+
+function openAttendedUnpaidDrilldown() {
+    const actions = [
+        { text: 'Discard', emit: 'discard', css: 'bg-red-600 hover:bg-red-700' },
+        { text: 'Mark Payment', emit: 'recover', css: 'bg-green-600 hover:bg-green-700' }
+    ];
+    openDrilldown(
+        `Attended But Unpaid`,
+        (page) => getAttendedButUnpaidDetails(page).then(res => res.data),
+        (item: any) => [
+            {
+                type: 'html',
+                html: `<span>${item.id}</span>`,
+                meta: { id: item.id, month: item.month, type: 'attended_unpaid' },
+                toString: function() { return `${this.meta.id}_${this.meta.month}_${this.meta.type}`; }
+            },
+            { type: 'textWithLink', text: item.student?.name, url: `/students/${item.student?.id}/view` }, 
+            item.course?.name,
+            item.month
+        ],
+        [{ name: 'Enrollment ID' }, { name: 'Student Name' }, { name: 'Course Name' }, { name: 'Month' }],
+        actions
     );
 }
 
@@ -417,7 +463,62 @@ async function loadAdvancePaymentsSummary() {
     if (resp.status === "success") advancePaymentsTotal.value = resp.data.total_pending;
     loadingAdvancePayments.value = false;
 }
-if (auth.canSeeCard("instructor_payments")) loadAdvancePaymentsSummary();
+if (auth.canSeeCard("unresolved_payments")) loadAdvancePaymentsSummary();
+const attendedUnpaidTotal = ref<APIMoney | null>(null);
+const loadingAttendedUnpaid = ref(false);
+async function loadAttendedUnpaidSummary() {
+    loadingAttendedUnpaid.value = true;
+    const resp = await getAttendedButUnpaidSummary();
+    if (resp.status === "success") attendedUnpaidTotal.value = resp.data.total_pending;
+    loadingAttendedUnpaid.value = false;
+}
+if (auth.canSeeCard("unresolved_payments")) loadAttendedUnpaidSummary();
+
+const recoverPaymentState = ref({
+    visible: false,
+    enrollmentId: 0,
+    month: '',
+    type: '',
+    amount: '',
+    className: ''
+});
+const billEnrollerState = ref({ visible: false, studentId: 0, paymentId: 0 });
+
+async function handleDrilldownAction(action: string, obj: any) {
+    const data = obj.meta;
+    if (action === 'discard') {
+        if (confirm("Are you sure you want to discard this payment as bad debt?")) {
+            await discardPayment(data.id, data.month, data.type);
+            drilldownState.value.visible = false;
+            loadAdvancePaymentsSummary();
+            loadAttendedUnpaidSummary();
+        }
+    } else if (action === 'recover') {
+        recoverPaymentState.value = {
+            visible: true,
+            enrollmentId: data.id,
+            month: data.month,
+            type: data.type,
+            amount: '',
+            className: ''
+        };
+    }
+}
+
+async function submitRecoverPayment() {
+    const res = await recoverPayment(recoverPaymentState.value.enrollmentId, recoverPaymentState.value.month, Number(recoverPaymentState.value.amount), recoverPaymentState.value.className || null);
+    if (res.status === 'success') {
+        recoverPaymentState.value.visible = false;
+        drilldownState.value.visible = false;
+        loadAdvancePaymentsSummary();
+        loadAttendedUnpaidSummary();
+        billEnrollerState.value = {
+            visible: true,
+            studentId: 0, 
+            paymentId: res.data.payment_id
+        };
+    }
+}
 
 </script>
 
@@ -429,12 +530,49 @@ if (auth.canSeeCard("instructor_payments")) loadAdvancePaymentsSummary();
             :fetch-data="drilldownState.fetchData"
             :map-row="drilldownState.mapRow"
             :columns="drilldownState.columns"
+            :actions="drilldownState.actions"
             @close="drilldownState.visible = false"
+            @action="handleDrilldownAction"
         />
+
+        <BillEnroller
+            v-if="billEnrollerState.visible"
+            :show="billEnrollerState.visible"
+            :student-id="billEnrollerState.studentId"
+            :payment-id="billEnrollerState.paymentId"
+            @on-enroll="billEnrollerState.visible = false"
+            @close="billEnrollerState.visible = false"
+        />
+
+        <!-- Recover Payment Modal -->
+        <div v-if="recoverPaymentState.visible" class="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50 p-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-md flex flex-col">
+                <div class="flex justify-between items-center p-4 border-b">
+                    <h2 class="text-xl font-bold">Recover Payment</h2>
+                    <button @click="recoverPaymentState.visible = false" class="text-gray-500 hover:text-gray-700">
+                        &times;
+                    </button>
+                </div>
+                <div class="p-4 flex flex-col gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Amount to Recover</label>
+                        <input type="number" v-model="recoverPaymentState.amount" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="e.g. 5000">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Class Name (If deleted)</label>
+                        <input type="text" v-model="recoverPaymentState.className" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Optional overriding class name">
+                    </div>
+                </div>
+                <div class="p-4 border-t flex justify-end">
+                    <button @click="submitRecoverPayment" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">Mark Payment</button>
+                </div>
+            </div>
+        </div>
+
         <div class="bg-slate-200 w-full h-max">
             <div class="container pb-20">
                 <div class="bg-white p-4 rounded-md shadow-md mb-5 flex items-center justify-between">
-                    <h2 class="text-xl font-bold">Dashboard Dashboard</h2>
+                    <h2 class="text-xl font-bold">Dashboard</h2>
                     <div class="flex items-center gap-3">
                         <h5 class="text-gray-700 font-medium">Viewing Month:</h5>
                         <input type="month" class="border rounded-md px-3 py-1" v-model="globalSelectedMonth" />
@@ -606,28 +744,49 @@ if (auth.canSeeCard("instructor_payments")) loadAdvancePaymentsSummary();
                         </div>
                     </CollapseCard>
 
-                    <!-- ── Card: Unresolved Advance Payments ── -->
-                    <CollapseCard v-if="auth.canSeeCard('instructor_payments')" header="Unresolved Advance Payments (All Time)">
-                        <div v-if="loadingAdvancePayments" class="w-full h-[120px] flex justify-center items-center">
+                    <!-- ── Card: Unresolved Payments ── -->
+                    <CollapseCard v-if="auth.canSeeCard('unresolved_payments')" header="Unresolved Payments (All Time)">
+                        <div v-if="loadingAdvancePayments || loadingAttendedUnpaid" class="w-full h-[120px] flex justify-center items-center">
                             <LoadingCursor />
                         </div>
-                        <div v-else-if="advancePaymentsTotal" class="mt-2 flex flex-col h-[200px] justify-between">
-                            <div v-if="Number(advancePaymentsTotal.amount) > 0">
-                                <p class="text-sm text-slate-500 mb-3">Total amount paid to instructors in advance for students who haven't paid their course fees yet.</p>
-                                <div class="flex items-center gap-2 mb-2">
-                                    <h5 class="text-2xl font-bold text-red-600">
-                                        {{ advancePaymentsTotal.currency }} {{ formatMoney(advancePaymentsTotal.amount) }}
-                                    </h5>
+                        <div v-else class="mt-2 flex flex-col gap-4">
+                            <!-- Section 1: Advance Payments -->
+                            <div class="border rounded p-3 bg-white">
+                                <h6 class="font-bold text-gray-700 mb-2">Advance Payments Unresolved</h6>
+                                <div v-if="advancePaymentsTotal && Number(advancePaymentsTotal.amount) > 0">
+                                    <p class="text-xs text-slate-500 mb-2">Total amount paid to instructors in advance for students who haven't paid their course fees yet.</p>
+                                    <div class="flex items-center justify-between">
+                                        <h5 class="text-lg font-bold text-red-600">
+                                            {{ advancePaymentsTotal.currency }} {{ formatMoney(advancePaymentsTotal.amount) }}
+                                        </h5>
+                                        <button @click="openAdvancePaymentDrilldown()" class="text-blue-600 bg-blue-100 px-2 py-1 rounded hover:bg-blue-200 text-xs font-semibold flex items-center gap-1">
+                                            View Details <span>&rarr;</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div v-else class="flex flex-col items-center justify-center py-2">
+                                    <p class="text-slate-500 text-xs mb-1 text-center">No unresolved advance payments</p>
+                                    <p class="text-[10px] text-slate-400 text-center">All advance payments have been recovered.</p>
                                 </div>
                             </div>
-                            <div v-else class="flex flex-col items-center justify-center h-full">
-                                <p class="text-slate-500 text-sm mb-2 text-center">No unresolved advance payments</p>
-                                <p class="text-xs text-slate-400 text-center">All advance payments have been recovered.</p>
-                            </div>
-                            <div class="mt-auto pt-4 flex justify-end" v-if="Number(advancePaymentsTotal.amount) > 0">
-                                <button @click="openAdvancePaymentDrilldown()" class="text-blue-600 bg-blue-200 px-2 py-1 rounded hover:bg-blue-300 text-sm font-semibold flex items-center gap-1">
-                                    View Details <span>&rarr;</span>
-                                </button>
+
+                            <!-- Section 2: Attended But Unpaid -->
+                            <div class="border rounded p-3 bg-white">
+                                <h6 class="font-bold text-gray-700 mb-2">Attended But Unpaid</h6>
+                                <div v-if="attendedUnpaidTotal && Number(attendedUnpaidTotal.amount) > 0">
+                                    <p class="text-xs text-slate-500 mb-2">Total owed by students who attended class more than once but haven't paid.</p>
+                                    <div class="flex items-center justify-between">
+                                        <h5 class="text-lg font-bold text-orange-600">
+                                            {{ attendedUnpaidTotal.currency }} {{ formatMoney(attendedUnpaidTotal.amount) }}
+                                        </h5>
+                                        <button @click="openAttendedUnpaidDrilldown()" class="text-blue-600 bg-blue-100 px-2 py-1 rounded hover:bg-blue-200 text-xs font-semibold flex items-center gap-1">
+                                            View Details <span>&rarr;</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div v-else class="flex flex-col items-center justify-center py-2">
+                                    <p class="text-slate-500 text-xs mb-1 text-center">No attended-but-unpaid records</p>
+                                </div>
                             </div>
                         </div>
                     </CollapseCard>

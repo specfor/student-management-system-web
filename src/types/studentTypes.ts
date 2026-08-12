@@ -22,6 +22,7 @@ export type Student = {
   trust_score?: number;
   payment_override_week?: number | null;
   payment_override_expires_at?: string | null;
+  bad_debts?: any[];
   payment_week_tendency?: {
     week_1: number;
     week_2: number;

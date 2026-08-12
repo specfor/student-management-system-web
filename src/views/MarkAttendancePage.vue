@@ -18,6 +18,7 @@ import TableComponent, { type Filter, type TableActionType, type TableColumns, t
 import type { Attendance } from '@/types/attendanceTypes';
 import BillEnroller from '@/components/BillEnroller.vue';
 import LoadingCursor from '@/components/minorUiComponents/loadingCursor.vue';
+import { ListBulletIcon } from '@heroicons/vue/24/solid';
 
 const alertStore = useAlertsStore()
 const dataEntryForm = useDataEntryFormsStore()
@@ -303,7 +304,8 @@ async function markPayment() {
 
 async function markAttendance() {
     enrollActionsEnabled.value = false
-    let resp = await sendMarkAttendance(selectedCourseId.value, selectedStudentId.value)
+    let dateToPass = customAttendanceDate.value !== '' ? customAttendanceDate.value : undefined;
+    let resp = await sendMarkAttendance(selectedCourseId.value, selectedStudentId.value, dateToPass)
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
     } else {
@@ -314,6 +316,37 @@ async function markAttendance() {
 
 const enrollActionsEnabled = ref(false)
 const enrollStatusText = ref('')
+const customAttendanceDate = ref('')
+
+// Attendance History Modal State
+const showHistoryModal = ref(false)
+const historyRecords = ref<Attendance[]>([])
+const historyLoading = ref(false)
+const historyHasMore = ref(true)
+const historyPage = ref(0)
+const historyPageSize = 10
+
+async function loadHistory(reset = false) {
+    if (selectedCourseId.value === 0 || selectedStudentId.value === 0) return;
+    if (reset) {
+        historyRecords.value = []
+        historyPage.value = 0
+        historyHasMore.value = true
+    }
+    historyLoading.value = true
+    let resp = await getAttendace(historyPage.value * historyPageSize, historyPageSize, {
+        sort: { by: 'date', direction: 'desc' },
+        filters: { courseId: selectedCourseId.value, studentId: selectedStudentId.value }
+    })
+    historyLoading.value = false
+    if (resp.status === 'success') {
+        historyRecords.value.push(...resp.data.records)
+        if (resp.data.records.length < historyPageSize) {
+            historyHasMore.value = false
+        }
+        historyPage.value++
+    }
+}
 
 watch(enrollmentLoading, () => {
     if (enrollmentLoading.value)
@@ -608,10 +641,67 @@ function selectCourse(courseId: number) {
                     </div>
                 </div>
 
-                <button :disabled="!enrollActionsEnabled" @click="markAttendance"
-                    class="mt-6 border-2 rounded-xl w-[300px] bg-amber-400 hover:bg-amber-600 py-8 text-center disabled:bg-slate-200 shadow-lg">
-                    <h3 class="font-semibold text-2xl">Mark Attendance</h3>
-                </button>
+                <div class="mt-6 flex flex-col items-center">
+                    <label class="text-sm font-semibold text-slate-700 mb-1">Select Custom Date (Optional)</label>
+                    <input type="date" v-model="customAttendanceDate" class="border rounded-md px-3 py-2 w-[300px] focus:outline-amber-500 text-center" />
+                </div>
+
+                <div class="mt-4 flex items-stretch gap-2 w-[300px]">
+                    <button :disabled="!enrollActionsEnabled" @click="markAttendance"
+                        class="border-2 rounded-xl flex-1 bg-amber-400 hover:bg-amber-600 py-8 text-center disabled:bg-slate-200 shadow-lg">
+                        <h3 class="font-semibold text-2xl">Mark Attendance</h3>
+                    </button>
+                    
+                    <button :disabled="selectedCourseId === 0 || selectedStudentId === 0" @click="() => { showHistoryModal = true; loadHistory(true) }"
+                        class="border-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white px-4 disabled:bg-slate-300 disabled:text-slate-500 shadow-lg flex items-center justify-center transition-colors"
+                        title="View Attendance History">
+                        <ListBulletIcon class="w-8 h-8" />
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance History Modal -->
+        <div v-if="showHistoryModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[80vh] flex flex-col">
+                <div class="flex justify-between items-center border-b pb-3 mb-4">
+                    <h2 class="text-2xl font-bold text-slate-800">Attendance History</h2>
+                    <button @click="showHistoryModal = false" class="text-slate-500 hover:text-red-500 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="overflow-y-auto flex-1 pr-2 space-y-3">
+                    <div v-if="historyRecords.length === 0 && !historyLoading" class="text-center py-8 text-slate-500 italic">
+                        No attendance records found for this course.
+                    </div>
+                    
+                    <div v-for="record in historyRecords" :key="record.id" 
+                         class="bg-blue-50 border border-blue-100 rounded-lg px-4 py-2 flex justify-between items-center">
+                        <div class="flex flex-col">
+                            <span class="font-bold text text-slate-700">{{ record.date }}</span>
+                            <span class="text-sm text-slate-500">Marked: {{ record.marked_automatically ? 'Automatically' : 'Manually' }}</span>
+                        </div>
+                        <div class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold border border-green-200">
+                            Present
+                        </div>
+                    </div>
+                    
+                    <div v-if="historyLoading" class="flex justify-center py-4">
+                        <LoadingCursor />
+                    </div>
+                    
+                    <button v-if="historyHasMore && !historyLoading && historyRecords.length > 0" 
+                            @click="loadHistory(false)"
+                            class="w-full py-3 mt-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold transition-colors border border-slate-300">
+                        Load More
+                    </button>
+                    <div v-if="!historyHasMore && historyRecords.length > 0 && !historyLoading" class="text-center text-sm text-slate-400 mt-4 pb-2">
+                        End of history
+                    </div>
+                </div>
             </div>
         </div>
         <!-- 

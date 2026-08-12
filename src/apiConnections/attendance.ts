@@ -62,10 +62,10 @@ export function getAttendaceOfCourseByEnrollmentId(
   return sendGetRequest(`/attendance/enrollment/${enrollId}`, params);
 }
 
-export function sendMarkAttendance(courseId: number, studentId: number) {
-  return sendJsonPostRequest("/attendance/" + courseId, {
-    student_id: studentId,
-  });
+export function sendMarkAttendance(courseId: number, studentId: number, date?: string) {
+  const payload: any = { student_id: studentId };
+  if (date) payload.date = date;
+  return sendJsonPostRequest("/attendance/" + courseId, payload);
 }
 
 

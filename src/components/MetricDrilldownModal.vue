@@ -10,9 +10,10 @@ const props = defineProps<{
     fetchData: (page: number) => Promise<{ data: any[]; total: number } | null>;
     mapRow: (item: any) => tableRowItem[];
     columns: TableColumns[];
+    actions?: any[];
 }>();
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'action']);
 
 const tableRows = ref<tableRowItem[][]>([]);
 const totalItems = ref(0);
@@ -70,9 +71,12 @@ function handlePageChange(startIndex: number) {
                     :table-rows="tableRows"
                     :paginate-total="totalItems"
                     :paginate-page-size="15"
+                    :actions="actions"
                     @load-page-emit="handlePageChange"
                     :refresh-func="async () => { return await loadData(1); }"
                     :options="{ hideActionBar: true, hidePaginateBar: totalItems <= 15, showRowCheckBox: false }"
+                    @discard="(id) => emit('action', 'discard', id)"
+                    @recover="(id) => emit('action', 'recover', id)"
                 />
             </div>
         </div>

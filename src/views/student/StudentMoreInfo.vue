@@ -383,6 +383,23 @@ async function updatePaymentOverrideWeek() {
               </div>
               <div v-else class="text-sm text-slate-500 italic">No payment history available.</div>
             </div>
+
+            <!-- Bad Debts Section -->
+            <div v-if="student.bad_debts && student.bad_debts.length > 0" class="col-span-2 mt-4 p-4 border border-red-200 rounded-lg bg-red-50">
+              <h4 class="font-semibold text-red-700 mb-2">Skipped / Discarded Payments</h4>
+              <div class="space-y-2">
+                <div v-for="debt in student.bad_debts" :key="debt.id" class="flex justify-between items-center bg-white p-2 rounded border border-red-100">
+                  <div>
+                    <p class="text-sm font-medium text-slate-800">{{ debt.course?.name || 'Unknown/Deleted Course' }}</p>
+                    <p class="text-xs text-slate-500">Month: <span class="font-bold">{{ debt.month }}</span> | Type: {{ debt.type === 'advance_payment' ? 'Advance Payment Unresolved' : 'Attended But Unpaid' }}</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-sm font-bold" :class="debt.resolved ? 'text-green-600' : 'text-red-600'">Rs. {{ Number(debt.amount).toLocaleString() }}</p>
+                    <p class="text-xs font-semibold" :class="debt.resolved ? 'text-green-600' : 'text-red-600'">{{ debt.resolved ? 'Resolved' : 'Unresolved' }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
