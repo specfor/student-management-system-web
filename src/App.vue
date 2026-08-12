@@ -20,8 +20,7 @@ const alertStore = useAlertsStore()
 useSystemInfoStore()
 const loading = ref(true)
 
-let lastAttendance: { marked_time: string, course: string, student: string, student_id: number, course_id: number } =
-  { marked_time: "", course: "", student: "", student_id: 0, course_id: 0 };
+
 
 async function checkAppUpdates() {
   let resp = await fetch('/build')
@@ -63,24 +62,21 @@ router.beforeEach((to, from, next) => {
 
 checkLogged()
 
-setInterval(() => {
-  const lastAttend = localStorage.getItem('last_attendance')
-  if (lastAttend) {
-    const attenData = JSON.parse(lastAttend)
-    if (lastAttendance.marked_time != "" && attenData.marked_time !== lastAttendance.marked_time) {
-      alertStore.insertAlert("Attendance Marked", `${attenData.student_id} - ${attenData.student} ---> ${attenData.course}`, "info", -1)
+echo.channel("system-notifications")
+  .listen("RemotePrintStatus", (e: any) => {
+    if (e.status === 'success') {
+      alertStore.insertAlert("Remote Print", e.message, "success", -1);
+    } else {
+      alertStore.insertAlert("Remote Print Failed", e.message, "error", -1);
     }
-    lastAttendance = attenData
-  }
-}, 1000)
-
-echo.channel("system-notifications").listen("RemotePrintStatus", (e: any) => {
-  if (e.status === 'success') {
-    alertStore.insertAlert("Remote Print", e.message, "success", -1);
-  } else {
-    alertStore.insertAlert("Remote Print Failed", e.message, "error", -1);
-  }
-});
+  })
+  .listen("AttendanceAutomaticallyMarked", (e: any) => {
+    if (e.status === 'success') {
+      alertStore.insertAlert("Attendance Marked", e.message, "success", -1);
+    } else {
+      alertStore.insertAlert("Attendance Failed", e.message, "error", -1);
+    }
+  });
 
 </script>
 
