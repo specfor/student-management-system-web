@@ -460,16 +460,38 @@ async function convertTempStudent(rawId: number | string) {
   let ts = tempStudentsData.find((t) => t.id === id);
   if (!ts) return;
 
+  let nextCustomId = "";
+  let lastUsedId = "None";
+  try {
+    const resp = await getStudents(0, 1, { sort: { by: 'custom_id', direction: 'desc' } });
+    if (resp.status === 'success' && resp.data.students.length > 0) {
+      const maxIdStr = resp.data.students[0].custom_id;
+      lastUsedId = maxIdStr;
+      const match = maxIdStr.match(/^(.*?)(\d+)(\D*)$/);
+      if (match) {
+        const prefix = match[1];
+        const numStr = match[2];
+        const suffix = match[3];
+        const num = parseInt(numStr, 10);
+        nextCustomId = `${prefix}${String(num + 1).padStart(numStr.length, '0')}${suffix}`;
+      } else {
+        nextCustomId = maxIdStr + "1";
+      }
+    }
+  } catch(e) {}
+
   dataEntryForm.newDataEntryForm("Convert to Regular Student", "Convert", [
-    { type: "message", text: `Converting temporary registration "${ts.name}" to a regular student profile. Enter the 5-character custom ID and optional full details.` },
+    { type: "message", text: `Converting temporary registration "${ts.name}" to a regular student profile. Enter the student ID and optional full details.` },
+    { type: "message", text: `Last Used ID: ${lastUsedId}` },
     {
       name: "custom_id",
-      text: "Student ID (5 chars)",
+      text: "Student ID",
       type: "text",
       required: true,
+      value: nextCustomId,
       validate: (val) => {
         let strVal = String(val);
-        if (strVal.length !== 5) return "Student ID must be exactly 5 characters long.";
+        if (strVal.trim().length === 0) return "Student ID cannot be empty.";
         else return null;
       },
     },
@@ -525,15 +547,37 @@ function showTempReceipt(id: number | string) {
 }
 
 async function addNewStudent() {
+  let nextCustomId = "";
+  let lastUsedId = "None";
+  try {
+    const resp = await getStudents(0, 1, { sort: { by: 'custom_id', direction: 'desc' } });
+    if (resp.status === 'success' && resp.data.students.length > 0) {
+      const maxIdStr = resp.data.students[0].custom_id;
+      lastUsedId = maxIdStr;
+      const match = maxIdStr.match(/^(.*?)(\d+)(\D*)$/);
+      if (match) {
+        const prefix = match[1];
+        const numStr = match[2];
+        const suffix = match[3];
+        const num = parseInt(numStr, 10);
+        nextCustomId = `${prefix}${String(num + 1).padStart(numStr.length, '0')}${suffix}`;
+      } else {
+        nextCustomId = maxIdStr + "1";
+      }
+    }
+  } catch(e) {}
+
   dataEntryForm.newDataEntryForm("New Student", "Create", [
+    { type: "message", text: `Last Used ID: ${lastUsedId}` },
     {
       name: "custom_id",
       text: "Student ID",
       type: "text",
       required: true,
+      value: nextCustomId,
       validate: (val) => {
         let strVal = String(val);
-        if (strVal.length !== 5) return "Student ID must be 5 characters long.";
+        if (strVal.trim().length === 0) return "Student ID cannot be empty.";
         else return null;
       },
     },
