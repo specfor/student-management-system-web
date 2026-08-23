@@ -94,8 +94,12 @@ onMounted(() => {
         // Extract YYYY-MM-DD from scanned_at
         const logDate = e.scanLog.scanned_at ? e.scanLog.scanned_at.split('T')[0] : '';
         
+        // Check if the log is a success type (either success or warning-payment)
+        const isSuccessLog = e.scanLog.status === 'success' || e.scanLog.status === 'warning-payment';
+        const matchesFilter = (filterStatus.value === 'success' && isSuccessLog) || (filterStatus.value === 'failed' && e.scanLog.status === 'failed');
+
         // If the new log matches the current filter, prepend it
-        if (e.scanLog.status === filterStatus.value && logDate === filterDate.value) {
+        if (matchesFilter && logDate === filterDate.value) {
             scanLogs.value.unshift(e.scanLog);
             if (scanLogs.value.length > 100 && !nextPageUrl.value) {
                 scanLogs.value.pop();
@@ -105,13 +109,15 @@ onMounted(() => {
         // Notify admin via toast
         if (e.scanLog.status === 'failed') {
             alertStore.insertAlert('Attendance Error', e.scanLog.message + (e.scanLog.student ? ` (${e.scanLog.student.name})` : ''), 'error');
+        } else if (e.scanLog.status === 'warning-payment') {
+            alertStore.insertAlert('Payment Due', e.scanLog.message + (e.scanLog.student ? ` (${e.scanLog.student.name})` : ''), 'info');
         }
         
         // Update counts
         if (logDate === filterDate.value) {
-            if (e.scanLog.status === 'success') {
+            if (isSuccessLog) {
                 successCount.value++;
-            } else {
+            } else if (e.scanLog.status === 'failed') {
                 errorCount.value++;
             }
         }
@@ -170,11 +176,11 @@ const formatTime = (datetime: string) => {
             <template v-else>
                 <div v-for="log in groupedScanLogs" :key="log.id" 
                      class="bg-white p-4 rounded-lg shadow-sm border-l-4"
-                     :class="log.status === 'success' ? 'border-green-500' : 'border-red-500'">
+                     :class="(log.status === 'success' || log.status === 'warning-payment') ? 'border-green-500' : 'border-red-500'">
                      
                     <div class="flex justify-between items-start mb-2">
                         <div class="flex items-center gap-2">
-                            <CheckCircleIcon v-if="log.status === 'success'" class="w-5 h-5 text-green-500" />
+                            <CheckCircleIcon v-if="log.status === 'success' || log.status === 'warning-payment'" class="w-5 h-5 text-green-500" />
                             <XCircleIcon v-else class="w-5 h-5 text-red-500" />
                             
                             <router-link 
@@ -214,9 +220,12 @@ const formatTime = (datetime: string) => {
                     </div>
                     
                     <div class="mt-2 text-sm">
-                        <p v-if="log.status === 'success'" class="text-green-700 bg-green-50 p-2 rounded">
-                            <span class="font-bold block text-xs uppercase mb-1">Marked For:</span>
+                        <p v-if="log.status === 'success' || log.status === 'warning-payment'" class="p-2 rounded" :class="log.status === 'warning-payment' ? 'text-amber-700 bg-amber-50' : 'text-green-700 bg-green-50'">
+                            <span class="font-bold block text-xs uppercase mb-1">
+                                {{ log.status === 'warning-payment' ? 'Marked (Payment Due):' : 'Marked For:' }}
+                            </span>
                             {{ log.course?.print_name || log.course?.name || 'Class' }}
+                            <span v-if="log.status === 'warning-payment'" class="block mt-1 text-xs font-semibold">{{ log.message }}</span>
                         </p>
                         <p v-else class="text-red-700 bg-red-50 p-2 rounded">
                             <span class="font-bold block text-xs uppercase mb-1">Failed:</span>
@@ -229,7 +238,7 @@ const formatTime = (datetime: string) => {
                         <div class="space-y-1.5 max-h-32 overflow-y-auto pr-1">
                             <div v-for="subLog in log.grouped_logs.slice(1)" :key="subLog.id" class="flex flex-col text-xs bg-gray-50/80 p-1.5 rounded border border-gray-100">
                                 <div class="flex justify-between items-start">
-                                    <span class="text-gray-600 mr-2 break-words" :class="log.status === 'success' ? 'text-green-600' : 'text-red-600'">{{ subLog.message || (subLog.course?.print_name || 'Class') }}</span>
+                                    <span class="text-gray-600 mr-2 break-words" :class="(log.status === 'success' || log.status === 'warning-payment') ? 'text-green-600' : 'text-red-600'">{{ subLog.message || (subLog.course?.print_name || 'Class') }}</span>
                                     <span class="text-gray-400 whitespace-nowrap">{{ formatTime(subLog.scanned_at) }}</span>
                                 </div>
                             </div>

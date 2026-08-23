@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "run-p type-check \"build-only {@}\" -- && buildnumgen > dist/build",
+    "build": "run-p type-check \"build-only {@}\" -- && date +%s > dist/build",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
     "build-only": "vite build",
     "dev": "vite",
