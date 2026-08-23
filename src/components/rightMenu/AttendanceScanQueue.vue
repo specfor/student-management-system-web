@@ -108,9 +108,11 @@ onMounted(() => {
 
         // Notify admin via toast
         if (e.scanLog.status === 'failed') {
-            alertStore.insertAlert('Attendance Error', e.scanLog.message + (e.scanLog.student ? ` (${e.scanLog.student.name})` : ''), 'error');
+            alertStore.insertAlert('Attendance Error', e.scanLog.message + (e.scanLog.student ? ` (${e.scanLog.student.name})` : ''), 'error', 5000);
         } else if (e.scanLog.status === 'warning-payment') {
-            alertStore.insertAlert('Payment Due', e.scanLog.message + (e.scanLog.student ? ` (${e.scanLog.student.name})` : ''), 'info');
+            alertStore.insertAlert('Payment Due', e.scanLog.message + (e.scanLog.student ? ` (${e.scanLog.student.name})` : ''), 'info', 5000);
+        } else if (e.scanLog.status === 'success') {
+            alertStore.insertAlert('Attendance Marked', e.scanLog.message + (e.scanLog.student ? ` (${e.scanLog.student.name})` : ''), 'success', 5000);
         }
         
         // Update counts

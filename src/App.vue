@@ -69,13 +69,6 @@ echo.channel("system-notifications")
     } else {
       alertStore.insertAlert("Remote Print Failed", e.message, "error", -1);
     }
-  })
-  .listen("AttendanceAutomaticallyMarked", (e: any) => {
-    if (e.status === 'success') {
-      alertStore.insertAlert("Attendance Marked", e.message, "success", -1);
-    } else {
-      alertStore.insertAlert("Attendance Failed", e.message, "error", -1);
-    }
   });
 
 </script>
