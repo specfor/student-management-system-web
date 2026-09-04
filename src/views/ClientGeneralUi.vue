@@ -28,6 +28,7 @@ const student: Ref<Student | null> = ref(null);
 
 const scanLogResult: Ref<any> = ref(null);
 let markedAttendanceShowStartTime = 0;
+let markedAttendanceShowDuration = 0;
 
 function playSound(type: 'success' | 'error') {
   if (type === 'success') {
@@ -144,7 +145,7 @@ async function getStatus(providedData?: any) {
     }
   }
 
-  if (markedAttendanceShowStartTime != 0 && Date.now() - markedAttendanceShowStartTime < 4000) {
+  if (markedAttendanceShowStartTime != 0 && Date.now() - markedAttendanceShowStartTime < markedAttendanceShowDuration) {
     return;
   }
 
@@ -192,13 +193,14 @@ onMounted(() => {
     scanLogResult.value = e.scanLog;
     mode.value = "mark-attendance";
     markedAttendanceShowStartTime = Date.now();
+    markedAttendanceShowDuration = e.scanLog.status === 'failed' ? 6000 : 4000;
     playSound(e.scanLog.status === 'success' ? 'success' : 'error');
     
     setTimeout(() => {
       if (mode.value === "mark-attendance") {
         mode.value = "home";
       }
-    }, 4000);
+    }, markedAttendanceShowDuration);
   });
 
   echo.channel("general-ui").listen("RemotePrintRequested", (e: any) => {
