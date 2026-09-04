@@ -151,13 +151,13 @@ watch(selectedCourseId, async (courseId) => {
     if (!showAllStudentsForSelection.value)
         loadStudentsOfCourse(selectedCourseId.value)
 
-    selectedCourseData.value = courses.find(c => c.id == courseId)!
+    selectedCourseData.value = courses.find(c => c.id == courseId) || null
     checkEnrolled()
 })
 watch(selectedStudentId, async (studentId) => {
     checkEnrolled()
     loadEnrolledCourses(selectedStudentId.value)
-    selectedStudentData.value = students.find(s => s.id == studentId)!
+    selectedStudentData.value = students.find(s => s.id == studentId) || null
 
     studentImageUrl.value = ""
     let resp = await downloadStudentImage(studentId)
@@ -353,11 +353,12 @@ watch(enrollmentLoading, () => {
         enrollStatusText.value = 'Loading...'
 })
 watch(enrollmentData, () => {
-    if (enrollmentData.value!.enrollment !== null && (enrollmentData.value!.enrollment as Enrollment).suspended) {
+    if (!enrollmentData.value) return;
+    if (enrollmentData.value.enrollment !== null && (enrollmentData.value.enrollment as Enrollment).suspended) {
         enrollStatusText.value = 'Student is Banned from the Course'
         return
     }
-    else if (enrollmentData.value!.enrolled) {
+    else if (enrollmentData.value.enrolled) {
         enrollActionsEnabled.value = true
         enrollStatusText.value = 'Enrolled With the Course'
     } else
@@ -372,7 +373,7 @@ function calculateFee() {
 
     let discount = 0
 
-    if (enrollmentData.value!.enrollment === null) {
+    if (!enrollmentData.value || enrollmentData.value.enrollment === null) {
         feeToPay.value = -1
         return
     }
@@ -620,7 +621,7 @@ function selectCourse(courseId: number) {
                     </button>
                 </div>
 
-                <div v-if="selectedStudentData !== null" class="mt-6 border-2 border-slate-300 rounded-xl bg-white px-6 py-4 shadow-md w-full max-w-xl">
+                <div v-if="selectedStudentData" class="mt-6 border-2 border-slate-300 rounded-xl bg-white px-6 py-4 shadow-md w-full max-w-xl">
                     <div class="flex items-center justify-between border-b pb-2 mb-3">
                         <span class="font-bold text-lg text-slate-700">Payment Trustworthiness</span>
                         <span class="px-3 py-1 rounded-full font-bold text-sm text-white"
