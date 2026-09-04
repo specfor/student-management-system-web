@@ -7,6 +7,8 @@ import type { Attendance } from '@/types/attendanceTypes';
 import type { Enrollment } from '@/types/enrollmentTypes';
 import { getRouterParam } from '@/utils/routeHelpers';
 import { ref, type Ref } from 'vue';
+import { getCourses } from '@/apiConnections/courses';
+import type { Course } from '@/types/courseTypes';
 
 const alertStore = useAlertsStore()
 
@@ -16,6 +18,20 @@ const countTotAttendance = ref(0)
 
 const enrollmentId = getRouterParam('id')
 const enrollment: Ref<Enrollment | null> = ref(null)
+
+const coursesMap: Ref<Map<number, string>> = ref(new Map());
+
+async function fetchCourses() {
+    let resp = await getCourses(0, 1000);
+    if (resp.status === 'success') {
+        Object.values(resp.data.courses).forEach((group: any) => {
+            group.forEach((c: any) => {
+                coursesMap.value.set(c.id, `${c.name} - ${c.grade?.name || 'N/A'} (${c.instructor?.name || 'No Instructor'})`);
+            });
+        });
+    }
+}
+fetchCourses();
 
 async function loadEnrollment(enID: number) {
     let resp = await getEnrollmentById(enID)
@@ -61,6 +77,7 @@ loadAttendance()
                         'bg-yellow-500': enrollment?.status[0].type === 'pending',
                         'bg-red-500': enrollment?.status[0].type === 'discontinued',
                         'bg-blue-500': enrollment?.status[0].type === 'completed',
+                        'bg-purple-500': enrollment?.status[0].type === 'shifted',
                     }">
                         {{
                             enrollment?.status[0].type.toUpperCase() }}</h5>
@@ -124,13 +141,18 @@ loadAttendance()
                                         'bg-yellow-500': entry.type === 'pending',
                                         'bg-red-500': entry.type === 'discontinued',
                                         'bg-blue-500': entry.type === 'completed',
+                                        'bg-purple-500': entry.type === 'shifted',
                                     }">{{ entry.type.toUpperCase() }}</p>
                                 </div>
-                                <div class="grid grid-cols-3">
+                                <div class="grid grid-cols-3" v-if="entry.type === 'shifted' && entry.shifted_to_course_id">
+                                    <h1>Shifted To</h1>
+                                    <p class="col-span-2 text-purple-700 font-medium">{{ coursesMap.get(entry.shifted_to_course_id) || `Course ID: ${entry.shifted_to_course_id}` }}</p>
+                                </div>
+                                <div class="grid grid-cols-3 mt-1">
                                     <h1>Reason</h1>
                                     <p class="col-span-2">{{ entry.reason ?? "None" }}</p>
                                 </div>
-                                <div class="grid grid-cols-3">
+                                <div class="grid grid-cols-3 mt-1">
                                     <h1>Changed On</h1>
                                     <p class="col-span-2">{{ (new Date(entry.timestamp! * 1000).toLocaleString()) }}
                                     </p>

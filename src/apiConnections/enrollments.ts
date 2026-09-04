@@ -74,7 +74,8 @@ export function updateEnrollment(
   discount_amount: number,
   discount_reason: string,
   status: EnrollmentStatus["type"],
-  status_reason: string
+  status_reason: string,
+  shifted_to_course_id?: number
 ) {
   const params: { [key: string]: any } = {
     suspend: suspend,
@@ -89,6 +90,9 @@ export function updateEnrollment(
     else params["price_adjustment"].percentage = discount_amount;
   }
   params["status"] = { type: status, reason: status_reason };
+  if (status === 'shifted' && shifted_to_course_id !== undefined) {
+    params["status"]["shifted_to_course_id"] = shifted_to_course_id;
+  }
 
   return sendJsonPatchRequest(`/enroll/${id}`, params);
 }

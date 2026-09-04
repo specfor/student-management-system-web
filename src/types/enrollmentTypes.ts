@@ -16,9 +16,10 @@ export type Enrollment = {
 };
 
 export type EnrollmentStatus = {
-  type: "active" | "completed" | "pending" | "discontinued";
+  type: "active" | "completed" | "pending" | "discontinued" | "shifted";
   reason: string | null;
   timestamp?: number;
+  shifted_to_course_id?: number;
 };
 
 export type EnrollmentPriceAdjustment = {

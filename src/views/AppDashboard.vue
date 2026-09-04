@@ -89,7 +89,7 @@ function openStudentDrilldown(filter: 'active' | 'inactive' | 'paid' | 'active_n
     );
 }
 
-function openEnrollmentDrilldown(status: 'active' | 'pending' | 'completed' | 'discontinued') {
+function openEnrollmentDrilldown(status: 'active' | 'pending' | 'completed' | 'discontinued' | 'shifted') {
     openDrilldown(
         `Enrollments (${status})`,
         (page) => getEnrollmentDetails(globalSelectedMonth.value, status, page).then(res => res.data),
@@ -401,7 +401,7 @@ if (!auth.canSeeCard("monthly_financial_report") && auth.canSeeCard("expense_sum
 
 
 // ─── Card A: Enrollment Overview ─────────────────────────────────────────────
-const enrollmentData = ref<{ active: number; discontinued: number; completed: number; pending: number } | null>(null);
+const enrollmentData = ref<{ active: number; discontinued: number; completed: number; pending: number; shifted: number } | null>(null);
 async function loadEnrollmentData() {
     const resp = await getEnrollmentCount(globalSelectedMonth.value);
     if (resp.status === "success") enrollmentData.value = resp.data;
@@ -665,7 +665,7 @@ async function submitRecoverPayment() {
                             <LoadingCursor />
                         </div>
                         <div v-else class="grid grid-cols-2 gap-4 mt-2">
-                            <div class="bg-blue-100 rounded-lg p-4 text-center cursor-pointer hover:bg-blue-200 transition-colors" @click="openEnrollmentDrilldown('active')">
+                            <div class="bg-blue-100 rounded-lg p-4 text-center cursor-pointer hover:bg-blue-200 transition-colors col-span-2" @click="openEnrollmentDrilldown('active')">
                                 <p class="text-2xl font-bold text-blue-700">{{ enrollmentData.active }}</p>
                                 <p class="text-sm text-blue-600 mt-1">Active</p>
                             </div>
@@ -680,6 +680,10 @@ async function submitRecoverPayment() {
                             <div class="bg-red-100 rounded-lg p-4 text-center cursor-pointer hover:bg-red-200 transition-colors" @click="openEnrollmentDrilldown('discontinued')">
                                 <p class="text-2xl font-bold text-red-700">{{ enrollmentData.discontinued }}</p>
                                 <p class="text-sm text-red-600 mt-1">Discontinued</p>
+                            </div>
+                            <div class="bg-purple-100 rounded-lg p-4 text-center cursor-pointer hover:bg-purple-200 transition-colors" @click="openEnrollmentDrilldown('shifted')">
+                                <p class="text-2xl font-bold text-purple-700">{{ enrollmentData.shifted || 0 }}</p>
+                                <p class="text-sm text-purple-600 mt-1">Shifted</p>
                             </div>
                         </div>
                     </CollapseCard>

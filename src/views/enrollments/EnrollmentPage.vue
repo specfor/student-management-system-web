@@ -53,7 +53,8 @@ const tableColumns: TableColumns[] = [
 
 const tableFilters: Filter[] = [{ name: 'student_id', label: 'Student', type: 'select', options: studentOptionFields.value },
 { name: 'course_id', type: 'select', label: 'Course', options: courseOptionFields.value },
-{ name: 'instructor_id', type: 'select', label: 'Instructor', options: instructorOptionFields.value },]
+{ name: 'instructor_id', type: 'select', label: 'Instructor', options: instructorOptionFields.value },
+{ name: 'status_is', type: 'select', label: 'Status', options: [{text: 'Active', value: 'active'}, {text: 'Pending', value: 'pending'}, {text: 'Completed', value: 'completed'}, {text: 'Discontinued', value: 'discontinued'}, {text: 'Shifted', value: 'shifted'}] },]
 
 
 const limitLoadEnrollments = 30
@@ -159,6 +160,8 @@ async function loadEnrollments(startIndex?: number, filters?: any) {
             status = { type: 'colorTag', text: lastStatus.type, css: 'bg-yellow-200 text-yellow-800' }
         else if (lastStatus.type === 'completed')
             status = { type: 'colorTag', text: lastStatus.type, css: 'bg-blue-200 text-blue-800' }
+        else if (lastStatus.type === 'shifted')
+            status = { type: 'colorTag', text: lastStatus.type, css: 'bg-purple-200 text-purple-800' }
 
         let student: tableRowItem = "Deleted"
         if (enrollment.student)
@@ -292,6 +295,7 @@ async function editEnrollment(id: number) {
                 { text: 'Pending', value: 'pending' },
                 { text: 'Discontinued', value: 'discontinued' },
                 { text: 'Completed', value: 'completed' },
+                { text: 'Shifted', value: 'shifted' },
             ],
         },
         { name: 'status_reason', type: 'textarea', text: 'Reason for change (for later reference)' },
@@ -315,26 +319,96 @@ async function editEnrollment(id: number) {
         if (!results.submitted)
             return
 
-        let resp = await updateEnrollment(id, false, results.data['discount_type'] as EnrollmentPriceAdjustment['type'],
-            results.data['amount'] as number, results.data['reason'] as string, results.data['status'] as EnrollmentStatus['type'], results.data['status_reason'] as string)
-        if (resp.status === 'error') {
-            if (resp.data.type === 'user_error')
-                Object.entries(resp.data.messages).forEach(msg => {
-                    let err = ""
-                    if (Array.isArray(msg[1]) && msg[1] !== null)
-                        err = msg[1].join(', ')
-                    else
-                        err = msg[1] as string
-                    dataEntryForm.insertErrorMessage(msg[0], err)
-                })
-            else
-                alertStore.insertAlert('An error occured.', resp.message, 'error')
-            continue
-        } else {
+        let finalResultsData = { ...results.data };
+        let shiftedToCourseId: number | undefined = undefined;
+
+        if (finalResultsData['status'] === 'shifted') {
             dataEntryForm.finishSubmission()
-            alertStore.insertAlert('Action completed.', resp.message)
-            loadEnrollments()
-            break
+            
+            let courseResp = await getCourses(0, 1000);
+            if (courseResp.status === 'error') {
+                alertStore.insertAlert('Error fetching courses', courseResp.message, 'error');
+                return;
+            }
+            
+            let coursesGrouped = courseResp.data.courses;
+            let courseOptions: { text: string, value: number }[] = [];
+            Object.values(coursesGrouped).forEach((group: any) => {
+                group.forEach((c: any) => {
+                    courseOptions.push({ text: `${c.name} - ${c.grade?.name || 'N/A'} (${c.instructor?.name || 'No Instructor'})`, value: c.id });
+                });
+            });
+            
+            dataEntryForm.newDataEntryForm('Select Target Class', 'Confirm Shift', [
+                { type: 'message', text: 'Select the class you want to shift this student to.' },
+                { name: 'shifted_to_course_id', type: 'select', text: 'Target Class', options: courseOptions }
+            ]);
+            
+            let shiftSuccess = false;
+            while(true) {
+                let shiftResults = await dataEntryForm.waitForSubmittedData();
+                if (!shiftResults.submitted) return;
+                
+                if (!shiftResults.data['shifted_to_course_id']) {
+                    dataEntryForm.insertErrorMessage('shifted_to_course_id', 'You must select a class.');
+                    continue;
+                }
+                
+                shiftedToCourseId = shiftResults.data['shifted_to_course_id'] as number;
+                
+                let resp = await updateEnrollment(id, false, finalResultsData['discount_type'] as EnrollmentPriceAdjustment['type'],
+                    finalResultsData['amount'] as number, finalResultsData['reason'] as string, finalResultsData['status'] as EnrollmentStatus['type'], finalResultsData['status_reason'] as string, shiftedToCourseId)
+                
+                if (resp.status === 'error') {
+                    if (resp.data.type === 'user_error')
+                        Object.entries(resp.data.messages).forEach(msg => {
+                            let err = ""
+                            if (Array.isArray(msg[1]) && msg[1] !== null)
+                                err = msg[1].join(', ')
+                            else
+                                err = msg[1] as string
+                            
+                            if (msg[0] === 'status.shifted_to_course_id') {
+                                dataEntryForm.insertErrorMessage('shifted_to_course_id', err)
+                            } else {
+                                alertStore.insertAlert('Validation Error', err, 'error')
+                            }
+                        })
+                    else
+                        alertStore.insertAlert('An error occured.', resp.message, 'error')
+                    continue;
+                } else {
+                    dataEntryForm.finishSubmission()
+                    alertStore.insertAlert('Action completed.', resp.message)
+                    loadEnrollments()
+                    shiftSuccess = true;
+                    break;
+                }
+            }
+            if (shiftSuccess) break;
+        } else {
+            let resp = await updateEnrollment(id, false, finalResultsData['discount_type'] as EnrollmentPriceAdjustment['type'],
+                finalResultsData['amount'] as number, finalResultsData['reason'] as string, finalResultsData['status'] as EnrollmentStatus['type'], finalResultsData['status_reason'] as string)
+            
+            if (resp.status === 'error') {
+                if (resp.data.type === 'user_error')
+                    Object.entries(resp.data.messages).forEach(msg => {
+                        let err = ""
+                        if (Array.isArray(msg[1]) && msg[1] !== null)
+                            err = msg[1].join(', ')
+                        else
+                            err = msg[1] as string
+                        dataEntryForm.insertErrorMessage(msg[0], err)
+                    })
+                else
+                    alertStore.insertAlert('An error occured.', resp.message, 'error')
+                continue
+            } else {
+                dataEntryForm.finishSubmission()
+                alertStore.insertAlert('Action completed.', resp.message)
+                loadEnrollments()
+                break
+            }
         }
     }
 }
