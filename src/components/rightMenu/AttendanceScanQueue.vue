@@ -9,7 +9,12 @@ const alertStore = useAlertsStore();
 const scanLogs = ref<any[]>([]);
 const isLoading = ref(true);
 const filterStatus = ref<'success' | 'failed'>('success');
-const filterDate = ref(new Date().toISOString().split('T')[0]);
+
+const getLocalDateString = (d: Date = new Date()) => {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+};
+const filterDate = ref(getLocalDateString());
+
 const successCount = ref(0);
 const errorCount = ref(0);
 const nextPageUrl = ref<string | null>(null);
@@ -97,8 +102,8 @@ onMounted(() => {
     
     // Listen to real-time events on the 'system' channel
     echo.channel('system').listen('ScanLogCreated', (e: any) => {
-        // Extract YYYY-MM-DD from scanned_at
-        const logDate = e.scanLog.scanned_at ? e.scanLog.scanned_at.split('T')[0] : '';
+        // Extract local YYYY-MM-DD from scanned_at
+        const logDate = e.scanLog.scanned_at ? getLocalDateString(new Date(e.scanLog.scanned_at)) : '';
         
         // Check if the log is a success type (either success or warning-payment)
         const isSuccessLog = e.scanLog.status === 'success' || e.scanLog.status === 'warning-payment';
