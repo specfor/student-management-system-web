@@ -88,6 +88,12 @@ function setFilter(status: 'success' | 'failed') {
 
 onMounted(() => {
     fetchScanLogs();
+
+    window.addEventListener('open-scan-queue', (e: any) => {
+        if (e.detail && e.detail.filter) {
+            setFilter(e.detail.filter);
+        }
+    });
     
     // Listen to real-time events on the 'system' channel
     echo.channel('system').listen('ScanLogCreated', (e: any) => {
@@ -108,11 +114,17 @@ onMounted(() => {
 
         // Notify admin via toast
         if (e.scanLog.status === 'failed') {
-            alertStore.insertAlert('Attendance Error', e.scanLog.message + (e.scanLog.student ? ` (${e.scanLog.student.name})` : ''), 'error', 5000);
+            alertStore.insertAlert('Attendance Error', e.scanLog.message + (e.scanLog.student ? ` (${e.scanLog.student.name})` : ''), 'error', -1, () => {
+                window.dispatchEvent(new CustomEvent('open-scan-queue', { detail: { filter: 'failed' } }));
+            });
         } else if (e.scanLog.status === 'warning-payment') {
-            alertStore.insertAlert('Payment Due', e.scanLog.message + (e.scanLog.student ? ` (${e.scanLog.student.name})` : ''), 'info', 5000);
+            alertStore.insertAlert('Payment Due', e.scanLog.message + (e.scanLog.student ? ` (${e.scanLog.student.name})` : ''), 'info', 10000, () => {
+                window.dispatchEvent(new CustomEvent('open-scan-queue', { detail: { filter: 'success' } }));
+            });
         } else if (e.scanLog.status === 'success') {
-            alertStore.insertAlert('Attendance Marked', e.scanLog.message + (e.scanLog.student ? ` (${e.scanLog.student.name})` : ''), 'success', 5000);
+            alertStore.insertAlert('Attendance Marked', e.scanLog.message + (e.scanLog.student ? ` (${e.scanLog.student.name})` : ''), 'success', 10000, () => {
+                window.dispatchEvent(new CustomEvent('open-scan-queue', { detail: { filter: 'success' } }));
+            });
         }
         
         // Update counts
@@ -146,7 +158,7 @@ const formatTime = (datetime: string) => {
                     type="date" 
                     v-model="filterDate" 
                     @change="fetchScanLogs()"
-                    class="bg-white border border-gray-300 text-gray-700 text-sm rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    class="bg-white border border-gray-300 text-gray-700 text-sm rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500 mr-8 lg:mr-16"
                 />
             </div>
             

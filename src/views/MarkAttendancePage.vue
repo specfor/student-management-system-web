@@ -307,9 +307,13 @@ async function markAttendance() {
     let dateToPass = customAttendanceDate.value !== '' ? customAttendanceDate.value : undefined;
     let resp = await sendMarkAttendance(selectedCourseId.value, selectedStudentId.value, dateToPass)
     if (resp.status === 'error') {
-        alertStore.insertAlert('An error occured.', resp.message, 'error')
+        alertStore.insertAlert('An error occured.', resp.message, 'error', -1, () => {
+            window.dispatchEvent(new CustomEvent('open-scan-queue', { detail: { filter: 'failed' } }));
+        })
     } else {
-        alertStore.insertAlert('Action completed.', resp.message)
+        alertStore.insertAlert('Action completed.', resp.message, 'success', 10000, () => {
+            window.dispatchEvent(new CustomEvent('open-scan-queue', { detail: { filter: 'success' } }));
+        })
     }
     enrollActionsEnabled.value = true
 }

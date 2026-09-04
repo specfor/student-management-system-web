@@ -2,9 +2,21 @@
 import { PrinterIcon, XCircleIcon, Bars3BottomRightIcon } from '@heroicons/vue/24/outline';
 import AttendanceScanQueue from './rightMenu/AttendanceScanQueue.vue';
 import BillPrintQueue from './rightMenu/BillPrintQueue.vue';
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 
 const activePanel = ref<'print' | 'scan' | null>(null)
+
+const handleOpenScanQueue = () => {
+    activePanel.value = 'scan';
+}
+
+onMounted(() => {
+    window.addEventListener('open-scan-queue', handleOpenScanQueue);
+})
+
+onUnmounted(() => {
+    window.removeEventListener('open-scan-queue', handleOpenScanQueue);
+})
 </script>
 
 <template>

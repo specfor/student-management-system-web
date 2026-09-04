@@ -8,6 +8,7 @@ type Alert = {
   type: "success" | "error" | "info";
   title: string;
   message: string;
+  onClick?: () => void;
 };
 
 export const useAlertsStore = defineStore("alerts", () => {
@@ -25,13 +26,15 @@ export const useAlertsStore = defineStore("alerts", () => {
     title: string,
     message: string,
     alertType: "success" | "error" | "info" = "success",
-    removeTimeout: number = delayAutoRemoveAlert
+    removeTimeout: number = delayAutoRemoveAlert,
+    onClick?: () => void
   ) {
     alerts.value.push({
       id: currentAlertId.value,
       type: alertType,
       title: title,
       message: message,
+      onClick: onClick,
     });
     if (removeTimeout !== -1) {
       setTimeout(removeAlert, removeTimeout, currentAlertId.value);
