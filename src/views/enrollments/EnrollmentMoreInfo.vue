@@ -58,7 +58,8 @@ async function loadAttendance(startIndex?: number) {
 
     tableDataAttendance.value = []
     resp.data.records.forEach((record: Attendance) => {
-        tableDataAttendance.value.push([record.date, (new Date(record.created_at)).toLocaleTimeString()])
+        let timeString = record.marked_automatically ? (new Date(record.created_at)).toLocaleTimeString() : 'Manually Marked';
+        tableDataAttendance.value.push([record.date, timeString])
     })
     countTotAttendance.value = resp.data.tot_count
 }
