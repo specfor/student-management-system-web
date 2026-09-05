@@ -52,7 +52,10 @@ export async function sendGetRequest(url: string, params = {}, headers = {}, use
   headers_ = { ...headers_, ...headers };
   let response = null;
   try {
-    if (params) url = url + "?" + new URLSearchParams(params);
+    const searchParams = new URLSearchParams(params).toString();
+    if (searchParams) {
+      url = url + (url.includes('?') ? '&' : '?') + searchParams;
+    }
     response = await fetch(url, {
       method: "GET",
       headers: headers_,
