@@ -193,7 +193,7 @@ async function loadStudentsOfCourse(courseId: number) {
 
     let selectedStudentFoundInList = false;
     (resp.data.enrollments as Enrollment[]).forEach(enrollment => {
-        if (enrollment.student && enrollment.status[enrollment.status.length - 1].type === 'active') {
+        if (enrollment.student && enrollment.status?.length > 0 && enrollment.status[enrollment.status.length - 1].type === 'active') {
             studentOptionFields.value.push({ text: enrollment.student.name, value: enrollment.student.id })
             if (enrollment.student.id == selectedStudentId.value)
                 selectedStudentFoundInList = true
@@ -242,18 +242,25 @@ async function loadStudentEnrollmentOfCourse() {
 
 async function markPayment() {
     enrollActionsEnabled.value = false
-    let cName = ''
-    if (selectedCourseData.value!['group_name'] === null)
-        cName = selectedCourseData.value!['id'] + ' - ' + selectedCourseData.value!['name']
-    else
-        cName = selectedCourseData.value!['id'] + ' - ' + selectedCourseData.value!['name'] + ' - ' + selectedCourseData.value!['group_name']
 
-    let sName = selectedStudentData.value!['id'] + ' - ' + selectedStudentData.value!['name']
+    if (!selectedCourseData.value || !selectedStudentData.value || !enrollmentData.value || !enrollmentData.value.enrollment) {
+        alertStore.insertAlert('An error occured.', 'Please ensure a course and student are selected properly and the student is enrolled.', 'error')
+        enrollActionsEnabled.value = true
+        return
+    }
+
+    let cName = ''
+    if (selectedCourseData.value.group_name === null)
+        cName = selectedCourseData.value.id + ' - ' + selectedCourseData.value.name
+    else
+        cName = selectedCourseData.value.id + ' - ' + selectedCourseData.value.name + ' - ' + selectedCourseData.value.group_name
+
+    let sName = selectedStudentData.value.id + ' - ' + selectedStudentData.value.name
 
     let timeP: InputField | MessageField = { name: 'time', type: 'month', text: 'Month', value: new Date().toJSON().slice(0, 7) }
-    if (selectedCourseData.value!['fee']['type'] === 'daily')
+    if (selectedCourseData.value.fee?.type === 'daily')
         timeP = { name: 'time', type: 'date', text: 'Day', value: new Date().toLocaleDateString() }
-    else if (selectedCourseData.value!['fee']['type'] === 'onetime')
+    else if (selectedCourseData.value.fee?.type === 'onetime')
         timeP = { type: 'message', text: 'Course fee is a one time fee.' }
 
     dataEntryForm.newDataEntryForm('Payment Confirmation', 'Confirm', [
@@ -281,10 +288,10 @@ async function markPayment() {
 
     let shouldShowBillEnroller = false
     let resp;
-    if (selectedCourseData.value!['fee']['type'] === 'onetime')
-        resp = await createStudentPayment((enrollmentData.value!.enrollment as Enrollment).id, fee, 'onetime', confirmed.data.custom_amount != '', confirmed.data.reason as string)
+    if (selectedCourseData.value.fee?.type === 'onetime')
+        resp = await createStudentPayment((enrollmentData.value.enrollment as Enrollment).id, fee, 'onetime', confirmed.data.custom_amount != '', confirmed.data.reason as string)
     else
-        resp = await createStudentPayment((enrollmentData.value!.enrollment as Enrollment).id, fee, confirmed.data.time as string, confirmed.data.custom_amount != '', confirmed.data.reason as string)
+        resp = await createStudentPayment((enrollmentData.value.enrollment as Enrollment).id, fee, confirmed.data.time as string, confirmed.data.custom_amount != '', confirmed.data.reason as string)
 
     if (resp.status === 'error') {
         alertStore.insertAlert('An error occured.', resp.message, 'error')
@@ -295,7 +302,7 @@ async function markPayment() {
     }
 
     if (shouldShowBillEnroller) {
-        billEnrollerStudentId.value = selectedStudentData.value!['id'];
+        billEnrollerStudentId.value = selectedStudentData.value.id;
         showBillEnroller.value = true
     }
     enrollActionsEnabled.value = true
@@ -304,6 +311,13 @@ async function markPayment() {
 
 async function markAttendance() {
     enrollActionsEnabled.value = false
+
+    if (selectedCourseId.value === 0 || selectedStudentId.value === 0) {
+        alertStore.insertAlert('An error occured.', 'Please select a valid course and student first.', 'error')
+        enrollActionsEnabled.value = true
+        return
+    }
+
     let dateToPass = customAttendanceDate.value !== '' ? customAttendanceDate.value : undefined;
     let resp = await sendMarkAttendance(selectedCourseId.value, selectedStudentId.value, dateToPass)
     if (resp.status === 'error') {
@@ -373,7 +387,13 @@ watch(enrollmentData, () => {
 const feeToPay = ref(-1)
 
 function calculateFee() {
-    let courseFee = Number(courses.find(c => c.id == selectedCourseId.value)!.fee.amount)
+    const course = courses.find(c => c.id == selectedCourseId.value);
+    if (!course || !course.fee) {
+        feeToPay.value = -1;
+        return;
+    }
+
+    let courseFee = Number(course.fee.amount)
 
     let discount = 0
 
@@ -382,13 +402,14 @@ function calculateFee() {
         return
     }
 
-    let price_adjustments = (enrollmentData.value!.enrollment as Enrollment).price_adjustments
+    let price_adjustments = (enrollmentData.value.enrollment as Enrollment).price_adjustments
 
-    if (price_adjustments !== null)
+    if (price_adjustments !== null) {
         if (price_adjustments.type === 'fixed')
-            discount = price_adjustments.amount!
+            discount = price_adjustments.amount || 0
         else
-            discount = (courseFee * price_adjustments.percentage!) / 100
+            discount = (courseFee * (price_adjustments.percentage || 0)) / 100
+    }
 
     feeToPay.value = courseFee - discount
 }
@@ -482,16 +503,15 @@ function selectCourse(courseId: number) {
                 <h1 class="font-semibold text-lg">Basic Info</h1>
                 <div class="grid grid-cols-2 ml-5">
                     <h4>ID</h4>
-                    <h4>{{ selectedCourseData ? selectedCourseData!.id : '' }}</h4>
+                    <h4>{{ selectedCourseData?.id || '' }}</h4>
                 </div>
                 <div class="grid grid-cols-2 ml-5">
                     <h4>Instructor</h4>
-                    <h4>{{ selectedCourseData ? (selectedCourseData!.instructor ? selectedCourseData!.instructor.name
-                        : 'Deleted') : '' }}</h4>
+                    <h4>{{ selectedCourseData?.instructor?.name || (selectedCourseData ? 'Deleted' : '') }}</h4>
                 </div>
                 <div class="grid grid-cols-2 ml-5">
                     <h4>Enrollment Open</h4>
-                    <h4>{{ selectedCourseData ? (selectedCourseData!.enrollment_open ? 'Open' : 'Closed') : '' }}
+                    <h4>{{ selectedCourseData ? (selectedCourseData.enrollment_open ? 'Open' : 'Closed') : '' }}
                     </h4>
                 </div>
             </div>
@@ -499,26 +519,26 @@ function selectCourse(courseId: number) {
                 <h1 class="font-semibold text-lg">Schedule</h1>
                 <div class="grid grid-cols-2 ml-5">
                     <h4>Day</h4>
-                    <h4>{{ selectedCourseData ? selectedCourseData!.schedule[0].day : '' }}</h4>
+                    <h4>{{ selectedCourseData?.schedule?.[0]?.day || '' }}</h4>
                 </div>
                 <div class="grid grid-cols-2 ml-5">
                     <h4>Time</h4>
-                    <h4>{{ selectedCourseData ? selectedCourseData!.schedule[0].time : '' }}</h4>
+                    <h4>{{ selectedCourseData?.schedule?.[0]?.time || '' }}</h4>
                 </div>
                 <div class="grid grid-cols-2 ml-5">
                     <h4>Venue / Hall</h4>
-                    <h4>{{ selectedCourseData ? selectedCourseData!.schedule[0].venue : '' }}</h4>
+                    <h4>{{ selectedCourseData?.schedule?.[0]?.venue || '' }}</h4>
                 </div>
             </div>
             <div>
                 <h1 class="font-semibold text-lg">Course Fee</h1>
                 <div class="grid grid-cols-2 ml-5">
                     <h4>Fee Type</h4>
-                    <h4>{{ selectedCourseData ? selectedCourseData!.fee.type : '' }}</h4>
+                    <h4>{{ selectedCourseData?.fee?.type || '' }}</h4>
                 </div>
                 <div class="grid grid-cols-2 ml-5">
                     <h4>Fee</h4>
-                    <h4>{{ selectedCourseData ? selectedCourseData!.fee.amount : '' }}</h4>
+                    <h4>{{ selectedCourseData?.fee?.amount || '' }}</h4>
                 </div>
             </div>
         </div>
@@ -538,20 +558,19 @@ function selectCourse(courseId: number) {
                         <h1 class="font-semibold text-lg">Basic Info</h1>
                         <div class="grid grid-cols-2 ml-5">
                             <h4>ID</h4>
-                            <h4>{{ selectedStudentData ? selectedStudentData!.id : '' }}</h4>
+                            <h4>{{ selectedStudentData?.id || '' }}</h4>
                         </div>
                         <div class="grid grid-cols-2 ml-5">
                             <h4>Name</h4>
-                            <h4>{{ selectedStudentData ? selectedStudentData!.name : '' }}</h4>
+                            <h4>{{ selectedStudentData?.name || '' }}</h4>
                         </div>
                         <div class="grid grid-cols-2 ml-5">
                             <h4>Grade</h4>
-                            <h4>{{ selectedStudentData ? (selectedStudentData!.grade ? selectedStudentData!.grade.name :
-                                'Deleted Grade') : '' }}</h4>
+                            <h4>{{ selectedStudentData ? (selectedStudentData.grade?.name || 'Deleted Grade') : '' }}</h4>
                         </div>
                         <div class="grid grid-cols-2 ml-5">
                             <h4>School</h4>
-                            <h4>{{ selectedStudentData ? selectedStudentData!.school : '' }}</h4>
+                            <h4>{{ selectedStudentData?.school || '' }}</h4>
                         </div>
                         <div class="flex flex-col items-center mt-3">
                             <div v-show="studentImageUrl === ''"
