@@ -118,3 +118,8 @@ export function discardPayment(enrollmentId: number, month: string, type: string
 export function recoverPayment(enrollmentId: number, month: string, amount: number, className: string | null) {
   return sendJsonPostRequest("/analytics/payments/recover", { enrollment_id: enrollmentId, month, amount, class_name: className });
 }
+
+export function getDailyIncomeSummary(date?: string) {
+  const params = date ? { date } : {};
+  return sendGetRequest("/analytics/daily-income-summary", params);
+}

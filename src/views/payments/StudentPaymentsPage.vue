@@ -14,7 +14,10 @@ import { getCourses } from '@/apiConnections/courses';
 import { getStudents } from '@/apiConnections/students';
 import type { Student } from '@/types/studentTypes';
 import BillEnroller from '@/components/BillEnroller.vue';
+import DailyIncomeCard from '@/components/DailyIncomeCard.vue';
+import { useAuthStore } from '@/stores/authorization';
 
+const authStore = useAuthStore()
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
 
@@ -223,6 +226,8 @@ function showBillAsigner(PaymentId: number) {
         <div class="flex justify-between items-center mb-10">
             <h4 class="font-semibold text-3xl">Student Payments</h4>
         </div>
+
+        <DailyIncomeCard v-if="authStore.canSeeCard('daily_income_summary')" />
 
         <div class="mb-10">
             <TableComponent :table-columns="tableColumns" :table-rows="paymentDataForTable" @edit-emit="editPayment"

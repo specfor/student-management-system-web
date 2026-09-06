@@ -256,10 +256,14 @@ async function markPayment() {
         cName = selectedCourseData.value.id + ' - ' + selectedCourseData.value.name + ' - ' + selectedCourseData.value.group_name
 
     let sName = selectedStudentData.value.id + ' - ' + selectedStudentData.value.name
+    
+    const getLocalDateString = (d: Date = new Date()) => {
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    };
 
     let timeP: InputField | MessageField = { name: 'time', type: 'month', text: 'Month', value: new Date().toJSON().slice(0, 7) }
     if (selectedCourseData.value.fee?.type === 'daily')
-        timeP = { name: 'time', type: 'date', text: 'Day', value: new Date().toLocaleDateString() }
+        timeP = { name: 'time', type: 'date', text: 'Day', value: getLocalDateString() }
     else if (selectedCourseData.value.fee?.type === 'onetime')
         timeP = { type: 'message', text: 'Course fee is a one time fee.' }
 
@@ -294,7 +298,15 @@ async function markPayment() {
         resp = await createStudentPayment((enrollmentData.value.enrollment as Enrollment).id, fee, confirmed.data.time as string, confirmed.data.custom_amount != '', confirmed.data.reason as string)
 
     if (resp.status === 'error') {
-        alertStore.insertAlert('An error occured.', resp.message, 'error')
+        let errorMessage = resp.message || 'An error occurred.';
+        if (resp.data && resp.data.messages) {
+            const firstKey = Object.keys(resp.data.messages)[0];
+            if (firstKey) {
+                const msg = resp.data.messages[firstKey];
+                errorMessage = Array.isArray(msg) ? msg[0] : msg;
+            }
+        }
+        alertStore.insertAlert('An error occured.', errorMessage, 'error')
     } else {
         paymentIdForBillEnroller.value = resp.data.payment.id
         shouldShowBillEnroller = true
