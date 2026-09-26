@@ -229,8 +229,8 @@ async function editPayment(id: number) {
     if (currentTab.value === 'admission') {
         let fee = admissionFees.find(f => f.id === id)
         dataEntryForm.newDataEntryForm('Edit Admission Fee', 'Save', [
-            { name: 'amount', type: 'number', text: 'Amount', default: fee?.amount, required: true },
-            { name: 'reduction_reason', type: 'text', text: 'Reductions', default: fee?.reductions }
+            { name: 'amount', type: 'number', text: 'Amount', value: fee?.amount, required: true },
+            { name: 'reduction_reason', type: 'text', text: 'Reductions', value: fee?.reductions }
         ])
         while (true) {
             let results = await dataEntryForm.waitForSubmittedData()
