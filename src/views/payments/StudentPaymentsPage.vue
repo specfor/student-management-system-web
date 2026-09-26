@@ -1,11 +1,12 @@
 <!-- eslint-disable no-constant-condition -->
 <script setup lang="ts">
 import { getStudentPayments, refundStudentPayment } from '@/apiConnections/payments';
+import { getAdmissionFees, updateAdmissionFee } from '@/apiConnections/students';
 import TableComponent, { type Filter, type TableActionType, type TableColumns, type tableRowItem } from '@/components/TableComponent.vue';
 import { useAlertsStore } from '@/stores/alerts';
 import { useDataEntryFormsStore } from '@/stores/formManagers/dataEntryForm';
 import { PencilSquareIcon } from '@heroicons/vue/24/solid';
-import { ref, type Ref } from 'vue';
+import { ref, type Ref, computed } from 'vue';
 import type { StudentPayment } from '@/types/paymentTypes';
 import { getInstructors } from '@/apiConnections/instructors';
 import type { Instructor } from '@/types/InstructorTypes';
@@ -21,24 +22,36 @@ const authStore = useAuthStore()
 const dataEntryForm = useDataEntryFormsStore()
 const alertStore = useAlertsStore()
 
+const currentTab = ref<'class' | 'admission'>('class')
+
 const paymentDataForTable: Ref<any[]> = ref([])
 
-const tableActions: TableActionType[] = [
+const classTableActions: TableActionType[] = [
     { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
 ]
-const tableColumns: TableColumns[] = [
+const admissionTableActions: TableActionType[] = [
+    { renderAsRouterLink: false, type: 'icon', emit: 'editEmit', icon: PencilSquareIcon, css: 'fill-blue-600' }
+]
+
+const classTableColumns: TableColumns[] = [
     { label: 'ID', sortable: true }, { label: 'Payment For' }, { label: 'Amount', sortable: true },
     { label: 'Student' }, { label: 'Course' }, { label: 'Custom Payment Reason' }, { label: 'Method' }, { label: 'Receipt ID' }, { label: 'Paid at' }, { label: 'Refunded' }]
 
-// const thisMonth = (new Date()).getFullYear() + '-' + ('0' + ((new Date()).getMonth() + 1)).slice(-2)
+const admissionTableColumns: TableColumns[] = [
+    { label: 'ID', sortable: true }, { label: 'Student' }, { label: 'Amount', sortable: true }, { label: 'Paid Status' }, { label: 'Reductions' }, { label: 'Date' }
+]
 
-const tableFilters: Ref<Filter[]> = ref([{ label: 'From 1st of', name: 'date_from', type: 'month' }, { label: 'Until 1st of', name: 'date_to', type: 'month' }])
-
+const classTableFilters: Ref<Filter[]> = ref([{ label: 'From 1st of', name: 'date_from', type: 'month' }, { label: 'Until 1st of', name: 'date_to', type: 'month' }])
+const admissionTableFilters: Ref<Filter[]> = ref([])
 
 let payments: StudentPayment[] = []
+let admissionFees: any[] = []
 const limitLoadPayments = 30
 const countTotPayments = ref(0)
 
+const activeTableColumns = computed(() => currentTab.value === 'class' ? classTableColumns : admissionTableColumns)
+const activeTableActions = computed(() => currentTab.value === 'class' ? classTableActions : admissionTableActions)
+const activeTableFilters = computed(() => currentTab.value === 'class' ? classTableFilters.value : admissionTableFilters.value)
 
 async function initLoadInstructors() {
     let resp = await getInstructors(undefined, undefined, { sort: { by: 'name', direction: 'asc' } })
@@ -47,7 +60,7 @@ async function initLoadInstructors() {
         (resp.data.instructors as Instructor[]).forEach(instructor => {
             insFilter.options.push({ text: instructor.name, value: instructor.id })
         });
-        tableFilters.value.push(insFilter)
+        classTableFilters.value.push(insFilter)
     }
 }
 async function initLoadCourses() {
@@ -64,7 +77,7 @@ async function initLoadCourses() {
             courseFilter.options.push({ text: courseName, value: course.id })
         })
     })
-    tableFilters.value.push(courseFilter)
+    classTableFilters.value.push(courseFilter)
 }
 async function initLoadStudents() {
     let resp = await getStudents(undefined, undefined, { sort: { by: 'name', direction: 'asc' } })
@@ -75,20 +88,20 @@ async function initLoadStudents() {
     (resp.data.students as Student[]).forEach(student => {
         studentFilter.options.push({ text: student.name, value: student.id })
     })
-    tableFilters.value.push(studentFilter)
-
+    classTableFilters.value.push(studentFilter)
+    
+    let admissionStudentFilter = JSON.parse(JSON.stringify(studentFilter))
+    admissionTableFilters.value.push(admissionStudentFilter)
 }
 initLoadInstructors()
 initLoadCourses()
 initLoadStudents()
-
 
 let lastLoadSettings: {
     lastUsedIndex: number, orderBy: string, orderDirec: 'asc' | 'desc',
     filters: { student_id?: number, course_id?: number, instructor_id?: number, date_from?: string, date_to?: string }
 }
     = { lastUsedIndex: 0, orderBy: '', orderDirec: 'desc', filters: { date_from: "", date_to: "" } }
-
 
 function setSorting(column: string, direction: 'asc' | 'desc') {
     let orderBy = ''
@@ -105,6 +118,14 @@ function setSorting(column: string, direction: 'asc' | 'desc') {
 
     lastLoadSettings.orderBy = orderBy
     lastLoadSettings.orderDirec = direction
+}
+
+async function loadData(startIndex?: number, filters?: { [key: string]: any }) {
+    if (currentTab.value === 'class') {
+        await loadPayments(startIndex, filters)
+    } else {
+        await loadAdmissionFees(startIndex, filters)
+    }
 }
 
 async function loadPayments(startIndex?: number, filters?: { [key: string]: any }) {
@@ -134,7 +155,6 @@ async function loadPayments(startIndex?: number, filters?: { [key: string]: any 
     else
         lastLoadSettings.filters.instructor_id = undefined
 
-
     let opt: any = {}
     opt.sort = { by: lastLoadSettings.orderBy, direction: lastLoadSettings.orderDirec }
     opt.filters = lastLoadSettings.filters
@@ -154,7 +174,6 @@ async function loadPayments(startIndex?: number, filters?: { [key: string]: any 
             student = { type: 'textWithLink', text: payment.enrollment.student.name, url: `/students/${payment.enrollment.student.id}/view` }
         let course: tableRowItem = "Deleted"
         if (payment.enrollment?.course)
-            // course = { type: 'textWithLink', text: payment.enrollment.course.name, url: `/courses/${payment.enrollment.course.id}/view` }
             course = payment.enrollment.course.name
 
         let refunded: tableRowItem = { type: 'colorTag', text: payment.refunded ? 'Yes' : 'No', css: payment.refunded ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700' }
@@ -166,9 +185,76 @@ async function loadPayments(startIndex?: number, filters?: { [key: string]: any 
     });
 }
 
-loadPayments()
+async function loadAdmissionFees(startIndex?: number, filters?: { [key: string]: any }) {
+    if (startIndex === undefined) startIndex = lastLoadSettings.lastUsedIndex
+    else lastLoadSettings.lastUsedIndex = startIndex
+
+    if (filters?.student_id) lastLoadSettings.filters.student_id = filters.student_id
+    else lastLoadSettings.filters.student_id = undefined
+
+    let opt: any = {}
+    opt.sort = { by: lastLoadSettings.orderBy, direction: lastLoadSettings.orderDirec }
+    opt.filters = { student_id: lastLoadSettings.filters.student_id }
+
+    let resp = await getAdmissionFees(startIndex, limitLoadPayments, opt)
+    if (resp.status === 'error') {
+        alertStore.insertAlert('An error occured.', resp.message, 'error')
+        return
+    }
+
+    countTotPayments.value = resp.data.tot_count
+    paymentDataForTable.value = []
+    admissionFees = resp.data.admission_fees
+    admissionFees.forEach(fee => {
+        let student: tableRowItem = "Deleted"
+        if (fee.student)
+            student = { type: 'textWithLink', text: fee.student.name, url: `/students/${fee.student.id}/view` }
+
+        let paidStatus: tableRowItem = { type: 'colorTag', text: fee.paid ? 'Paid' : 'Unpaid', css: fee.paid ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700' }
+
+        paymentDataForTable.value.push([
+            fee.id,
+            student,
+            fee.amount,
+            paidStatus,
+            fee.reductions ?? "None",
+            new Date(fee.created_at).toLocaleString()
+        ])
+    });
+}
+
+loadData()
 
 async function editPayment(id: number) {
+    if (currentTab.value === 'admission') {
+        let fee = admissionFees.find(f => f.id === id)
+        dataEntryForm.newDataEntryForm('Edit Admission Fee', 'Save', [
+            { name: 'amount', type: 'number', text: 'Amount', default: fee?.amount, required: true },
+            { name: 'reduction_reason', type: 'text', text: 'Reductions', default: fee?.reductions }
+        ])
+        while (true) {
+            let results = await dataEntryForm.waitForSubmittedData()
+            if (!results.submitted) return
+
+            let resp = await updateAdmissionFee(id, Number(results.data.amount), undefined, results.data.reduction_reason as string)
+            if (resp.status === 'error') {
+                if (resp.data.type === 'user_error')
+                    Object.entries(resp.data.messages).forEach(msg => {
+                        let err = Array.isArray(msg[1]) ? msg[1].join(', ') : msg[1] as string
+                        dataEntryForm.insertErrorMessage(msg[0], err)
+                    })
+                else alertStore.insertAlert('An error occured.', resp.message, 'error')
+                continue
+            } else {
+                dataEntryForm.finishSubmission()
+                alertStore.insertAlert('Action completed.', resp.message)
+                loadData()
+                break
+            }
+        }
+        return
+    }
+
     dataEntryForm.newDataEntryForm('Refund Payment', 'Refund', [
         { name: 'reason', type: 'text', text: 'Reason', required: true }
     ])
@@ -195,7 +281,7 @@ async function editPayment(id: number) {
         } else {
             dataEntryForm.finishSubmission()
             alertStore.insertAlert('Action completed.', resp.message)
-            loadPayments()
+            loadData()
             break
         }
     }
@@ -219,6 +305,11 @@ function showBillAsigner(PaymentId: number) {
     billAsignerVisible.value = true
 }
 
+function switchTab(tab: 'class' | 'admission') {
+    currentTab.value = tab
+    lastLoadSettings.lastUsedIndex = 0
+    loadData()
+}
 </script>
 
 <template>
@@ -229,14 +320,30 @@ function showBillAsigner(PaymentId: number) {
 
         <DailyIncomeCard v-if="authStore.canSeeCard('daily_income_summary')" />
 
-        <div class="mb-10">
-            <TableComponent :table-columns="tableColumns" :table-rows="paymentDataForTable" @edit-emit="editPayment"
-                :actions="tableActions" :refresh-func="async () => { await loadPayments(); return true }"
-                @delete-emit="delPayment" @load-page-emit="loadPayments" :paginate-page-size="limitLoadPayments"
+        <!-- Tabs -->
+        <div class="border-b border-gray-200 mb-6 mt-4">
+            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                <button @click="switchTab('class')" 
+                    :class="{'border-blue-500 text-blue-600': currentTab === 'class', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': currentTab !== 'class'}" 
+                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                    Class Payments
+                </button>
+                <button @click="switchTab('admission')" 
+                    :class="{'border-blue-500 text-blue-600': currentTab === 'admission', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': currentTab !== 'admission'}" 
+                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                    Admission Fees
+                </button>
+            </nav>
+        </div>
+
+        <div class="mb-10" :key="currentTab">
+            <TableComponent :table-columns="activeTableColumns" :table-rows="paymentDataForTable" @edit-emit="editPayment"
+                :actions="activeTableActions" :refresh-func="async () => { await loadData(); return true }"
+                @delete-emit="delPayment" @load-page-emit="loadData" :paginate-page-size="limitLoadPayments"
                 :paginate-total="countTotPayments" :current-sorting="{ column: 'ID', direc: 'desc' }" @sort-by="(col, dir) => {
-                    setSorting(col, dir); loadPayments();
-                }" :filters="tableFilters" @filter-values="(val) => {
-                    loadPayments(undefined, val)
+                    setSorting(col, dir); loadData();
+                }" :filters="activeTableFilters" @filter-values="(val) => {
+                    loadData(undefined, val)
                 }" @assign-bill="(paymentId) => {
                     showBillAsigner(paymentId)
                 }" />
@@ -245,7 +352,7 @@ function showBillAsigner(PaymentId: number) {
         <div class="aboslute inset-0 bg-gray-800 bg-opacity-50">
             <BillEnroller :payment-id="billAsignPaymentId" :student-id="billAsignStudentId" :show="billAsignerVisible"
                 @close="() => { billAsignerVisible = false }" @bill-created="(id) => {
-                    loadPayments()
+                    loadData()
                 }" />
         </div>
     </div>

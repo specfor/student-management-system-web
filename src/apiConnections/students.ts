@@ -137,6 +137,32 @@ export function getAdmissionPaymentStatus(student_id: number) {
   return sendGetRequest(`/student-admission-fees`, params);
 }
 
+export function getAdmissionFees(
+  startIndex = 0,
+  limit: null | number = null,
+  options?: {
+    filters?: {
+      student_id?: number;
+    };
+    sort?: {
+      by: "id" | "student_id" | "created_at";
+      direction: "asc" | "desc";
+    };
+  }
+) {
+  const params: { [key: string]: any } = { start: startIndex };
+  if (limit) params["size"] = limit;
+
+  if (options?.filters?.student_id)
+    params["student_id"] = options?.filters?.student_id;
+  if (options?.sort) {
+    params.sort = options.sort.by;
+    params.sort_dir = options.sort.direction;
+  }
+
+  return sendGetRequest("/student-admission-fees", params);
+}
+
 export function updateAdmissionFee(id: number, amount?: number, paid?: boolean, reduction_reason?: string) {
   const params: { [key: string]: any } = {};
   if (amount) params.amount = amount;
