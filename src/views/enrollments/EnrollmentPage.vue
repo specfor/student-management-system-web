@@ -335,7 +335,9 @@ async function editEnrollment(id: number) {
             let courseOptions: { text: string, value: number }[] = [];
             Object.values(coursesGrouped).forEach((group: any) => {
                 group.forEach((c: any) => {
-                    courseOptions.push({ text: `${c.name} - ${c.grade?.name || 'N/A'} (${c.instructor?.name || 'No Instructor'})`, value: c.id });
+                    let courseName = c.name;
+                    if (c.group_name) courseName += " - " + c.group_name;
+                    courseOptions.push({ text: `${courseName} - ${c.grade?.name || 'N/A'} (${c.instructor?.name || 'No Instructor'})`, value: c.id });
                 });
             });
             

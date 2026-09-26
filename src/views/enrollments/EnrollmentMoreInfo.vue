@@ -26,7 +26,9 @@ async function fetchCourses() {
     if (resp.status === 'success') {
         Object.values(resp.data.courses).forEach((group: any) => {
             group.forEach((c: any) => {
-                coursesMap.value.set(c.id, `${c.name} - ${c.grade?.name || 'N/A'} (${c.instructor?.name || 'No Instructor'})`);
+                let courseName = c.name;
+                if (c.group_name) courseName += " - " + c.group_name;
+                coursesMap.value.set(c.id, `${courseName} - ${c.grade?.name || 'N/A'} (${c.instructor?.name || 'No Instructor'})`);
             });
         });
     }
@@ -98,7 +100,7 @@ loadAttendance()
                     <div class="grid grid-cols-3 gap-x-5 items-center mt-2">
                         <h4>Course</h4>
                         <p class="col-span-2 border-b pl-3 border-slate-300">{{ enrollment.course ?
-                            enrollment.course.name :
+                            (enrollment.course.name + (enrollment.course.group_name ? ' - ' + enrollment.course.group_name : '')) :
                             "Deleted" }}</p>
                     </div>
                     <div class="grid grid-cols-3 gap-x-5 items-center mt-2">
