@@ -85,7 +85,7 @@ function openStudentDrilldown(filter: 'active' | 'inactive' | 'paid' | 'active_n
         title,
         (page) => getStudentDetails(globalSelectedMonth.value, filter, page).then(res => res.data),
         (item: any) => [item.id, { type: 'textWithLink', text: item.name, url: `/students/${item.id}/view` }, item.phone_number],
-        [{ name: 'ID' }, { name: 'Name' }, { name: 'Phone' }]
+        [{ label: 'ID' }, { label: 'Name' }, { label: 'Phone' }]
     );
 }
 
@@ -94,7 +94,7 @@ function openEnrollmentDrilldown(status: 'active' | 'pending' | 'completed' | 'd
         `Enrollments (${status})`,
         (page) => getEnrollmentDetails(globalSelectedMonth.value, status, page).then(res => res.data),
         (item: any) => [item.id, { type: 'textWithLink', text: item.student?.name, url: `/students/${item.student?.id}/view` }, item.course?.name],
-        [{ name: 'ID' }, { name: 'Student Name' }, { name: 'Course Name' }]
+        [{ label: 'ID' }, { label: 'Student Name' }, { label: 'Course Name' }]
     );
 }
 
@@ -103,7 +103,7 @@ function openOutstandingPaymentDrilldown(status: 'paid' | 'unpaid') {
         `Outstanding Payments (${status})`,
         (page) => getOutstandingPaymentDetails(globalSelectedMonth.value, status, page).then(res => res.data),
         (item: any) => [item.id, { type: 'textWithLink', text: item.name, url: `/students/${item.id}/view` }, item.phone_number],
-        [{ name: 'ID' }, { name: 'Name' }, { name: 'Phone' }]
+        [{ label: 'ID' }, { label: 'Name' }, { label: 'Phone' }]
     );
 }
 
@@ -112,7 +112,7 @@ function openInstructorPaymentDrilldown(status: 'paid' | 'unpaid') {
         `Instructor Payments (${status})`,
         (page) => getInstructorPaymentDetails(globalSelectedMonth.value, status, page).then(res => res.data),
         (item: any) => [item.id, { type: 'textWithLink', text: item.name, url: `/instructors/${item.id}/view` }, item.phone_number],
-        [{ name: 'ID' }, { name: 'Name' }, { name: 'Phone' }]
+        [{ label: 'ID' }, { label: 'Name' }, { label: 'Phone' }]
     );
 }
 
@@ -135,7 +135,7 @@ function openAdvancePaymentDrilldown() {
             item.course?.name,
             item.month
         ],
-        [{ name: 'Enrollment ID' }, { name: 'Student Name' }, { name: 'Course Name' }, { name: 'Month' }],
+        [{ label: 'Enrollment ID' }, { label: 'Student Name' }, { label: 'Course Name' }, { label: 'Month' }],
         actions
     );
 }
@@ -159,7 +159,7 @@ function openAttendedUnpaidDrilldown() {
             item.course?.name,
             item.month
         ],
-        [{ name: 'Enrollment ID' }, { name: 'Student Name' }, { name: 'Course Name' }, { name: 'Month' }],
+        [{ label: 'Enrollment ID' }, { label: 'Student Name' }, { label: 'Course Name' }, { label: 'Month' }],
         actions
     );
 }
@@ -179,7 +179,7 @@ function openIncomeDrilldown(filter: 'this_month' | 'delayed' | 'admission') {
             }
             return [item.id, { type: 'textWithLink', text: item.enrollment?.student?.name, url: `/students/${item.enrollment?.student?.id}/view` }, item.enrollment?.course?.name, item.amount, new Date(item.created_at).toLocaleDateString()];
         },
-        [{ name: 'ID' }, { name: 'Student Name' }, { name: 'Category / Course' }, { name: 'Amount' }, { name: 'Date' }]
+        [{ label: 'ID' }, { label: 'Student Name' }, { label: 'Category / Course' }, { label: 'Amount' }, { label: 'Date' }]
     );
 }
 
@@ -196,7 +196,7 @@ function openExpenseDrilldown(filter: string) {
             }
             return [item.id, item.description || '-', item.type, item.amount, new Date(item.created_at).toLocaleDateString()];
         },
-        [{ name: 'ID' }, { name: 'Description / Name' }, { name: 'Type' }, { name: 'Amount' }, { name: 'Date' }]
+        [{ label: 'ID' }, { label: 'Description / Name' }, { label: 'Type' }, { label: 'Amount' }, { label: 'Date' }]
     );
 }
 
